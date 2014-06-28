@@ -57,9 +57,6 @@ proc `+=` *(a: var BigInt, b: BigInt) =
 template optAdd{x = y + z}(x,y,z: BigInt) = addition(x, y, z)
 
 template realMultiplication(a: BigInt, b, c: BigInt, bl, cl) =
-  var tmp: uint64
-  a.limbs.setLen(bl + cl)
-
   for i in 0 .. < bl:
     tmp += uint64(b.limbs[i]) * uint64(c.limbs[0])
     a.limbs[i] = uint32(tmp)
@@ -92,6 +89,9 @@ template realMultiplication(a: BigInt, b, c: BigInt, bl, cl) =
 proc multiplication*(a: var BigInt, b, c: BigInt) =
   let bl = b.limbs.len
   let cl = c.limbs.len
+  var tmp: uint64
+
+  a.limbs.setLen(bl + cl)
 
   if cl > bl:
     realMultiplication(a, c, b, cl, bl)
@@ -115,6 +115,8 @@ proc `$`*(a: BigInt) : string =
     result.add(toLower(toHex(int(A.limbs[i]), 8)))
 
 when isMainModule:
+  # We're about twice as slow as GMP in these microbenchmarks:
+
   #var a = initBigInt(1337)
   #var b = initBigInt(42)
   #var c = initBigInt(0)
