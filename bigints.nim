@@ -216,11 +216,24 @@ proc initBigInt*(str: string): BigInt =
   for i in countdown((str.high div 9) * 9, 0, 9):
     var smul = 1'u32
     var num: uint32
-    for j in countdown(min(str.high, i + 8), i):
+    for j in countdown(min(i + 8, str.high), i):
       num += smul * uint32(ord(str[j]) - ord('0'))
       smul *= 10
     result += mul * initBigInt(num)
     mul *= initBigInt(smul)
+
+  # More readable but a bit slower
+  #var smul: uint32 = 1
+  #var num: uint32
+  ## 9 characters at once (max that fits into uint32)
+  #for i in countdown(str.high, 0):
+  #  num += smul * uint32(ord(str[i]) - ord('0'))
+  #  smul *= 10
+  #  if i mod 9 == 0:
+  #    result += mul * initBigInt(num)
+  #    mul *= initBigInt(smul)
+  #    smul = 1'u32
+  #    num = 0
 
 when isMainModule:
   # We're about twice as slow as GMP in these microbenchmarks:
@@ -292,5 +305,6 @@ when isMainModule:
   #echo cmp(b,b)
   #echo cmp(c,c)
 
-  #var x = initBigInt("0000111122223333444455556666777788889999")
+  for i in 0..1000000:
+    var x = initBigInt("0000111122223333444455556666777788889999")
   #echo x
