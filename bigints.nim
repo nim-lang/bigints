@@ -17,7 +17,7 @@ proc initBigInt*(vals: seq[uint32], flags: set[Flags] = {}): BigInt =
 proc initBigInt*[T](val: T): BigInt =
   result.limbs = @[uint32(val)]
   result.flags = {}
-  if int64(val) > 0:
+  if int64(val) < 0:
     result.flags.incl(Negative)
 
 template unsignedCmp(a, b: BigInt) =
@@ -54,8 +54,6 @@ template addParts(toAdd) =
   a.limbs[i] = uint32(tmp)
   tmp = tmp shr 32
 
-# TODO: Negative numbers
-# TODO: Subtraction
 # Works when a = b
 proc unsignedAddition(a: var BigInt, b, c: BigInt) =
   var tmp: uint64
@@ -85,9 +83,6 @@ proc unsignedAddition(a: var BigInt, b, c: BigInt) =
 # Works when a = b
 # Assumes positive parameters and b > c
 proc unsignedSubtraction(a: var BigInt, b, c: BigInt) =
-  assert(Negative notin b.flags)
-  assert(Negative notin c.flags)
-  assert(b > c)
   var tmp: int64
 
   let
@@ -274,7 +269,35 @@ proc `shl` *(x: BigInt, y: int): BigInt =
 
 template optShl{x = y shl z}(x, y: BigInt, z) = shiftLeft(x, y, z)
 
+proc reset(a: var BigInt) =
+  a.limbs.setLen(1)
+  a.limbs[0] = 0
+  a.flags = {}
+
+proc division(q, r: var BigInt, n, d: BigInt) =
+  let
+    nn = n.limbs.len
+    dn = d.limbs.len
+
+  if nn == 0:
+    q.reset()
+    r.reset()
+
+  elif nn < dn:
+    r = n
+    q.reset()
+
+  else:
+    r = n
+    q.reset()
+
+    while r >= d:
+      r -= d
+      q += initBigInt(1)
+
 const digits = "0123456789abcdefghijklmnopqrstuvwxyz"
+
+const multiples = [2,4,8,16,32]
 
 # Should be const, unfortunately not working right now
 let sizes: array[2..36, int] = [31,20,15,13,12,11,10,10,9,9,8,8,8,8,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,6,6,6,6,6,6]
@@ -287,7 +310,7 @@ let sizes: array[2..36, int] = [31,20,15,13,12,11,10,10,9,9,8,8,8,8,7,7,7,7,7,7,
 # Only multiples of 2 so far
 # TODO: General case requires fast division
 proc toString*(a: BigInt, base: range[2..36] = 16): string =
-  assert(base mod 2 == 0)
+  assert(base in multiples)
   var
     size = sizes[base] + 1
     cs = newStringOfCap(size)
@@ -313,6 +336,9 @@ proc toString*(a: BigInt, base: range[2..36] = 16): string =
       cs[size - i - 1] = digits[int(x mod base)]
       x = x div base
     result.add(cs)
+
+  if result.len == 0:
+    result.add('0')
 
 proc `$`*(a: BigInt) : string = toString(a, 16)
 
@@ -428,8 +454,10 @@ when isMainModule:
   #var y = initBigInt("-11", 16)
   #echo y
 
-  var a = initBigInt("2222222222222222222222222222222222222", 16)
-  var b = initBigInt("11111111111111111111111111111", 16)
-  var c = initBigInt(0)
-  subtraction(c,a,b)
-  echo c
+  var a = initBigInt("22222222222", 10)
+  var b = initBigInt("22222222222", 10)
+  var q = initBigInt(0)
+  var r = initBigInt(0)
+  division(q,r,a,b)
+  echo q.limbs
+  echo r.limbs
