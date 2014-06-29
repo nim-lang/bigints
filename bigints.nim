@@ -18,6 +18,31 @@ proc initBigInt*(vals: seq[uint32]): BigInt =
   result.limbs = vals
   result.flags = {}
 
+template comparison(op, br) =
+  result = op(a.limbs.len, b.limbs.len)
+
+  if br:
+    return
+
+  for i in countdown(a.limbs.high, 0):
+    result = op(a.limbs[i], b.limbs[i])
+
+    if br:
+      return
+
+proc cmp*(a, b: BigInt): int64 =
+  proc minus(x, y): int64 = int64(x) - int64(y)
+  comparison(minus, result != 0)
+
+proc `<` *(a, b: BigInt): bool =
+  comparison(`<`, result)
+
+proc `<=` *(a, b: BigInt): bool =
+  comparison(`<=`, not result)
+
+proc `==` *(a, b: BigInt): bool =
+  comparison(`==`, not result)
+
 template addParts(toAdd) =
   tmp += toAdd
   a.limbs[i] = uint32(tmp)
@@ -233,3 +258,11 @@ when isMainModule:
   #  a *= b
   #echo a
 
+  #echo cmp(a,a)
+  #echo cmp(a,b)
+  #echo cmp(b,a)
+  #echo cmp(a,c)
+  #echo cmp(c,a)
+  #echo cmp(b,c)
+  #echo cmp(b,b)
+  #echo cmp(c,c)
