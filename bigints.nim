@@ -98,21 +98,15 @@ proc unsignedSubtraction(a: var BigInt, b, c: BigInt) =
   a.limbs.setLen(if bl < cl: cl else: bl)
 
   for i in 0 .. < m:
-    tmp += abs(int64(b.limbs[i]) - int64(c.limbs[i]))
-    a.limbs[i] = uint32(tmp)
-    tmp = tmp shr 32
+    addParts(abs(int64(b.limbs[i]) - int64(c.limbs[i])))
 
   if bl < cl:
-    for i in m .. < bl:
-      tmp += int64(b.limbs[i])
-      a.limbs[i] = uint32(tmp)
-      tmp = tmp shr 32
+    for i in m .. < cl:
+      addParts(int64(c.limbs[i]))
     a.flags.incl(Negative)
   else:
     for i in m .. < bl:
-      tmp += int64(b.limbs[i])
-      a.limbs[i] = uint32(tmp)
-      tmp = tmp shr 32
+      addParts(int64(b.limbs[i]))
     a.flags.excl(Negative)
 
   for i in countdown(a.limbs.high, 0):
@@ -164,6 +158,16 @@ proc subtraction(a: var BigInt, b, c: BigInt) =
       unsignedAddition(a, b, c)
     of false:
       unsignedSubtraction(a, b, c)
+
+proc `-` *(a, b: BigInt): BigInt=
+  result = initBigInt(0)
+  subtraction(result, a, b)
+
+template `-=` *(a: var BigInt, b: BigInt) =
+  let c = a
+  subtraction(a, c, b)
+
+template optSub{x = y - z}(x,y,z: BigInt) = subtraction(x, y, z)
 
 template unsignedMultiplication(a: BigInt, b, c: BigInt, bl, cl) =
   for i in 0 .. < bl:
