@@ -10,38 +10,44 @@ type
 
 const maxInt = int64(high uint32)
 
+proc initBigInt*(vals: seq[uint32], flags: set[Flags] = {}): BigInt =
+  result.limbs = vals
+  result.flags = flags
+
 proc initBigInt*[T](val: T): BigInt =
   result.limbs = @[uint32(val)]
   result.flags = {}
+  if int64(val) > 0:
+    result.flags.incl(Negative)
 
-proc initBigInt*(vals: seq[uint32]): BigInt =
-  result.limbs = vals
-  result.flags = {}
+template unsignedCmp(a, b: BigInt) =
+  result = int64(a.limbs.len) - int64(b.limbs.len)
 
-template comparison(op, br) =
-  result = op(a.limbs.len, b.limbs.len)
-
-  if br:
+  if result != 0:
     return
 
   for i in countdown(a.limbs.high, 0):
-    result = op(a.limbs[i], b.limbs[i])
+    result = int64(a.limbs[i]) - int64(b.limbs[i])
 
-    if br:
+    if result != 0:
       return
 
 proc cmp*(a, b: BigInt): int64 =
-  proc minus(x, y): int64 = int64(x) - int64(y)
-  comparison(minus, result != 0)
+  case Negative in a.flags
+  of true:
+    case Negative in b.flags
+    of true: unsignedCmp(b, a)
+    of false: return -1
+  of false:
+    case Negative in b.flags
+    of true: return 1
+    of false: unsignedCmp(a, b)
 
-proc `<` *(a, b: BigInt): bool =
-  comparison(`<`, result)
+proc `<` *(a, b: BigInt): bool = cmp(a, b) < 0
 
-proc `<=` *(a, b: BigInt): bool =
-  comparison(`<=`, not result)
+proc `<=` *(a, b: BigInt): bool = cmp(a, b) <= 0
 
-proc `==` *(a, b: BigInt): bool =
-  comparison(`==`, not result)
+proc `==` *(a, b: BigInt): bool = cmp(a, b) == 0
 
 template addParts(toAdd) =
   tmp += toAdd
@@ -49,8 +55,9 @@ template addParts(toAdd) =
   tmp = tmp shr 32
 
 # TODO: Negative numbers
+# TODO: Subtraction
 # Works when a = b
-proc addition(a: var BigInt, b, c: BigInt) =
+proc unsignedAddition(a: var BigInt, b, c: BigInt) =
   var tmp: uint64
 
   let
@@ -73,6 +80,65 @@ proc addition(a: var BigInt, b, c: BigInt) =
   if tmp > 0'u64:
     a.limbs.add(uint32(tmp))
 
+  a.flags.excl(Negative)
+
+# Works when a = b
+# Assumes positive parameters and b > c
+proc unsignedSubtraction(a: var BigInt, b, c: BigInt) =
+  assert(Negative notin b.flags)
+  assert(Negative notin c.flags)
+  assert(b > c)
+  var tmp: int64
+
+  let
+    bl = b.limbs.len
+    cl = c.limbs.len
+  var m = if bl < cl: bl else: cl
+
+  a.limbs.setLen(if bl < cl: cl else: bl)
+
+  for i in 0 .. < m:
+    tmp += abs(int64(b.limbs[i]) - int64(c.limbs[i]))
+    a.limbs[i] = uint32(tmp)
+    tmp = tmp shr 32
+
+  if bl < cl:
+    for i in m .. < bl:
+      tmp += int64(b.limbs[i])
+      a.limbs[i] = uint32(tmp)
+      tmp = tmp shr 32
+    a.flags.incl(Negative)
+  else:
+    for i in m .. < bl:
+      tmp += int64(b.limbs[i])
+      a.limbs[i] = uint32(tmp)
+      tmp = tmp shr 32
+    a.flags.excl(Negative)
+
+  for i in countdown(a.limbs.high, 0):
+    if a.limbs[i] > 0'u32:
+      a.limbs.setLen(i + 1)
+      break
+
+  if tmp > 0:
+    a.limbs.add(uint32(tmp))
+
+proc addition(a: var BigInt, b, c: BigInt) =
+  case Negative in b.flags
+  of true:
+    case Negative in c.flags
+    of true:
+      unsignedAddition(a, b, c)
+      a.flags.incl(Negative)
+    of false:
+      unsignedSubtraction(a, c, b)
+  of false:
+    case Negative in c.flags
+    of true:
+      unsignedSubtraction(a, b, c)
+    of false:
+      unsignedAddition(a, b, c)
+
 proc `+` *(a, b: BigInt): BigInt=
   result = initBigInt(0)
   addition(result, a, b)
@@ -83,7 +149,23 @@ template `+=` *(a: var BigInt, b: BigInt) =
 
 template optAdd{x = y + z}(x,y,z: BigInt) = addition(x, y, z)
 
-template realMultiplication(a: BigInt, b, c: BigInt, bl, cl) =
+proc subtraction(a: var BigInt, b, c: BigInt) =
+  case Negative in b.flags
+  of true:
+    case Negative in c.flags
+    of true:
+      unsignedSubtraction(a, c, b)
+    of false:
+      unsignedAddition(a, b, c)
+      a.flags.incl(Negative)
+  of false:
+    case Negative in c.flags
+    of true:
+      unsignedAddition(a, b, c)
+    of false:
+      unsignedSubtraction(a, b, c)
+
+template unsignedMultiplication(a: BigInt, b, c: BigInt, bl, cl) =
   for i in 0 .. < bl:
     tmp += uint64(b.limbs[i]) * uint64(c.limbs[0])
     a.limbs[i] = uint32(tmp)
@@ -126,9 +208,9 @@ proc multiplication(a: var BigInt, b, c: BigInt) =
   a.limbs.setLen(bl + cl)
 
   if cl > bl:
-    realMultiplication(a, c, b, cl, bl)
+    unsignedMultiplication(a, c, b, cl, bl)
   else:
-    realMultiplication(a, b, c, bl, cl)
+    unsignedMultiplication(a, b, c, bl, cl)
 
 proc `*` *(a, b: BigInt): BigInt =
   result = initBigInt(0)
@@ -190,25 +272,45 @@ template optShl{x = y shl z}(x, y: BigInt, z) = shiftLeft(x, y, z)
 
 const digits = "0123456789abcdefghijklmnopqrstuvwxyz"
 
-# TODO: Requires fast division
-#proc toString*(a: BigInt, base: range[2..36] = 10): string =
-#  const digits = "0123456789abcdefghijklmnopqrstuvwxyz"
-#  result = ""
-#  for l in a.limbs:
-#    echo(uint64(l mod 1000000))
-
-proc `$`*(a: BigInt) : string =
-  result = newStringOfCap(8 * a.limbs.len)
-  #result.add("0x")
-  for i in countdown(a.limbs.len - 1, 0):
-    result.add(toLower(toHex(int(A.limbs[i]), 8)))
-
-const sizes: array[2..36, int] = [31,20,15,13,12,11,10,10,9,9,8,8,8,8,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,6,6,6,6,6,6]
+# Should be const, unfortunately not working right now
+let sizes: array[2..36, int] = [31,20,15,13,12,11,10,10,9,9,8,8,8,8,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,6,6,6,6,6,6]
 # Ideally calculate sizes with:
 #var x = uint32.high div base # 1 less so we actually fit
 #while x > 0'u32:
 #  x = x div base
 #  size.inc()
+
+# Only multiples of 2 so far
+# TODO: General case requires fast division
+proc toString*(a: BigInt, base: range[2..36] = 16): string =
+  assert(base mod 2 == 0)
+  var
+    size = sizes[base] + 1
+    cs = newStringOfCap(size)
+
+  result = newStringOfCap(size * a.limbs.len + 1)
+  if Negative in a.flags:
+    result.add('-')
+  #result.add("0x")
+
+  # Special case for the highest
+  var x = a.limbs[a.limbs.high]
+  while x > 0'u32:
+    cs.add(digits[int(x mod base)])
+    x = x div base
+  for j in countdown(cs.high, 0):
+    result.add(cs[j])
+
+  cs.setLen(size)
+
+  for i in countdown(a.limbs.high - 1, 0):
+    var x = a.limbs[i]
+    for i in 0 .. < size:
+      cs[size - i - 1] = digits[int(x mod base)]
+      x = x div base
+    result.add(cs)
+
+proc `$`*(a: BigInt) : string = toString(a, 16)
 
 proc initBigInt*(str: string, base: range[2..36] = 10): BigInt =
   result.limbs = @[]
@@ -216,12 +318,18 @@ proc initBigInt*(str: string, base: range[2..36] = 10): BigInt =
 
   var mul = initBigInt(1)
   let size = sizes[base]
+  var first = 0
+  var str = str
 
-  # 9 characters at once (max that fits into uint32)
+  if str[0] == '-':
+    first = 1
+    result.flags.incl(Negative)
+    str[0] = '0'
+
   for i in countdown((str.high div size) * size, 0, size):
     var smul = 1'u32
     var num: uint32
-    for j in countdown(min(i + size - 1, str.high), i):
+    for j in countdown(min(i + size - 1, str.high), max(i, first)):
       let c = toLower(str[j])
 
       # This is pretty expensive
@@ -236,25 +344,6 @@ proc initBigInt*(str: string, base: range[2..36] = 10): BigInt =
       smul *= base
     result += mul * initBigInt(num)
     mul *= initBigInt(smul)
-
-  # Character by character
-  #for i in countdown(str.high, 0):
-  #  let x = uint32(ord(str[i]) - ord('0'))
-  #  result += mul * initBigInt(x)
-  #  mul = mul * initBigInt(10)
-
-  # More readable but a bit slower
-  #var smul: uint32 = 1
-  #var num: uint32
-  ## 9 characters at once (max that fits into uint32)
-  #for i in countdown(str.high, 0):
-  #  num += smul * uint32(ord(str[i]) - ord('0'))
-  #  smul *= 10
-  #  if i mod 9 == 0:
-  #    result += mul * initBigInt(num)
-  #    mul *= initBigInt(smul)
-  #    smul = 1'u32
-  #    num = 0
 
 when isMainModule:
   # We're about twice as slow as GMP in these microbenchmarks:
@@ -329,4 +418,14 @@ when isMainModule:
   #for i in 0..1000000:
   #  var x = initBigInt("0000111122223333444455556666777788889999")
   #var x = initBigInt("0000111122223333444455556666777788889999", 16)
+  #var x = initBigInt("11", 16)
   #echo x
+  #var y = initBigInt("-0000110000000000000000000000000000000000", 16)
+  #var y = initBigInt("-11", 16)
+  #echo y
+
+  var a = initBigInt("2222222222222222222222222222222222222", 16)
+  var b = initBigInt("11111111111111111111111111111", 16)
+  var c = initBigInt(0)
+  subtraction(c,a,b)
+  echo c
