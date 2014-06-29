@@ -49,7 +49,7 @@ template addParts(toAdd) =
   tmp = tmp shr 32
 
 # TODO: Negative numbers
-# This should also work even if a = b
+# Works when a = b
 proc addition(a: var BigInt, b, c: BigInt) =
   var tmp: uint64
 
@@ -188,6 +188,9 @@ proc `shl` *(x: BigInt, y: int): BigInt =
 
 template optShl{x = y shl z}(x, y: BigInt, z) = shiftLeft(x, y, z)
 
+const digits = "0123456789abcdefghijklmnopqrstuvwxyz"
+
+# TODO: Requires fast division
 #proc toString*(a: BigInt, base: range[2..36] = 10): string =
 #  const digits = "0123456789abcdefghijklmnopqrstuvwxyz"
 #  result = ""
@@ -200,27 +203,45 @@ proc `$`*(a: BigInt) : string =
   for i in countdown(a.limbs.len - 1, 0):
     result.add(toLower(toHex(int(A.limbs[i]), 8)))
 
-proc initBigInt*(str: string): BigInt =
+const sizes: array[2..36, int] = [31,20,15,13,12,11,10,10,9,9,8,8,8,8,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,6,6,6,6,6,6]
+# Ideally calculate sizes with:
+#var x = uint32.high div base # 1 less so we actually fit
+#while x > 0'u32:
+#  x = x div base
+#  size.inc()
+
+proc initBigInt*(str: string, base: range[2..36] = 10): BigInt =
   result.limbs = @[]
   result.flags = {}
 
   var mul = initBigInt(1)
+  let size = sizes[base]
+
+  # 9 characters at once (max that fits into uint32)
+  for i in countdown((str.high div size) * size, 0, size):
+    var smul = 1'u32
+    var num: uint32
+    for j in countdown(min(i + size - 1, str.high), i):
+      let c = toLower(str[j])
+
+      # This is pretty expensive
+      #if not (c in digits[0..base]):
+      #  raise newException(EInvalidValue, "Invalid input: " & str[j])
+
+      case c
+      of '0'..'9': num += smul * uint32(ord(c) - ord('0'))
+      of 'a'..'z': num += smul * uint32(ord(c) - ord('a') + 10)
+      else: raise newException(EInvalidValue, "Invalid input: " & str[j])
+
+      smul *= base
+    result += mul * initBigInt(num)
+    mul *= initBigInt(smul)
 
   # Character by character
   #for i in countdown(str.high, 0):
   #  let x = uint32(ord(str[i]) - ord('0'))
   #  result += mul * initBigInt(x)
   #  mul = mul * initBigInt(10)
-
-  # 9 characters at once (max that fits into uint32)
-  for i in countdown((str.high div 9) * 9, 0, 9):
-    var smul = 1'u32
-    var num: uint32
-    for j in countdown(min(i + 8, str.high), i):
-      num += smul * uint32(ord(str[j]) - ord('0'))
-      smul *= 10
-    result += mul * initBigInt(num)
-    mul *= initBigInt(smul)
 
   # More readable but a bit slower
   #var smul: uint32 = 1
@@ -305,6 +326,7 @@ when isMainModule:
   #echo cmp(b,b)
   #echo cmp(c,c)
 
-  for i in 0..1000000:
-    var x = initBigInt("0000111122223333444455556666777788889999")
+  #for i in 0..1000000:
+  #  var x = initBigInt("0000111122223333444455556666777788889999")
+  #var x = initBigInt("0000111122223333444455556666777788889999", 16)
   #echo x
