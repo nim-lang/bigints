@@ -24,11 +24,13 @@ template addParts(toAdd) =
   tmp = tmp shr 32
 
 # TODO: Negative numbers
-proc addition*(a: var BigInt, b, c: BigInt) =
+# This should also work even if a = b
+proc addition(a: var BigInt, b, c: BigInt) =
   var tmp: uint64
 
-  let bl = b.limbs.len
-  let cl = c.limbs.len
+  let
+    bl = b.limbs.len
+    cl = c.limbs.len
   var m = if bl < cl: bl else: cl
 
   a.limbs.setLen(if bl < cl: cl else: bl)
@@ -50,7 +52,7 @@ proc `+` *(a, b: BigInt): BigInt=
   result = initBigInt(0)
   addition(result, a, b)
 
-proc `+=` *(a: var BigInt, b: BigInt) =
+template `+=` *(a: var BigInt, b: BigInt) =
   let c = a
   addition(a, c, b)
 
@@ -86,9 +88,11 @@ template realMultiplication(a: BigInt, b, c: BigInt, bl, cl) =
       tmp = tmp shr 32
       pos.inc()
 
-proc multiplication*(a: var BigInt, b, c: BigInt) =
-  let bl = b.limbs.len
-  let cl = c.limbs.len
+# This doesn't work when a = b
+proc multiplication(a: var BigInt, b, c: BigInt) =
+  let
+    bl = b.limbs.len
+    cl = c.limbs.len
   var tmp: uint64
 
   a.limbs.setLen(bl + cl)
@@ -98,15 +102,69 @@ proc multiplication*(a: var BigInt, b, c: BigInt) =
   else:
     realMultiplication(a, b, c, bl, cl)
 
-proc `*` *(a, b: BigInt): BigInt=
+proc `*` *(a, b: BigInt): BigInt =
   result = initBigInt(0)
   multiplication(result, a, b)
 
-proc `*=` *(a: var BigInt, b: BigInt) =
+template `*=` *(a: var BigInt, b: BigInt) =
   let c = a
   multiplication(a, c, b)
 
+# noalias doesn't work yet (i think): https://github.com/Araq/Nimrod/issues/206
+# so we set the templates in the correct order instead
 template optMul{x = `*`(y, z)}(x,y,z: BigInt) = multiplication(x, y, z)
+
+template optMulSame{x = `*`(x, z)}(x,z: BigInt) = x *= z
+
+# Works when a = b
+proc shiftRight(a: var BigInt, b: BigInt, c: int) =
+  let
+    big = c div 32
+    al = b.limbs.len - big
+  var carry: uint32
+
+  for i in countdown(al - 1, 0):
+    a.limbs[i] = carry or (b.limbs[i + big] shr uint32(c mod 32))
+    carry = uint32(uint64(b.limbs[i + big]) shl 32'u32 - uint32(c mod 32))
+
+  a.limbs.setLen(al)
+
+proc `shr` *(x: BigInt, y: int): BigInt =
+  result = initBigInt(0)
+  shiftRight(result, x, y)
+
+template optShr{x = y shr z}(x, y: BigInt, z) = shiftRight(x, y, z)
+
+# Works when a = b
+proc shiftLeft(a: var BigInt, b: BigInt, c: int) =
+  let
+    big = c div 32
+    al = b.limbs.len + big
+  var carry, tmp: uint32
+
+  a.limbs.setLen(al)
+
+  for i in 0 .. < big:
+    a.limbs[i] = 0
+
+  for i in big .. < al:
+    a.limbs[i] = carry or (b.limbs[i - big] shl uint32(c mod 32))
+    carry = uint32(uint64(b.limbs[i - big]) shr 32'u32 - uint32(c mod 32))
+
+  if carry > 0'u32:
+    a.limbs.add(carry)
+
+proc `shl` *(x: BigInt, y: int): BigInt =
+  result = initBigInt(0)
+  shiftLeft(result, x, y)
+
+template optShl{x = y shl z}(x, y: BigInt, z) = shiftLeft(x, y, z)
+
+#proc toString*(a: BigInt, base: range[2..36] = 10): string =
+#  const digits = "0123456789abcdefghijklmnopqrstuvwxyz"
+#  result = ""
+#  for l in a.limbs:
+#    echo(uint64(l mod 1000000))
 
 proc `$`*(a: BigInt) : string =
   result = newStringOfCap(8 * a.limbs.len)
@@ -121,6 +179,7 @@ when isMainModule:
   #var a = initBigInt(1337)
   #var b = initBigInt(42)
   #var c = initBigInt(0)
+
   #for i in 0..200000:
   #  c = a + b
   #  b = a + c
@@ -131,6 +190,7 @@ when isMainModule:
   #var a = initBigInt(0xFFFFFFFF'u32)
   #var b = initBigInt(0xFFFFFFFF'u32)
   #var c = initBigInt(0)
+
   #for i in 0..20_000:
   #  c = a * b
   #  a = c * b
@@ -146,4 +206,30 @@ when isMainModule:
   #for i in 0..10_000_000:
   #  c = a * b
 
+  #var a = initBigInt(1000000000)
+  #var b = initBigInt(1000000000)
+  #var c = a+a+a+a+a+a+a+a+a+a+a+a+a+a+a+a+a+a
+  #echo c.toString()
+
+  #var a = initBigInt(@[0xFEDCBA98'u32, 0xFFFFFFFF'u32, 0x12345678'u32, 0xFFFFFFFF'u32])
+  #var b = initBigInt(0)
+  #echo a
+  #b = a shl 205
+  #echo b
+  #a = a shl 205
+  #echo a
+  #for i in 0..100000000:
+  #  shiftLeft(b, a, 24)
+  #echo b
+  #shiftLeft(a, b, 24)
+  #echo a
+  #shiftRight(a, b, 20000)
+  #echo a
+
+  #echo a
+  #c = a * b
   #echo c
+  #for i in 0..50000:
+  #  a *= b
+  #echo a
+
