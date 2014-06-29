@@ -10,8 +10,8 @@ type
 
 const maxInt = int64(high uint32)
 
-proc initBigInt*(val: uint32): BigInt =
-  result.limbs = @[val]
+proc initBigInt*[T](val: T): BigInt =
+  result.limbs = @[uint32(val)]
   result.flags = {}
 
 proc initBigInt*(vals: seq[uint32]): BigInt =
@@ -113,6 +113,9 @@ template realMultiplication(a: BigInt, b, c: BigInt, bl, cl) =
       tmp = tmp shr 32
       pos.inc()
 
+  if a.limbs[a.limbs.high] == 0:
+    a.limbs.setLen(bl + cl - 1)
+
 # This doesn't work when a = b
 proc multiplication(a: var BigInt, b, c: BigInt) =
   let
@@ -197,6 +200,28 @@ proc `$`*(a: BigInt) : string =
   for i in countdown(a.limbs.len - 1, 0):
     result.add(toLower(toHex(int(A.limbs[i]), 8)))
 
+proc initBigInt*(str: string): BigInt =
+  result.limbs = @[]
+  result.flags = {}
+
+  var mul = initBigInt(1)
+
+  # Character by character
+  #for i in countdown(str.high, 0):
+  #  let x = uint32(ord(str[i]) - ord('0'))
+  #  result += mul * initBigInt(x)
+  #  mul = mul * initBigInt(10)
+
+  # 9 characters at once (max that fits into uint32)
+  for i in countdown((str.high div 9) * 9, 0, 9):
+    var smul = 1'u32
+    var num: uint32
+    for j in countdown(min(str.high, i + 8), i):
+      num += smul * uint32(ord(str[j]) - ord('0'))
+      smul *= 10
+    result += mul * initBigInt(num)
+    mul *= initBigInt(smul)
+
 when isMainModule:
   # We're about twice as slow as GMP in these microbenchmarks:
 
@@ -266,3 +291,6 @@ when isMainModule:
   #echo cmp(b,c)
   #echo cmp(b,b)
   #echo cmp(c,c)
+
+  #var x = initBigInt("0000111122223333444455556666777788889999")
+  #echo x
