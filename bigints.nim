@@ -8,13 +8,21 @@ type
     limbs: seq[uint32]
     flags: set[Flags]
 
+proc `$`*(a: BigInt) : string
+
+const debug = false
+
+template log(x) =
+  if debug:
+    debugEcho x
+
 const maxInt = int64(high uint32)
 
 proc initBigInt*(vals: seq[uint32], flags: set[Flags] = {}): BigInt =
   result.limbs = vals
   result.flags = flags
 
-proc initBigInt*[T](val: T): BigInt =
+proc initBigInt*[T: int|int16|int32|int64|uint|uint16|uint32|uint64](val: T): BigInt =
   result.limbs = @[uint32(val)]
   result.flags = {}
   if int64(val) < 0:
@@ -93,21 +101,29 @@ proc unsignedSubtraction(a: var BigInt, b, c: BigInt) =
   a.limbs.setLen(if bl < cl: cl else: bl)
 
   for i in 0 .. < m:
-    addParts(abs(int64(b.limbs[i]) - int64(c.limbs[i])))
+    tmp = int64(uint32.high) + 1 + int64(b.limbs[i]) - int64(c.limbs[i]) - tmp
+    a.limbs[i] = uint32(tmp)
+    tmp = 1 - (tmp shr 32)
 
   if bl < cl:
     for i in m .. < cl:
-      addParts(int64(c.limbs[i]))
+      tmp = int64(uint32.high) + 1 - int64(c.limbs[i]) - tmp
+      a.limbs[i] = uint32(tmp)
+      tmp = 1 - (tmp shr 32)
     a.flags.incl(Negative)
   else:
     for i in m .. < bl:
-      addParts(int64(b.limbs[i]))
+      tmp = int64(uint32.high) + 1 + int64(b.limbs[i]) - tmp
+      a.limbs[i] = uint32(tmp)
+      tmp = 1 - (tmp shr 32)
     a.flags.excl(Negative)
 
-  for i in countdown(a.limbs.high, 0):
-    if a.limbs[i] > 0'u32:
-      a.limbs.setLen(i + 1)
-      break
+  block remover:
+    for i in countdown(a.limbs.high, 0):
+      if a.limbs[i] > 0'u32:
+        a.limbs.setLen(i + 1)
+        break remover
+    a.limbs.setLen(1)
 
   if tmp > 0:
     a.limbs.add(uint32(tmp))
@@ -274,6 +290,7 @@ proc reset(a: var BigInt) =
   a.limbs[0] = 0
   a.flags = {}
 
+# Terribly inefficient
 proc division(q, r: var BigInt, n, d: BigInt) =
   let
     nn = n.limbs.len
@@ -343,7 +360,7 @@ proc toString*(a: BigInt, base: range[2..36] = 16): string =
 proc `$`*(a: BigInt) : string = toString(a, 16)
 
 proc initBigInt*(str: string, base: range[2..36] = 10): BigInt =
-  result.limbs = @[]
+  result.limbs = @[0'u32]
   result.flags = {}
 
   var mul = initBigInt(1)
@@ -454,8 +471,8 @@ when isMainModule:
   #var y = initBigInt("-11", 16)
   #echo y
 
-  var a = initBigInt("22222222222", 10)
-  var b = initBigInt("22222222222", 10)
+  var a = initBigInt("222222222222222222222222222222222222222222222222222222222222222222222222222222", 16)
+  var b = initBigInt("1111111111111111111111111111111111111111111111111111111111111111111111111", 16)
   var q = initBigInt(0)
   var r = initBigInt(0)
   division(q,r,a,b)
