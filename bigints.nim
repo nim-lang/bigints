@@ -348,6 +348,14 @@ template optMod{x = y mod z}(x,y,z: BigInt) =
 template optDivMod{w = y div z; x = y mod z}(w,x,y,z: BigInt) =
   division(w, x, y, z)
 
+template optDivMod2{w = x div z; x = x mod z}(w,x,z: BigInt) =
+  var tmp = x
+  division(w, x, tmp, z)
+
+template optDivMod3{w = w div z; x = w mod z}(w,x,z: BigInt) =
+  var tmp = w
+  division(w, x, tmp, z)
+
 const digits = "0123456789abcdefghijklmnopqrstuvwxyz"
 
 const multiples = [2,4,8,16,32]
@@ -362,7 +370,7 @@ let sizes: array[2..36, int] = [31,20,15,13,12,11,10,10,9,9,8,8,8,8,7,7,7,7,7,7,
 
 # Only multiples of 2 so far
 # TODO: General case requires fast division
-proc toString*(a: BigInt, base: range[2..36] = 16): string =
+proc toStringMultipleTwo(a: BigInt, base: range[2..36] = 16): string =
   assert(base in multiples)
   var
     size = sizes[base] + 1
@@ -393,7 +401,44 @@ proc toString*(a: BigInt, base: range[2..36] = 16): string =
   if result.len == 0:
     result.add('0')
 
-proc `$`*(a: BigInt) : string = toString(a, 16)
+proc reverse(a: string): string =
+  result = newString(a.len)
+  for i, c in a:
+    result[a.high - i] = c
+
+proc `^`*(base: int, exp: int): int =
+  var
+    base = base
+    exp = exp
+  result = 1
+
+  while exp != 0:
+    if (exp and 1) != 0:
+      result *= base
+    exp = exp shr 1
+    base *= base
+
+proc toString*(a: BigInt, base: range[2..36] = 10): string =
+  if base in multiples:
+    return toStringMultipleTwo(a, base)
+
+  var
+    b = a
+    c = initBigInt(0)
+    d = initBigInt(base ^ sizes[base])
+    s = ""
+
+  while b > initBigInt(0):
+    b = b div d
+    c = b mod d
+    var x = c.limbs[0]
+    while x > 0'u32:
+      s.add(digits[int(x mod base)])
+      x = x div base
+
+  return reverse(s)
+
+proc `$`*(a: BigInt) : string = toString(a, 10)
 
 proc initBigInt*(str: string, base: range[2..36] = 10): BigInt =
   result.limbs = @[0'u32]
@@ -507,10 +552,13 @@ when isMainModule:
   #var y = initBigInt("-11", 16)
   #echo y
 
-  var a = initBigInt("222222222222222222222222222222222222222222222222222222222222222222222222222222", 16)
-  var b = initBigInt("1111111111111111111111111111111111111111111111111111111111111111111111111", 16)
-  var q = initBigInt(0)
-  var r = initBigInt(0)
-  division(q,r,a,b)
-  echo q.limbs
-  echo r.limbs
+  #var a = initBigInt("222222222222222222222222222222222222222222222222222222222222222222222222222222", 16)
+  #var b = initBigInt("1111111111111111111111111111111111111111111111111111111111111111111111111", 16)
+  #var q = initBigInt(0)
+  #var r = initBigInt(0)
+  #division(q,r,a,b)
+  #echo q.limbs
+  #echo r.limbs
+
+  var a = initBigInt("1234567890000000", 10)
+  echo a
