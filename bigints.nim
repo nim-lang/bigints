@@ -312,6 +312,32 @@ proc division(q, r: var BigInt, n, d: BigInt) =
       r -= d
       q += initBigInt(1)
 
+proc `div` *(a, b: BigInt): BigInt =
+  result = initBigInt(0)
+  var tmp = initBigInt(0)
+  division(result, tmp, a, b)
+
+proc `mod` *(a, b: BigInt): BigInt =
+  result = initBigInt(0)
+  var tmp = initBigInt(0)
+  division(tmp, result, a, b)
+
+proc `divmod` *(a, b: BigInt): tuple[q, r: BigInt] =
+  result.q = initBigInt(0)
+  result.r = initBigInt(0)
+  division(result.q, result.r, a, b)
+
+template optDiv{x = y div z}(x,y,z: BigInt) =
+  var tmp = initBigInt(0)
+  division(x, tmp, y, z)
+
+template optMod{x = y mod z}(x,y,z: BigInt) =
+  var tmp = initBigInt(0)
+  division(tmp, x, y, z)
+
+template optDivMod{w = y div z; x = y mod z}(w,x,y,z: BigInt) =
+  division(w, x, y, z)
+
 const digits = "0123456789abcdefghijklmnopqrstuvwxyz"
 
 const multiples = [2,4,8,16,32]
