@@ -227,6 +227,16 @@ proc multiplication(a: var BigInt, b, c: BigInt) =
   else:
     unsignedMultiplication(a, b, c, bl, cl)
 
+  case Negative in b.flags
+  of true:
+    case Negative in c.flags
+    of true: a.flags.excl(Negative)
+    of false: a.flags.incl(Negative)
+  of false:
+    case Negative in b.flags
+    of true: a.flags.incl(Negative)
+    of false: a.flags.excl(Negative)
+
 proc `*` *(a, b: BigInt): BigInt =
   result = initBigInt(0)
   multiplication(result, a, b)
