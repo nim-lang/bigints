@@ -30,12 +30,12 @@ proc initBigInt*(vals: seq[uint32], flags: set[Flags] = {}): BigInt =
   result.flags = flags
 
 proc initBigInt*[T: int|int16|int32|uint|uint16|uint32](val: T): BigInt =
-  result.limbs = @[uint32(val)]
+  result.limbs = @[uint32(abs(int64(val)))]
   result.flags = {}
   if int64(val) < 0:
     result.flags.incl(Negative)
 
-template unsignedCmp(a, b: BigInt) =
+proc unsignedCmp(a, b: BigInt): int64 =
   result = int64(a.limbs.len) - int64(b.limbs.len)
 
   if result != 0:
@@ -51,12 +51,12 @@ proc cmp*(a, b: BigInt): int64 =
   case Negative in a.flags
   of true:
     case Negative in b.flags
-    of true: unsignedCmp(b, a)
+    of true: return unsignedCmp(b, a)
     of false: return -1
   of false:
     case Negative in b.flags
     of true: return 1
-    of false: unsignedCmp(a, b)
+    of false: return unsignedCmp(a, b)
 
 proc `<` *(a, b: BigInt): bool = cmp(a, b) < 0
 
@@ -95,9 +95,15 @@ proc unsignedAddition(a: var BigInt, b, c: BigInt) =
 
   a.flags.excl(Negative)
 
+proc negate(a: var BigInt) =
+  if Negative in a.flags:
+    a.flags.excl(Negative)
+  else:
+    a.flags.incl(Negative)
+
 # Works when a = b
 # Assumes positive parameters and b > c
-proc unsignedSubtraction(a: var BigInt, b, c: BigInt) =
+template realUnsignedSubtraction(a: var BigInt, b, c: BigInt) =
   var tmp: int64
 
   let
@@ -129,6 +135,13 @@ proc unsignedSubtraction(a: var BigInt, b, c: BigInt) =
 
   if tmp > 0:
     a.limbs.add(uint32(tmp))
+
+proc unsignedSubtraction(a: var BigInt, b, c: BigInt) =
+  if unsignedCmp(b, c) > 0:
+    realUnsignedSubtraction(a, b, c)
+  else:
+    realUnsignedSubtraction(a, c, b)
+    negate(a)
 
 proc addition(a: var BigInt, b, c: BigInt) =
   case Negative in b.flags
@@ -297,7 +310,7 @@ proc reset(a: var BigInt) =
   a.limbs[0] = 0
   a.flags = {}
 
-proc division(q: var BigInt, r: var uint32, n: BigInt, d: uint32) =
+proc divrem(q: var BigInt, r: var uint32, n: BigInt, d: uint32) =
   q.limbs.setLen(n.limbs.len)
   r = 0
 
@@ -308,6 +321,9 @@ proc division(q: var BigInt, r: var uint32, n: BigInt, d: uint32) =
 
   while q.limbs.len > 1 and q.limbs[q.limbs.high] == 0:
     q.limbs.setLen(q.limbs.high)
+
+proc division(q: var BigInt, r: var uint32, n: BigInt, d: uint32) =
+  divrem(q, r, n, d)
 
 proc `div` *(a: BigInt, b: uint32): BigInt =
   result = initBigInt(0)
@@ -350,7 +366,7 @@ proc bits(d: uint32): int =
   result += bitLengths[int(d)]
 
 # From Knuth and Python
-proc division(q, r: var BigInt, n, d: BigInt) =
+proc divrem(q, r: var BigInt, n, d: BigInt) =
   let
     nn = n.limbs.len
     dn = d.limbs.len
@@ -363,7 +379,7 @@ proc division(q, r: var BigInt, n, d: BigInt) =
     q.reset()
   elif dn == 1:
     var x: uint32
-    division(q, x, n, d.limbs[0])
+    divrem(q, x, n, d.limbs[0])
     r.limbs.setLen(1)
     r.limbs[0] = x
     r.flags = {}
@@ -436,6 +452,22 @@ proc division(q, r: var BigInt, n, d: BigInt) =
     normalize(r)
     q = a
     normalize(q)
+
+proc division(q, r: var BigInt, n, d: BigInt) =
+  divrem(q, r, n, d)
+
+  # set signs
+  if n < initBigInt(0) xor d < initBigInt(0):
+    q.flags.incl(Negative)
+
+  if n < initBigInt(0) and r != initBigInt(0):
+    r.flags.incl(Negative)
+
+  # divrem -> divmod
+  if (r < initBigInt(0) and d > initBigInt(0)) or
+     (r > initBigInt(0) and d < initBigInt(0)):
+    r += d
+    q -= initBigInt(1)
 
 proc `div` *(a, b: BigInt): BigInt =
   result = initBigInt(0)
@@ -545,6 +577,12 @@ proc toString*(a: BigInt, base: range[2..36] = 10): string =
     d = uint32(base) ^ uint32(sizes[base])
     s = ""
 
+  result = ""
+
+  if Negative in a.flags:
+    b.flags.excl(Negative)
+    result.add('-')
+
   while b > initBigInt(0):
     division(b, c, b, d)
     #b = b div d
@@ -553,7 +591,7 @@ proc toString*(a: BigInt, base: range[2..36] = 10): string =
       s.add(digits[int(c mod base)])
       c = c div base
 
-  return reverse(s)
+  result.add(reverse(s))
 
 proc `$`*(a: BigInt) : string = toString(a, 10)
 
@@ -694,14 +732,14 @@ when isMainModule:
 
   #echo a.toString(10)
 
-  var a = initBigInt("111122223333444455556666777788889999", 10)
-  var b = initBigInt(0)
-  var c = initBigInt(0)
+  #var a = initBigInt("111122223333444455556666777788889999", 10)
+  #var b = initBigInt(0)
+  #var c = initBigInt(0)
 
-  echo a.limbs
-  division(c, b, a, initBigInt("556666777788889999", 10))
-  echo c
-  echo b
+  #echo a.limbs
+  #division(c, b, a, initBigInt("556666777788889999", 10))
+  #echo c
+  #echo b
 
   #echo a.toString(10)
 
@@ -715,3 +753,18 @@ when isMainModule:
   #for i in countdown(b.limbs.high, 0):
   #  stdout.write(toHex(int64(b.limbs[i]), 8) & " ")
 
+  #var a = initBigInt(0)
+  #a.limbs.setLen(20001)
+  #for i in 0..20000:
+  #  a.limbs[i] = 0xFF_FF_FF_FF'u32
+  ##a.limbs[20001] = 0b0000_0001_1111_1111_1111_1111_1111_1111'u32
+
+  #var a = initBigInt(-13)
+  #var b = initBigInt(-10)
+  #echo a div b
+  #echo a mod b
+
+  #echo a.toString(10)
+  #var a = initBigInt(3)
+  #var b = initBigInt(-10)
+  #echo a + b
