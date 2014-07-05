@@ -585,8 +585,6 @@ proc toString*(a: BigInt, base: range[2..36] = 10): string =
 
   while b > initBigInt(0):
     division(b, c, b, d)
-    #b = b div d
-    #c = b mod d
     while c > 0'u32:
       s.add(digits[int(c mod base)])
       c = c div base
@@ -763,8 +761,8 @@ when isMainModule:
   #var b = initBigInt(-10)
   #echo a div b
   #echo a mod b
-
   #echo a.toString(10)
+
   #var a = initBigInt(3)
-  #var b = initBigInt(-10)
-  #echo a + b
+  #var b = initBigInt("100000000000000000")
+  #echo a - b
