@@ -36,6 +36,7 @@ proc initBigInt*[T: int|int16|int32|uint|uint16|uint32](val: T): BigInt =
     result.flags.incl(Negative)
 
 const null = initBigInt(0)
+const one = initBigInt(1)
 
 proc unsignedCmp(a, b: BigInt): int64 =
   result = int64(a.limbs.len) - int64(b.limbs.len)
@@ -432,7 +433,7 @@ proc division(q, r: var BigInt, n, d: BigInt) =
   if (r < null and d > null) or
      (r > null and d < null):
     r += d
-    q -= initBigInt(1)
+    q -= one
 
 proc `div` *(a, b: BigInt): BigInt =
   result = null
@@ -562,7 +563,7 @@ proc initBigInt*(str: string, base: range[2..36] = 10): BigInt =
   result.limbs = @[0'u32]
   result.flags = {}
 
-  var mul = initBigInt(1)
+  var mul = one
   let size = sizes[base]
   var first = 0
   var str = str
