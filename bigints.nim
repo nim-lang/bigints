@@ -48,15 +48,16 @@ proc unsignedCmp(a, b: BigInt): int64 =
       return
 
 proc cmp*(a, b: BigInt): int64 =
-  case Negative in a.flags
-  of true:
-    case Negative in b.flags
-    of true: return unsignedCmp(b, a)
-    of false: return -1
-  of false:
-    case Negative in b.flags
-    of true: return 1
-    of false: return unsignedCmp(a, b)
+  if Negative in a.flags:
+    if Negative in b.flags:
+      return unsignedCmp(b, a)
+    else:
+      return -1
+  else:
+    if Negative in b.flags:
+      return 1
+    else:
+      return unsignedCmp(a, b)
 
 proc `<` *(a, b: BigInt): bool = cmp(a, b) < 0
 
@@ -144,19 +145,16 @@ proc unsignedSubtraction(a: var BigInt, b, c: BigInt) =
     negate(a)
 
 proc addition(a: var BigInt, b, c: BigInt) =
-  case Negative in b.flags
-  of true:
-    case Negative in c.flags
-    of true:
+  if Negative in b.flags:
+    if Negative in c.flags:
       unsignedAddition(a, b, c)
       a.flags.incl(Negative)
-    of false:
+    else:
       unsignedSubtraction(a, c, b)
-  of false:
-    case Negative in c.flags
-    of true:
+  else:
+    if Negative in c.flags:
       unsignedSubtraction(a, b, c)
-    of false:
+    else:
       unsignedAddition(a, b, c)
 
 proc `+` *(a, b: BigInt): BigInt=
@@ -170,19 +168,16 @@ template `+=` *(a: var BigInt, b: BigInt) =
 template optAdd{x = y + z}(x,y,z: BigInt) = addition(x, y, z)
 
 proc subtraction(a: var BigInt, b, c: BigInt) =
-  case Negative in b.flags
-  of true:
-    case Negative in c.flags
-    of true:
+  if Negative in b.flags:
+    if Negative in c.flags:
       unsignedSubtraction(a, c, b)
-    of false:
+    else:
       unsignedAddition(a, b, c)
       a.flags.incl(Negative)
-  of false:
-    case Negative in c.flags
-    of true:
+  else:
+    if Negative in c.flags:
       unsignedAddition(a, b, c)
-    of false:
+    else:
       unsignedSubtraction(a, b, c)
 
 proc `-` *(a, b: BigInt): BigInt=
@@ -242,15 +237,16 @@ proc multiplication(a: var BigInt, b, c: BigInt) =
   else:
     unsignedMultiplication(a, b, c, bl, cl)
 
-  case Negative in b.flags
-  of true:
-    case Negative in c.flags
-    of true: a.flags.excl(Negative)
-    of false: a.flags.incl(Negative)
-  of false:
-    case Negative in b.flags
-    of true: a.flags.incl(Negative)
-    of false: a.flags.excl(Negative)
+  if Negative in b.flags:
+    if Negative in c.flags:
+      a.flags.excl(Negative)
+    else:
+      a.flags.incl(Negative)
+  else:
+    if Negative in b.flags:
+      a.flags.incl(Negative)
+    else:
+      a.flags.excl(Negative)
 
 proc `*` *(a, b: BigInt): BigInt =
   result = initBigInt(0)
