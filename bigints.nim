@@ -35,6 +35,8 @@ proc initBigInt*[T: int|int16|int32|uint|uint16|uint32](val: T): BigInt =
   if int64(val) < 0:
     result.flags.incl(Negative)
 
+const null = initBigInt(0)
+
 proc unsignedCmp(a, b: BigInt): int64 =
   result = int64(a.limbs.len) - int64(b.limbs.len)
 
@@ -158,7 +160,7 @@ proc addition(a: var BigInt, b, c: BigInt) =
       unsignedAddition(a, b, c)
 
 proc `+` *(a, b: BigInt): BigInt=
-  result = initBigInt(0)
+  result = null
   addition(result, a, b)
 
 template `+=` *(a: var BigInt, b: BigInt) =
@@ -181,7 +183,7 @@ proc subtraction(a: var BigInt, b, c: BigInt) =
       unsignedSubtraction(a, b, c)
 
 proc `-` *(a, b: BigInt): BigInt=
-  result = initBigInt(0)
+  result = null
   subtraction(result, a, b)
 
 template `-=` *(a: var BigInt, b: BigInt) =
@@ -249,7 +251,7 @@ proc multiplication(a: var BigInt, b, c: BigInt) =
       a.flags.excl(Negative)
 
 proc `*` *(a, b: BigInt): BigInt =
-  result = initBigInt(0)
+  result = null
   multiplication(result, a, b)
 
 template `*=` *(a: var BigInt, b: BigInt) =
@@ -277,7 +279,7 @@ proc shiftRight(a: var BigInt, b: BigInt, c: int) =
     a.limbs.setLen(a.limbs.high)
 
 proc `shr` *(x: BigInt, y: int): BigInt =
-  result = initBigInt(0)
+  result = null
   shiftRight(result, x, y)
 
 template optShr{x = y shr z}(x, y: BigInt, z) = shiftRight(x, y, z)
@@ -296,7 +298,7 @@ proc shiftLeft(a: var BigInt, b: BigInt, c: int) =
     a.limbs.add(carry)
 
 proc `shl` *(x: BigInt, y: int): BigInt =
-  result = initBigInt(0)
+  result = null
   shiftLeft(result, x, y)
 
 template optShl{x = y shl z}(x, y: BigInt, z) = shiftLeft(x, y, z)
@@ -306,7 +308,7 @@ proc reset(a: var BigInt) =
   a.limbs[0] = 0
   a.flags = {}
 
-proc divrem(q: var BigInt, r: var uint32, n: BigInt, d: uint32) =
+proc unsignedSmallDivrem(q: var BigInt, r: var uint32, n: BigInt, d: uint32) =
   q.limbs.setLen(n.limbs.len)
   r = 0
 
@@ -317,39 +319,6 @@ proc divrem(q: var BigInt, r: var uint32, n: BigInt, d: uint32) =
 
   while q.limbs.len > 1 and q.limbs[q.limbs.high] == 0:
     q.limbs.setLen(q.limbs.high)
-
-proc division(q: var BigInt, r: var uint32, n: BigInt, d: uint32) =
-  divrem(q, r, n, d)
-
-proc `div` *(a: BigInt, b: uint32): BigInt =
-  result = initBigInt(0)
-  var tmp = 0'u32
-  division(result, tmp, a, b)
-
-proc `mod` *(a: BigInt, b: uint32): uint32 =
-  result = 0'u32
-  var tmp = initBigInt(0)
-  division(tmp, result, a, b)
-
-proc `divmod` *(a: BigInt, b: uint32): tuple[q: BigInt, r: uint32] =
-  result.q = initBigInt(0)
-  result.r = 0'u32
-  division(result.q, result.r, a, b)
-
-template optSmallDiv{x = y div z}(x,y: BigInt, z: uint32) =
-  var tmp = 0'u32
-  division(x, tmp, y, z)
-
-template optSmallMod{x = y mod z}(x: uint32, y: BigInt, z: uint32) =
-  var tmp = initBigInt(0)
-  division(tmp, x, y, z)
-
-template optSmallDivMod{w = y div z; x = y mod z}(w: BigInt, x: uint32, y: BigInt, z: uint32) =
-  division(w, x, y, z)
-
-template optSmallDivMod2{w = w div z; x = w mod z}(w: BigInt, x: uint32, z: uint32) =
-  var tmp = w
-  division(w, x, tmp, z)
 
 proc bits(d: uint32): int =
   const bitLengths = [0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
@@ -362,7 +331,7 @@ proc bits(d: uint32): int =
   result += bitLengths[int(d)]
 
 # From Knuth and Python
-proc divrem(q, r: var BigInt, n, d: BigInt) =
+proc unsignedDivrem(q, r: var BigInt, n, d: BigInt) =
   let
     nn = n.limbs.len
     dn = d.limbs.len
@@ -375,7 +344,7 @@ proc divrem(q, r: var BigInt, n, d: BigInt) =
     q.reset()
   elif dn == 1:
     var x: uint32
-    divrem(q, x, n, d.limbs[0])
+    unsignedSmallDivrem(q, x, n, d.limbs[0])
     r.limbs.setLen(1)
     r.limbs[0] = x
     r.flags = {}
@@ -398,7 +367,7 @@ proc divrem(q, r: var BigInt, n, d: BigInt) =
 
     let k = sizeN - sizeD
     assert k >= 0
-    var a = initBigInt(0)
+    var a = null
     a.limbs.setLen(k)
     let wm1 = r.limbs[r.limbs.high]
     let wm2 = r.limbs[r.limbs.high-1]
@@ -450,42 +419,42 @@ proc divrem(q, r: var BigInt, n, d: BigInt) =
     normalize(q)
 
 proc division(q, r: var BigInt, n, d: BigInt) =
-  divrem(q, r, n, d)
+  unsignedDivrem(q, r, n, d)
 
   # set signs
-  if n < initBigInt(0) xor d < initBigInt(0):
+  if n < null xor d < null:
     q.flags.incl(Negative)
 
-  if n < initBigInt(0) and r != initBigInt(0):
+  if n < null and r != null:
     r.flags.incl(Negative)
 
   # divrem -> divmod
-  if (r < initBigInt(0) and d > initBigInt(0)) or
-     (r > initBigInt(0) and d < initBigInt(0)):
+  if (r < null and d > null) or
+     (r > null and d < null):
     r += d
     q -= initBigInt(1)
 
 proc `div` *(a, b: BigInt): BigInt =
-  result = initBigInt(0)
-  var tmp = initBigInt(0)
+  result = null
+  var tmp = null
   division(result, tmp, a, b)
 
 proc `mod` *(a, b: BigInt): BigInt =
-  result = initBigInt(0)
-  var tmp = initBigInt(0)
+  result = null
+  var tmp = null
   division(tmp, result, a, b)
 
 proc `divmod` *(a, b: BigInt): tuple[q, r: BigInt] =
-  result.q = initBigInt(0)
-  result.r = initBigInt(0)
+  result.q = null
+  result.r = null
   division(result.q, result.r, a, b)
 
 template optDiv{x = y div z}(x,y,z: BigInt) =
-  var tmp = initBigInt(0)
+  var tmp = null
   division(x, tmp, y, z)
 
 template optMod{x = y mod z}(x,y,z: BigInt) =
-  var tmp = initBigInt(0)
+  var tmp = null
   division(tmp, x, y, z)
 
 template optDivMod{w = y div z; x = y mod z}(w,x,y,z: BigInt) =
@@ -568,7 +537,7 @@ proc toString*(a: BigInt, base: range[2..36] = 10): string =
     return toStringMultipleTwo(a, base)
 
   var
-    b = a
+    tmp = a
     c = 0'u32
     d = uint32(base) ^ uint32(sizes[base])
     s = ""
@@ -576,11 +545,11 @@ proc toString*(a: BigInt, base: range[2..36] = 10): string =
   result = ""
 
   if Negative in a.flags:
-    b.flags.excl(Negative)
+    tmp.flags.excl(Negative)
     result.add('-')
 
-  while b > initBigInt(0):
-    division(b, c, b, d)
+  while tmp > null:
+    unsignedSmallDivRem(tmp, c, tmp, d)
     while c > 0'u32:
       s.add(digits[int(c mod base)])
       c = c div base
