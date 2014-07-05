@@ -18,11 +18,18 @@ template log(x) =
 
 const maxInt = int64(high uint32)
 
+proc normalize(a: var BigInt) =
+  for i in countdown(a.limbs.high, 0):
+    if a.limbs[i] > 0'u32:
+      a.limbs.setLen(i+1)
+      return
+  a.limbs.setLen(1)
+
 proc initBigInt*(vals: seq[uint32], flags: set[Flags] = {}): BigInt =
   result.limbs = vals
   result.flags = flags
 
-proc initBigInt*[T: int|int16|int32|int64|uint|uint16|uint32|uint64](val: T): BigInt =
+proc initBigInt*[T: int|int16|int32|uint|uint16|uint32](val: T): BigInt =
   result.limbs = @[uint32(val)]
   result.flags = {}
   if int64(val) < 0:
@@ -118,12 +125,7 @@ proc unsignedSubtraction(a: var BigInt, b, c: BigInt) =
       tmp = 1 - (tmp shr 32)
     a.flags.excl(Negative)
 
-  block remover:
-    for i in countdown(a.limbs.high, 0):
-      if a.limbs[i] > 0'u32:
-        a.limbs.setLen(i + 1)
-        break remover
-    a.limbs.setLen(1)
+  normalize(a)
 
   if tmp > 0:
     a.limbs.add(uint32(tmp))
@@ -198,7 +200,6 @@ template unsignedMultiplication(a: BigInt, b, c: BigInt, bl, cl) =
 
   for j in 1 .. < cl:
     for i in 0 .. < bl:
-      # TODO: Fix: Two carries
       tmp += uint64(a.limbs[j + i]) + uint64(b.limbs[i]) * uint64(c.limbs[j])
       a.limbs[j + i] = uint32(tmp)
       tmp = tmp shr 32
@@ -218,7 +219,8 @@ proc multiplication(a: var BigInt, b, c: BigInt) =
   let
     bl = b.limbs.len
     cl = c.limbs.len
-  var tmp: uint64
+  var
+    tmp, tmp2, tmp3: uint64
 
   a.limbs.setLen(bl + cl)
 
@@ -253,16 +255,17 @@ template optMulSame{x = `*`(x, z)}(x,z: BigInt) = x *= z
 
 # Works when a = b
 proc shiftRight(a: var BigInt, b: BigInt, c: int) =
-  let
-    big = c div 32
-    al = b.limbs.len - big
-  var carry: uint32
+  a.limbs.setLen(b.limbs.len)
+  var carry: uint64
+  let mask: uint32 = 1'u32 shl uint32(c) - 1
 
-  for i in countdown(al - 1, 0):
-    a.limbs[i] = carry or (b.limbs[i + big] shr uint32(c mod 32))
-    carry = uint32(uint64(b.limbs[i + big]) shl 32'u32 - uint32(c mod 32))
+  for i in countdown(b.limbs.high, 0):
+    let acc: uint64 = (carry shl 32) or b.limbs[i]
+    carry = uint32(acc and mask)
+    a.limbs[i] = uint32(acc shr uint32(c))
 
-  a.limbs.setLen(al)
+  if a.limbs[a.limbs.high] == 0:
+    a.limbs.setLen(a.limbs.high)
 
 proc `shr` *(x: BigInt, y: int): BigInt =
   result = initBigInt(0)
@@ -272,19 +275,13 @@ template optShr{x = y shr z}(x, y: BigInt, z) = shiftRight(x, y, z)
 
 # Works when a = b
 proc shiftLeft(a: var BigInt, b: BigInt, c: int) =
-  let
-    big = c div 32
-    al = b.limbs.len + big
-  var carry, tmp: uint32
+  a.limbs.setLen(b.limbs.len)
+  var carry: uint32
 
-  a.limbs.setLen(al)
-
-  for i in 0 .. < big:
-    a.limbs[i] = 0
-
-  for i in big .. < al:
-    a.limbs[i] = carry or (b.limbs[i - big] shl uint32(c mod 32))
-    carry = uint32(uint64(b.limbs[i - big]) shr 32'u32 - uint32(c mod 32))
+  for i in 0..b.limbs.high:
+    let acc = (uint64(b.limbs[i]) shl uint64(c)) or carry
+    a.limbs[i] = uint32(acc)
+    carry = uint32(acc shr 32)
 
   if carry > 0'u32:
     a.limbs.add(carry)
@@ -300,7 +297,29 @@ proc reset(a: var BigInt) =
   a.limbs[0] = 0
   a.flags = {}
 
-# Terribly inefficient
+proc division(q: var BigInt, r: var uint32, n: BigInt, d: uint32) =
+  q.limbs.setLen(n.limbs.len)
+  r = 0
+
+  for i in countdown(n.limbs.high, 0):
+    let tmp: uint64 = uint64(n.limbs[i]) + uint64(r) shl 32
+    q.limbs[i] = uint32(tmp div d)
+    r = uint32(tmp mod d)
+
+  while q.limbs.len > 1 and q.limbs[q.limbs.high] == 0:
+    q.limbs.setLen(q.limbs.high)
+
+proc bits(d: uint32): int =
+  const bitLengths = [0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
+                      5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5]
+  var d = d
+
+  while d >= 32'u32:
+    result += 6
+    d = d shr 6
+  result += bitLengths[int(d)]
+
+# From Knuth and Python
 proc division(q, r: var BigInt, n, d: BigInt) =
   let
     nn = n.limbs.len
@@ -309,18 +328,121 @@ proc division(q, r: var BigInt, n, d: BigInt) =
   if nn == 0:
     q.reset()
     r.reset()
-
   elif nn < dn:
     r = n
     q.reset()
-
+  elif dn == 1:
+    var x: uint32
+    division(q, x, n, d.limbs[0])
+    r.limbs.setLen(1)
+    r.limbs[0] = x
+    r.flags = {}
   else:
-    r = n
+    r.reset()
     q.reset()
 
-    while r >= d:
-      r -= d
-      q += initBigInt(1)
+    var sizeN = n.limbs.len
+    let sizeD = d.limbs.len
+    assert sizeN >= sizeD and sizeD >= 2
+    var carry: uint64
+
+    # normalize
+    let ls = 32 - bits(d.limbs[d.limbs.high])
+    r = d shl ls
+    q = n shl ls
+    if q.limbs.len > n.limbs.len or q.limbs[q.limbs.high] >= r.limbs[r.limbs.high]:
+      q.limbs.add(0'u32)
+      inc(sizeN)
+
+    let k = sizeN - sizeD
+    assert k >= 0
+    var a = initBigInt(0)
+    a.limbs.setLen(k)
+    let wm1 = r.limbs[r.limbs.high]
+    let wm2 = r.limbs[r.limbs.high-1]
+    var ak = k
+
+    for v in countdown(k-1, 0):
+      # estimate quotient digit, may rarely overestimate by 1
+      let vtop = q.limbs[v + sizeD]
+      assert vtop <= wm1
+      let vv = (uint64(vtop) shl 32) or q.limbs[v+sizeD-1]
+      var q1 = uint64(vv) div wm1
+      var r1 = uint64(vv) mod wm1
+
+      while (uint64(wm2)*uint64(q1)) > ((uint64(r1) shl 32) or q.limbs[v+sizeD-2]):
+        dec(q1)
+        r1 += wm1
+        if r1 > uint64(uint32.high):
+          break
+
+      assert q1 <= uint64(uint32.high)
+
+      # subtract
+      var zhi: int64 = 0
+      for i in 0 .. <sizeD:
+        let z = int64(q.limbs[v+i]) + zhi - int64(q1 * uint64(r.limbs[i]))
+        q.limbs[v+i] = uint32(z)
+        zhi = z shr 32
+
+      # add back if was too large (rare branch)
+      if int64(vtop) + zhi < 0:
+        carry = 0
+        for i in 0 .. <sizeD:
+          carry += q.limbs[v+i] + r.limbs[i]
+          q.limbs[v+i] = uint32(carry)
+          carry = carry shr 32
+        dec(q1)
+
+      # store quotient digit
+      assert q1 <= uint64(uint32.high)
+      dec(ak)
+      a.limbs[ak] = uint32(q1)
+
+    # unshift remainder, we reuse w1 to store the result
+    q.limbs.setLen(sizeD)
+    r = q shr ls
+
+    normalize(r)
+    q = a
+    normalize(q)
+
+    #r = n
+    #q.reset()
+    #let yguess = (uint64(d.limbs[dn-2]) shl 32) or d.limbs[dn-1]
+
+    #for p in countdown(nn-2, dn-2):
+    #  let xguess = (uint64(r.limbs[p]) shl 32) or r.limbs[p+1]
+    #  if ((xguess div yguess) shr 32) > 0'u64:
+    #    echo "FUCK"
+    #  let qdigit = uint32(xguess div yguess)
+    #  q.limbs.add(qdigit)
+    #  var j = 0
+    #  for i in p+2-dn .. p+2-1:
+    #    r.limbs[i] -= qdigit * d.limbs[j]
+    #    inc(j)
+    #  r.limbs.setLen(r.limbs.high)
+
+    #for i in 0..q.limbs.high:
+    #  swap(q.limbs[i], q.limbs[q.limbs.high-i])
+
+    ## Normalize remainder
+    #var
+    #  borrow: uint32
+    #  count = 0
+    #  carry = 0
+    # borrow, r = remainder_norm(r, y)
+
+    #for i in 0 .. dn-r.limbs.len:
+    #  r.limbs.add(0)
+
+    #for i, term in r.limbs:
+    #  carry + 
+
+    #q.limbs[0] -= borrow
+
+    # Normalize div
+    # divnorm(q)
 
 proc `div` *(a, b: BigInt): BigInt =
   result = initBigInt(0)
@@ -360,16 +482,18 @@ const digits = "0123456789abcdefghijklmnopqrstuvwxyz"
 
 const multiples = [2,4,8,16,32]
 
-# Should be const, unfortunately not working right now
-let sizes: array[2..36, int] = [31,20,15,13,12,11,10,10,9,9,8,8,8,8,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,6,6,6,6,6,6]
-# Ideally calculate sizes with:
-#var x = uint32.high div base # 1 less so we actually fit
-#while x > 0'u32:
-#  x = x div base
-#  size.inc()
+proc calcSizes(): array[2..36, int] =
+  for i in 2..36:
+    var x = int64(uint32.high) div i # 1 less so we actually fit
+    while x > 0:
+      x = x div i
+      result[i].inc()
 
-# Only multiples of 2 so far
-# TODO: General case requires fast division
+#const sizes: array[2..36, int] = [31,20,15,13,12,11,10,10,9,9,8,8,8,8,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,6,6,6,6,6,6]
+
+# not working with consts
+let sizes = calcSizes()
+
 proc toStringMultipleTwo(a: BigInt, base: range[2..36] = 16): string =
   assert(base in multiples)
   var
@@ -406,7 +530,7 @@ proc reverse(a: string): string =
   for i, c in a:
     result[a.high - i] = c
 
-proc `^`*(base: int, exp: int): int =
+proc `^`* [T](base, exp: T): T =
   var
     base = base
     exp = exp
@@ -424,17 +548,17 @@ proc toString*(a: BigInt, base: range[2..36] = 10): string =
 
   var
     b = a
-    c = initBigInt(0)
-    d = initBigInt(base ^ sizes[base])
+    c = 0'u32
+    d = uint32(base) ^ uint32(sizes[base])
     s = ""
 
   while b > initBigInt(0):
-    b = b div d
-    c = b mod d
-    var x = c.limbs[0]
-    while x > 0'u32:
-      s.add(digits[int(x mod base)])
-      x = x div base
+    division(b, c, b, d)
+    #b = b div d
+    #c = b mod d
+    while c > 0'u32:
+      s.add(digits[int(c mod base)])
+      c = c div base
 
   return reverse(s)
 
@@ -560,5 +684,41 @@ when isMainModule:
   #echo q.limbs
   #echo r.limbs
 
-  var a = initBigInt("1234567890000000", 10)
-  echo a
+  #var a = initBigInt("fffffffffffffffffffffffff", 16)
+  #var b = initBigInt("fffffffffffffffffffffffff", 16)
+  #echo a
+  #echo b
+  #echo a * b
+
+  #var a = initBigInt("111122223333444455556666777788889999", 10)
+  #var b = 0'u32
+  #var c = initBigInt(0)
+
+  #echo a.limbs
+  #division(c, b, a, 100)
+  #echo c
+  #echo b
+
+  #echo a.toString(10)
+
+  var a = initBigInt("111122223333444455556666777788889999", 10)
+  var b = initBigInt(0)
+  var c = initBigInt(0)
+
+  echo a.limbs
+  division(c, b, a, initBigInt("556666777788889999", 10))
+  echo c
+  echo b
+
+  #echo a.toString(10)
+
+  #var a = initBigInt(@[4294967295'u32, 0'u32, 1'u32])
+  #var b = initBigInt(0)
+  #a = a shl 31
+  ##var b = a shl 1
+  #for i in countdown(a.limbs.high, 0):
+  #  stdout.write(toHex(int64(a.limbs[i]), 8) & " ")
+  #echo "\n ----- "
+  #for i in countdown(b.limbs.high, 0):
+  #  stdout.write(toHex(int64(b.limbs[i]), 8) & " ")
+
