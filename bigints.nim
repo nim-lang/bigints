@@ -309,6 +309,36 @@ proc division(q: var BigInt, r: var uint32, n: BigInt, d: uint32) =
   while q.limbs.len > 1 and q.limbs[q.limbs.high] == 0:
     q.limbs.setLen(q.limbs.high)
 
+proc `div` *(a: BigInt, b: uint32): BigInt =
+  result = initBigInt(0)
+  var tmp = 0'u32
+  division(result, tmp, a, b)
+
+proc `mod` *(a: BigInt, b: uint32): uint32 =
+  result = 0'u32
+  var tmp = initBigInt(0)
+  division(tmp, result, a, b)
+
+proc `divmod` *(a: BigInt, b: uint32): tuple[q: BigInt, r: uint32] =
+  result.q = initBigInt(0)
+  result.r = 0'u32
+  division(result.q, result.r, a, b)
+
+template optSmallDiv{x = y div z}(x,y: BigInt, z: uint32) =
+  var tmp = 0'u32
+  division(x, tmp, y, z)
+
+template optSmallMod{x = y mod z}(x: uint32, y: BigInt, z: uint32) =
+  var tmp = initBigInt(0)
+  division(tmp, x, y, z)
+
+template optSmallDivMod{w = y div z; x = y mod z}(w: BigInt, x: uint32, y: BigInt, z: uint32) =
+  division(w, x, y, z)
+
+template optSmallDivMod2{w = w div z; x = w mod z}(w: BigInt, x: uint32, z: uint32) =
+  var tmp = w
+  division(w, x, tmp, z)
+
 proc bits(d: uint32): int =
   const bitLengths = [0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
                       5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5]
@@ -406,43 +436,6 @@ proc division(q, r: var BigInt, n, d: BigInt) =
     normalize(r)
     q = a
     normalize(q)
-
-    #r = n
-    #q.reset()
-    #let yguess = (uint64(d.limbs[dn-2]) shl 32) or d.limbs[dn-1]
-
-    #for p in countdown(nn-2, dn-2):
-    #  let xguess = (uint64(r.limbs[p]) shl 32) or r.limbs[p+1]
-    #  if ((xguess div yguess) shr 32) > 0'u64:
-    #    echo "FUCK"
-    #  let qdigit = uint32(xguess div yguess)
-    #  q.limbs.add(qdigit)
-    #  var j = 0
-    #  for i in p+2-dn .. p+2-1:
-    #    r.limbs[i] -= qdigit * d.limbs[j]
-    #    inc(j)
-    #  r.limbs.setLen(r.limbs.high)
-
-    #for i in 0..q.limbs.high:
-    #  swap(q.limbs[i], q.limbs[q.limbs.high-i])
-
-    ## Normalize remainder
-    #var
-    #  borrow: uint32
-    #  count = 0
-    #  carry = 0
-    # borrow, r = remainder_norm(r, y)
-
-    #for i in 0 .. dn-r.limbs.len:
-    #  r.limbs.add(0)
-
-    #for i, term in r.limbs:
-    #  carry + 
-
-    #q.limbs[0] -= borrow
-
-    # Normalize div
-    # divnorm(q)
 
 proc `div` *(a, b: BigInt): BigInt =
   result = initBigInt(0)
