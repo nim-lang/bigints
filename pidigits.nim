@@ -1,7 +1,7 @@
 import os, strutils, unsigned, bigints
 
 var
-  tmp1, tmp2, acc, k, dd = initBigInt(0)
+  tmp1, tmp2, tmp3, acc, k, dd = initBigInt(0)
   den, num = initBigInt(1)
 
 const
@@ -15,11 +15,11 @@ proc extractDigit(): int64 =
   if num > acc:
     return -1
 
-  tmp1 = num shl 1
-  tmp1 += num
-  tmp1 += acc
-  tmp2 = tmp1 mod den
-  tmp1 = tmp1 div den
+  tmp3 = num shl 1
+  tmp3 += num
+  tmp3 += acc
+  tmp2 = tmp3 mod den
+  tmp1 = tmp3 div den
   tmp2 += num
 
   if tmp2 >= den:

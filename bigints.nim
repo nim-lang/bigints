@@ -168,7 +168,7 @@ template `+=` *(a: var BigInt, b: BigInt) =
   let c = a
   addition(a, c, b)
 
-#template optAdd*{x = y + z}(x,y,z: BigInt) = addition(x, y, z)
+template optAdd*{x = y + z}(x,y,z: BigInt) = addition(x, y, z)
 
 proc subtraction(a: var BigInt, b, c: BigInt) =
   if Negative in b.flags:
@@ -191,7 +191,7 @@ template `-=` *(a: var BigInt, b: BigInt) =
   let c = a
   subtraction(a, c, b)
 
-#template optSub*{x = y - z}(x,y,z: BigInt) = subtraction(x, y, z)
+template optSub*{x = y - z}(x,y,z: BigInt) = subtraction(x, y, z)
 
 template unsignedMultiplication*(a: BigInt, b, c: BigInt, bl, cl) =
   for i in 0 .. < bl:
@@ -259,9 +259,9 @@ template `*=` *(a: var BigInt, b: BigInt) =
 
 # noalias doesn't work yet (i think): https://github.com/Araq/Nimrod/issues/206
 # so we set the templates in the correct order instead
-#template optMul*{x = `*`(y, z)}(x,y,z: BigInt) = multiplication(x, y, z)
+template optMul*{x = `*`(y, z)}(x,y,z: BigInt) = multiplication(x, y, z)
 
-#template optMulSame*{x = `*`(x, z)}(x,z: BigInt) = x *= z
+template optMulSame*{x = `*`(x, z)}(x,z: BigInt) = x *= z
 
 # Works when a = b
 proc shiftRight(a: var BigInt, b: BigInt, c: int) =
@@ -281,7 +281,7 @@ proc `shr` *(x: BigInt, y: int): BigInt =
   result = null
   shiftRight(result, x, y)
 
-#template optShr*{x = y shr z}(x, y: BigInt, z) = shiftRight(x, y, z)
+template optShr*{x = y shr z}(x, y: BigInt, z) = shiftRight(x, y, z)
 
 # Works when a = b
 proc shiftLeft(a: var BigInt, b: BigInt, c: int) =
@@ -300,7 +300,7 @@ proc `shl` *(x: BigInt, y: int): BigInt =
   result = null
   shiftLeft(result, x, y)
 
-#template optShl*{x = y shl z}(x, y: BigInt, z) = shiftLeft(x, y, z)
+template optShl*{x = y shl z}(x, y: BigInt, z) = shiftLeft(x, y, z)
 
 proc reset(a: var BigInt) =
   a.limbs.setLen(1)
@@ -348,9 +348,6 @@ proc unsignedDivrem(q, r: var BigInt, n, d: BigInt) =
     r.limbs[0] = x
     r.flags = {}
   else:
-    #r.reset()
-    #q.reset()
-
     assert nn >= dn and dn >= 2
     var carry: uint64
 
@@ -453,6 +450,7 @@ proc `divmod` *(a, b: BigInt): tuple[q, r: BigInt] =
   result.r = null
   division(result.q, result.r, a, b)
 
+# TODO: Figure out what's wrong with this and pidigits
 #template optDiv*{x = y div z}(x,y,z: BigInt) =
 #  var tmp = null
 #  division(x, tmp, y, z)
@@ -460,17 +458,28 @@ proc `divmod` *(a, b: BigInt): tuple[q, r: BigInt] =
 #template optMod*{x = y mod z}(x,y,z: BigInt) =
 #  var tmp = null
 #  division(tmp, x, y, z)
-#
-#template optDivMod*{w = y div z; x = y mod z}(w,x,y,z: BigInt) =
-#  division(w, x, y, z)
-#
-#template optDivMod2*{w = x div z; x = x mod z}(w,x,z: BigInt) =
-#  var tmp = x
-#  division(w, x, tmp, z)
-#
-#template optDivMod3*{w = w div z; x = w mod z}(w,x,z: BigInt) =
-#  var tmp = w
-#  division(w, x, tmp, z)
+
+template optDivMod*{w = y div z; x = y mod z}(w,x,y,z: BigInt) =
+  division(w, x, y, z)
+
+template optDivMod2*{w = x div z; x = x mod z}(w,x,z: BigInt) =
+  var tmp = x
+  division(w, x, tmp, z)
+
+template optDivMod3*{w = w div z; x = w mod z}(w,x,z: BigInt) =
+  var tmp = w
+  division(w, x, tmp, z)
+
+template optDivMod4*{w = y mod z; x = y div z}(w,x,y,z: BigInt) =
+  division(x, w, y, z)
+
+template optDivMod5*{w = x mod z; x = x div z}(w,x,z: BigInt) =
+  var tmp = x
+  division(x, w, tmp, z)
+
+template optDivMod6*{w = w mod z; x = w div z}(w,x,z: BigInt) =
+  var tmp = w
+  division(x, w, tmp, z)
 
 const digits = "0123456789abcdefghijklmnopqrstuvwxyz"
 
