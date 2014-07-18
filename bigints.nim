@@ -168,7 +168,7 @@ template `+=` *(a: var BigInt, b: BigInt) =
   let c = a
   addition(a, c, b)
 
-template optAdd{x = y + z}(x,y,z: BigInt) = addition(x, y, z)
+#template optAdd*{x = y + z}(x,y,z: BigInt) = addition(x, y, z)
 
 proc subtraction(a: var BigInt, b, c: BigInt) =
   if Negative in b.flags:
@@ -191,9 +191,9 @@ template `-=` *(a: var BigInt, b: BigInt) =
   let c = a
   subtraction(a, c, b)
 
-template optSub{x = y - z}(x,y,z: BigInt) = subtraction(x, y, z)
+#template optSub*{x = y - z}(x,y,z: BigInt) = subtraction(x, y, z)
 
-template unsignedMultiplication(a: BigInt, b, c: BigInt, bl, cl) =
+template unsignedMultiplication*(a: BigInt, b, c: BigInt, bl, cl) =
   for i in 0 .. < bl:
     tmp += uint64(b.limbs[i]) * uint64(c.limbs[0])
     a.limbs[i] = uint32(tmp)
@@ -211,7 +211,6 @@ template unsignedMultiplication(a: BigInt, b, c: BigInt, bl, cl) =
 
   for j in 1 .. < cl:
     for i in 0 .. < bl:
-      tmp += uint64(a.limbs[j + i]) + uint64(b.limbs[i]) * uint64(c.limbs[j])
       a.limbs[j + i] = uint32(tmp)
       tmp = tmp shr 32
 
@@ -222,8 +221,7 @@ template unsignedMultiplication(a: BigInt, b, c: BigInt, bl, cl) =
       tmp = tmp shr 32
       pos.inc()
 
-  if a.limbs[a.limbs.high] == 0:
-    a.limbs.setLen(bl + cl - 1)
+  normalize(a)
 
 # This doesn't work when a = b
 proc multiplication(a: var BigInt, b, c: BigInt) =
@@ -261,9 +259,9 @@ template `*=` *(a: var BigInt, b: BigInt) =
 
 # noalias doesn't work yet (i think): https://github.com/Araq/Nimrod/issues/206
 # so we set the templates in the correct order instead
-template optMul{x = `*`(y, z)}(x,y,z: BigInt) = multiplication(x, y, z)
+#template optMul*{x = `*`(y, z)}(x,y,z: BigInt) = multiplication(x, y, z)
 
-template optMulSame{x = `*`(x, z)}(x,z: BigInt) = x *= z
+#template optMulSame*{x = `*`(x, z)}(x,z: BigInt) = x *= z
 
 # Works when a = b
 proc shiftRight(a: var BigInt, b: BigInt, c: int) =
@@ -283,7 +281,7 @@ proc `shr` *(x: BigInt, y: int): BigInt =
   result = null
   shiftRight(result, x, y)
 
-template optShr{x = y shr z}(x, y: BigInt, z) = shiftRight(x, y, z)
+#template optShr*{x = y shr z}(x, y: BigInt, z) = shiftRight(x, y, z)
 
 # Works when a = b
 proc shiftLeft(a: var BigInt, b: BigInt, c: int) =
@@ -302,14 +300,14 @@ proc `shl` *(x: BigInt, y: int): BigInt =
   result = null
   shiftLeft(result, x, y)
 
-template optShl{x = y shl z}(x, y: BigInt, z) = shiftLeft(x, y, z)
+#template optShl*{x = y shl z}(x, y: BigInt, z) = shiftLeft(x, y, z)
 
 proc reset(a: var BigInt) =
   a.limbs.setLen(1)
   a.limbs[0] = 0
   a.flags = {}
 
-proc unsignedSmallDivrem(q: var BigInt, r: var uint32, n: BigInt, d: uint32) =
+proc unsignedSmallDivRem(q: var BigInt, r: var uint32, n: BigInt, d: uint32) =
   q.limbs.setLen(n.limbs.len)
   r = 0
 
@@ -333,7 +331,7 @@ proc bits(d: uint32): int =
 
 # From Knuth and Python
 proc unsignedDivrem(q, r: var BigInt, n, d: BigInt) =
-  let
+  var
     nn = n.limbs.len
     dn = d.limbs.len
 
@@ -345,17 +343,15 @@ proc unsignedDivrem(q, r: var BigInt, n, d: BigInt) =
     q.reset()
   elif dn == 1:
     var x: uint32
-    unsignedSmallDivrem(q, x, n, d.limbs[0])
+    unsignedSmallDivRem(q, x, n, d.limbs[0])
     r.limbs.setLen(1)
     r.limbs[0] = x
     r.flags = {}
   else:
-    r.reset()
-    q.reset()
+    #r.reset()
+    #q.reset()
 
-    var sizeN = n.limbs.len
-    let sizeD = d.limbs.len
-    assert sizeN >= sizeD and sizeD >= 2
+    assert nn >= dn and dn >= 2
     var carry: uint64
 
     # normalize
@@ -364,9 +360,9 @@ proc unsignedDivrem(q, r: var BigInt, n, d: BigInt) =
     q = n shl ls
     if q.limbs.len > n.limbs.len or q.limbs[q.limbs.high] >= r.limbs[r.limbs.high]:
       q.limbs.add(0'u32)
-      inc(sizeN)
+      inc(nn)
 
-    let k = sizeN - sizeD
+    let k = nn - dn
     assert k >= 0
     var a = null
     a.limbs.setLen(k)
@@ -376,13 +372,13 @@ proc unsignedDivrem(q, r: var BigInt, n, d: BigInt) =
 
     for v in countdown(k-1, 0):
       # estimate quotient digit, may rarely overestimate by 1
-      let vtop = q.limbs[v + sizeD]
+      let vtop = q.limbs[v + dn]
       assert vtop <= wm1
-      let vv = (uint64(vtop) shl 32) or q.limbs[v+sizeD-1]
+      let vv = (uint64(vtop) shl 32) or q.limbs[v+dn-1]
       var q1 = uint64(vv) div wm1
       var r1 = uint64(vv) mod wm1
 
-      while (uint64(wm2)*uint64(q1)) > ((uint64(r1) shl 32) or q.limbs[v+sizeD-2]):
+      while (uint64(wm2)*uint64(q1)) > ((uint64(r1) shl 32) or q.limbs[v+dn-2]):
         dec(q1)
         r1 += wm1
         if r1 > uint64(uint32.high):
@@ -392,15 +388,18 @@ proc unsignedDivrem(q, r: var BigInt, n, d: BigInt) =
 
       # subtract
       var zhi: int64 = 0
-      for i in 0 .. <sizeD:
-        let z = int64(q.limbs[v+i]) + zhi - int64(q1 * uint64(r.limbs[i]))
+      for i in 0 .. <dn:
+        var z = int64(q.limbs[v+i]) + zhi - int64(q1 * uint64(r.limbs[i]))
         q.limbs[v+i] = uint32(z)
-        zhi = z shr 32
+        if z < 0:
+          zhi = -1 - ((-1 - z) shr 32)
+        else:
+          zhi = z shr 32
 
       # add back if was too large (rare branch)
       if int64(vtop) + zhi < 0:
         carry = 0
-        for i in 0 .. <sizeD:
+        for i in 0 .. <dn:
           carry += q.limbs[v+i] + r.limbs[i]
           q.limbs[v+i] = uint32(carry)
           carry = carry shr 32
@@ -412,7 +411,7 @@ proc unsignedDivrem(q, r: var BigInt, n, d: BigInt) =
       a.limbs[ak] = uint32(q1)
 
     # unshift remainder, we reuse w1 to store the result
-    q.limbs.setLen(sizeD)
+    q.limbs.setLen(dn)
     r = q shr ls
 
     normalize(r)
@@ -425,9 +424,13 @@ proc division(q, r: var BigInt, n, d: BigInt) =
   # set signs
   if n < null xor d < null:
     q.flags.incl(Negative)
+  else:
+    q.flags.excl(Negative)
 
   if n < null and r != null:
     r.flags.incl(Negative)
+  else:
+    r.flags.excl(Negative)
 
   # divrem -> divmod
   if (r < null and d > null) or
@@ -450,24 +453,24 @@ proc `divmod` *(a, b: BigInt): tuple[q, r: BigInt] =
   result.r = null
   division(result.q, result.r, a, b)
 
-template optDiv{x = y div z}(x,y,z: BigInt) =
-  var tmp = null
-  division(x, tmp, y, z)
-
-template optMod{x = y mod z}(x,y,z: BigInt) =
-  var tmp = null
-  division(tmp, x, y, z)
-
-template optDivMod{w = y div z; x = y mod z}(w,x,y,z: BigInt) =
-  division(w, x, y, z)
-
-template optDivMod2{w = x div z; x = x mod z}(w,x,z: BigInt) =
-  var tmp = x
-  division(w, x, tmp, z)
-
-template optDivMod3{w = w div z; x = w mod z}(w,x,z: BigInt) =
-  var tmp = w
-  division(w, x, tmp, z)
+#template optDiv*{x = y div z}(x,y,z: BigInt) =
+#  var tmp = null
+#  division(x, tmp, y, z)
+#
+#template optMod*{x = y mod z}(x,y,z: BigInt) =
+#  var tmp = null
+#  division(tmp, x, y, z)
+#
+#template optDivMod*{w = y div z; x = y mod z}(w,x,y,z: BigInt) =
+#  division(w, x, y, z)
+#
+#template optDivMod2*{w = x div z; x = x mod z}(w,x,z: BigInt) =
+#  var tmp = x
+#  division(w, x, tmp, z)
+#
+#template optDivMod3*{w = w div z; x = w mod z}(w,x,z: BigInt) =
+#  var tmp = w
+#  division(w, x, tmp, z)
 
 const digits = "0123456789abcdefghijklmnopqrstuvwxyz"
 
@@ -551,10 +554,18 @@ proc toString*(a: BigInt, base: range[2..36] = 10): string =
 
   while tmp > null:
     unsignedSmallDivRem(tmp, c, tmp, d)
-    while c > 0'u32:
+    for i in 1 .. sizes[base]:
       s.add(digits[int(c mod base)])
       c = c div base
 
+  var lastDigit = s.high
+  while lastDigit > 0:
+    if s[lastDigit] != '0':
+      break
+    dec lastDigit
+
+  s.setLen(lastDigit+1)
+  if s.len == 0: s = "0"
   result.add(reverse(s))
 
 proc `$`*(a: BigInt) : string = toString(a, 10)
@@ -567,10 +578,11 @@ proc initBigInt*(str: string, base: range[2..36] = 10): BigInt =
   let size = sizes[base]
   var first = 0
   var str = str
+  var fs: set[Flags]
 
   if str[0] == '-':
     first = 1
-    result.flags.incl(Negative)
+    fs.incl(Negative)
     str[0] = '0'
 
   for i in countdown((str.high div size) * size, 0, size):
@@ -591,6 +603,8 @@ proc initBigInt*(str: string, base: range[2..36] = 10): BigInt =
       smul *= base
     result += mul * initBigInt(num)
     mul *= initBigInt(smul)
+
+  result.flags = fs
 
 when isMainModule:
   # We're about twice as slow as GMP in these microbenchmarks:
@@ -732,3 +746,27 @@ when isMainModule:
   #var a = initBigInt(3)
   #var b = initBigInt("100000000000000000")
   #echo a - b
+
+  #a = a div b
+  #echo a
+
+  #var a = initBigInt("114563644360333347700372329626168316793115507959307062949710523744989695464449225205841634915762626460598360592957710138104092802289353468061413012636613144333838896336671958767939732533712207225240881417306586834931980305973362337217612343305405994503389889956658191787743071027072639968990356716036687103663834079725347692146897315979003906250")
+  #var b = initBigInt("37110314837047916227882694320360675271152660126976564204341054165582659066313003251294342658387330791109263639054518846261243201776403745881386398672927926765573625696633292384950281404347174511630802572216125672511290566438440980352276195055462659645876962628295015910491909958529441748144812127421727850262294140657104435376822948455810546875")
+  ##var c = a div b
+  #var d = a mod b
+  ##echo c
+  #echo a
+  #echo b
+  #echo d
+
+  #var a = initBigInt(3225)
+  #var b = initBigInt(240)
+  #a += b
+  #echo a
+
+  var a = initBigInt("176206390484111649670565285281535494096573857183344276918667663963221676301197729485410008095645976019172170391040222532126288730386146435153818474132388709061170722938476941658754628345275176986460943315899031023622489897390090425887600422373020323833947861264392150228054803318242325151623477497569678695274872363196564000211830423270100846173925887876497546308817147991387816212128421014623672280450790006161488181500288969289620708421445635520413947028146871017121332770732190770726575692877757534865394691433859985510087629268621329076774293546349631593330716567725109440366992918345112005896305414469484767723908970046328045488303702537173428410107925617484663656273404571746913676830920092271554113099319300324096636450399568799275846937847473892408009795197569885285496759648162838267229246514158878204348299246423803547265912214453433448276097598585130404095115054589087489833596463142739580441144264799646634855889715254306793212890625")
+  var b = initBigInt(0)
+  var acc = initBigInt("861210082732066541532665887925299303579512781038289409489470886836236995532341661502300077529662592103949902897170235705942880440590653121006900618559776768310816610553371337447706999981577599375587341186749682484082350039871662512708747027935794011364002882479290935571588018504174265039105934908825594902472830871614778292875382370917452638932983308796613574868097761220057870728168147915772008453100610713188736271915262792413408620656544871809262305724051465756524682416577887280505693119967339110566033625292183037852238710834633719668887688918151471745620796224928388087679593585646815738655018105979481430851232357068527760908700832334635544169865534008118045857792961830603167249028302420612456968287955659132951856711104091884763609192744199821311720800038359880293199593290902312150930776977888986212927451017185789241644617568344066866602117874714001907745824210773602563102098490105135858430074335956305731087923049926757812500")
+  var c = a * b
+  echo c.limbs
+  echo acc - c
