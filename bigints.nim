@@ -38,6 +38,14 @@ proc initBigInt*[T: int|int16|int32|uint|uint16|uint32](val: T): BigInt =
 const null = initBigInt(0)
 const one = initBigInt(1)
 
+proc unsignedCmpInt(a: BigInt, b: int32): int64 =
+  result = int64(a.limbs.len) - 1
+
+  if result != 0:
+    return
+
+  result = int64(a.limbs[0]) - int64(b)
+
 proc unsignedCmp(a, b: BigInt): int64 =
   result = int64(a.limbs.len) - int64(b.limbs.len)
 
@@ -73,6 +81,27 @@ template addParts(toAdd) =
   a.limbs[i] = uint32(tmp)
   tmp = tmp shr 32
 
+proc unsignedAdditionInt(a: var BigInt, b: BigInt, c: int32) =
+  var tmp: uint64
+
+  let bl = b.limbs.len
+  const cl = 1
+  const m = 1
+
+  a.limbs.setLen(bl)
+
+  tmp = uint64(b.limbs[0]) + uint64(c)
+  a.limbs[0] = uint32(tmp)
+  tmp = tmp shr 32
+
+  for i in m .. < bl:
+    addParts(uint64(b.limbs[i]))
+
+  if tmp > 0'u64:
+    a.limbs.add(uint32(tmp))
+
+  a.flags.excl(Negative)
+
 # Works when a = b
 proc unsignedAddition(a: var BigInt, b, c: BigInt) =
   var tmp: uint64
@@ -104,6 +133,34 @@ proc negate(a: var BigInt) =
     a.flags.excl(Negative)
   else:
     a.flags.incl(Negative)
+
+# Works when a = b
+# Assumes positive parameters and b > c
+template realUnsignedSubtractionInt(a: var BigInt, b: BigInt, c: int32) =
+  var tmp: int64
+
+  let bl = b.limbs.len
+  const cl = 1
+  const m = cl
+
+  a.limbs.setLen(bl)
+
+  block:
+    const i = 0
+    tmp = int64(uint32.high) + 1 + int64(b.limbs[i]) - int64(c)
+    a.limbs[i] = uint32(tmp)
+    tmp = 1 - (tmp shr 32)
+
+  for i in m .. < bl:
+    tmp = int64(uint32.high) + 1 + int64(b.limbs[i]) - tmp
+    a.limbs[i] = uint32(tmp)
+    tmp = 1 - (tmp shr 32)
+  a.flags.excl(Negative)
+
+  normalize(a)
+
+  if tmp > 0:
+    a.limbs.add(uint32(tmp))
 
 # Works when a = b
 # Assumes positive parameters and b > c
@@ -140,12 +197,34 @@ template realUnsignedSubtraction(a: var BigInt, b, c: BigInt) =
   if tmp > 0:
     a.limbs.add(uint32(tmp))
 
+proc unsignedSubtractionInt(a: var BigInt, b: BigInt, c: int32) =
+  if unsignedCmpInt(b, c) > 0:
+    realUnsignedSubtractionInt(a, b, c)
+  else:
+    # TODO: is this right?
+    realUnsignedSubtractionInt(a, b, c)
+    negate(a)
+
 proc unsignedSubtraction(a: var BigInt, b, c: BigInt) =
   if unsignedCmp(b, c) > 0:
     realUnsignedSubtraction(a, b, c)
   else:
     realUnsignedSubtraction(a, c, b)
     negate(a)
+
+proc additionInt(a: var BigInt, b: BigInt, c: int32) =
+  if Negative in b.flags:
+    if c < 0:
+      unsignedAdditionInt(a, b, c)
+      a.flags.incl(Negative)
+    else:
+      # TODO: is this right?
+      unsignedSubtractionInt(a, b, c)
+  else:
+    if c < 0:
+      unsignedSubtractionInt(a, b, c)
+    else:
+      unsignedAdditionInt(a, b, c)
 
 proc addition(a: var BigInt, b, c: BigInt) =
   if Negative in b.flags:
@@ -160,6 +239,10 @@ proc addition(a: var BigInt, b, c: BigInt) =
     else:
       unsignedAddition(a, b, c)
 
+proc `+` *(a: BigInt, b: int32): BigInt=
+  result = null
+  additionInt(result, a, b)
+
 proc `+` *(a, b: BigInt): BigInt=
   result = null
   addition(result, a, b)
@@ -167,6 +250,12 @@ proc `+` *(a, b: BigInt): BigInt=
 template `+=` *(a: var BigInt, b: BigInt) =
   let c = a
   addition(a, c, b)
+
+template `+=` *(a: var BigInt, b: int32) =
+  let c = a
+  additionInt(a, c, b)
+
+template optAddInt*{x = y + z}(x,y: BigInt, z: int32) = additionInt(x, y, z)
 
 template optAdd*{x = y + z}(x,y,z: BigInt) = addition(x, y, z)
 
@@ -192,6 +281,17 @@ template `-=` *(a: var BigInt, b: BigInt) =
   subtraction(a, c, b)
 
 template optSub*{x = y - z}(x,y,z: BigInt) = subtraction(x, y, z)
+
+template unsignedMultiplicationInt*(a: BigInt, b: BigInt, c: int32, bl) =
+  for i in 0 .. < bl:
+    tmp += uint64(b.limbs[i]) * uint64(c)
+    a.limbs[i] = uint32(tmp)
+    tmp = tmp shr 32
+
+  a.limbs[bl] = uint32(tmp)
+  tmp = tmp shr 32
+
+  normalize(a)
 
 template unsignedMultiplication*(a: BigInt, b, c: BigInt, bl, cl) =
   for i in 0 .. < bl:
@@ -224,6 +324,27 @@ template unsignedMultiplication*(a: BigInt, b, c: BigInt, bl, cl) =
   normalize(a)
 
 # This doesn't work when a = b
+proc multiplicationInt(a: var BigInt, b: BigInt, c: int32) =
+  let bl = b.limbs.len
+  var
+    tmp, tmp2, tmp3: uint64
+
+  a.limbs.setLen(bl + 1)
+
+  unsignedMultiplicationInt(a, b, c, bl)
+
+  if Negative in b.flags:
+    if c < 0:
+      a.flags.excl(Negative)
+    else:
+      a.flags.incl(Negative)
+  else:
+    if c < 0:
+      a.flags.incl(Negative)
+    else:
+      a.flags.excl(Negative)
+
+# This doesn't work when a = b
 proc multiplication(a: var BigInt, b, c: BigInt) =
   let
     bl = b.limbs.len
@@ -244,10 +365,18 @@ proc multiplication(a: var BigInt, b, c: BigInt) =
     else:
       a.flags.incl(Negative)
   else:
-    if Negative in b.flags:
+    if Negative in c.flags:
       a.flags.incl(Negative)
     else:
       a.flags.excl(Negative)
+
+proc `*` *(a: BigInt, b: int32): BigInt =
+  result = null
+  multiplicationInt(result, a, b)
+
+template `*=` *(a: var BigInt, b: int32) =
+  let c = a
+  multiplicationInt(a, c, b)
 
 proc `*` *(a, b: BigInt): BigInt =
   result = null
@@ -259,6 +388,10 @@ template `*=` *(a: var BigInt, b: BigInt) =
 
 # noalias doesn't work yet (i think): https://github.com/Araq/Nimrod/issues/206
 # so we set the templates in the correct order instead
+template optMulInt*{x = `*`(y, z)}(x,y: BigInt, z: int32) = multiplicationInt(x, y, z)
+
+template optMulSameInt*{x = `*`(x, z)}(x: BigInt, z: int32) = x *= z
+
 template optMul*{x = `*`(y, z)}(x,y,z: BigInt) = multiplication(x, y, z)
 
 template optMulSame*{x = `*`(x, z)}(x,z: BigInt) = x *= z

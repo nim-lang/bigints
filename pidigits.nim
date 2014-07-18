@@ -2,16 +2,9 @@ import os, strutils, unsigned, bigints
 
 var
   tmp1, tmp2, tmp3, acc, k, dd = initBigInt(0)
-  den, num = initBigInt(1)
+  den, num, k2 = initBigInt(1)
 
-const
-  one = initBigInt(1)
-  two = initBigInt(2)
-  three = initBigInt(3)
-  four = initBigInt(4)
-  ten = initBigInt(10)
-
-proc extractDigit(): int64 =
+proc extractDigit(): int32 =
   if num > acc:
     return -1
 
@@ -25,15 +18,16 @@ proc extractDigit(): int64 =
   if tmp2 >= den:
     return -1
 
-  result = int64(tmp1.limbs[0])
+  result = int32(tmp1.limbs[0])
 
-proc eliminateDigit(d: BigInt) =
+proc eliminateDigit(d: int32) =
   acc -= den * d
-  acc *= ten
-  num *= ten
+  acc *= 10
+  num *= 10
 
-proc nextTerm(k: BigInt) =
-  let k2 = k * two + one
+proc nextTerm() =
+  k += 1
+  k2 += 2
   tmp1 = num shl 1
   acc += tmp1
   acc *= k2
@@ -44,10 +38,9 @@ let n = parseInt(paramStr(1))
 var i = 0
 
 while i < n:
-  var d: int64 = -1
+  var d: int32 = -1
   while d < 0:
-    k += one
-    nextTerm(k)
+    nextTerm()
     d = extractDigit()
 
   stdout.write(chr(ord('0') + d))
@@ -56,5 +49,4 @@ while i < n:
     echo "\t:", i
   if i >= n:
     break
-  dd.limbs[0] = uint32(d)
-  eliminateDigit(dd)
+  eliminateDigit(d)
