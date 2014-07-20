@@ -610,19 +610,19 @@ proc division(q, r: var BigInt, n, d: BigInt) =
   unsignedDivRem(q, r, n, d)
 
   # set signs
-  if n < null xor d < null:
+  if n < 0 xor d < 0:
     q.flags.incl(Negative)
   else:
     q.flags.excl(Negative)
 
-  if n < null and r != null:
+  if n < 0 and r != 0:
     r.flags.incl(Negative)
   else:
     r.flags.excl(Negative)
 
   # divrem -> divmod
-  if (r < null and d > null) or
-     (r > null and d < null):
+  if (r < 0 and d > 0) or
+     (r > 0 and d < 0):
     r += d
     q -= one
 
@@ -632,12 +632,12 @@ proc division(q, r: var BigInt, n: BigInt, d: int32) =
   unsignedDivRem(q, r.limbs[0], n, uint32(d))
 
   # set signs
-  if n < null xor d < 0:
+  if n < 0 xor d < 0:
     q.flags.incl(Negative)
   else:
     q.flags.excl(Negative)
 
-  if n < null and r != null:
+  if n < 0 and r != 0:
     r.flags.incl(Negative)
   else:
     r.flags.excl(Negative)
@@ -803,7 +803,7 @@ proc toString*(a: BigInt, base: range[2..36] = 10): string =
     tmp.flags.excl(Negative)
     result.add('-')
 
-  while tmp > null:
+  while tmp > 0:
     unsignedDivRem(tmp, c, tmp, d)
     for i in 1 .. sizes[base]:
       s.add(digits[int(c mod base)])
