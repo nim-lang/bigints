@@ -1,3 +1,5 @@
+# Translation of http://benchmarksgame.alioth.debian.org/u32/program.php?test=pidigits&lang=go&id=4
+
 import os, strutils, unsigned, bigints
 
 var

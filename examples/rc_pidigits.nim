@@ -1,3 +1,5 @@
+# Solution for http://rosettacode.org/wiki/Pi
+
 import strutils, unsigned, bigints
 
 var

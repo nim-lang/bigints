@@ -1,3 +1,5 @@
+# Solution for http://rosettacode.org/wiki/Arbitrary-precision_integers_(included)
+
 import bigints
 
 var x = 5.pow 4.pow 3.pow 2

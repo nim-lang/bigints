@@ -2,7 +2,7 @@
 name: "bigints"
 version: "0.1"
 author: "Dennis Felsing"
-description: "Arbitrary size integers"
+description: "Arbitrary-precision integers"
 license: "MIT"
 
 srcDir: "src"
