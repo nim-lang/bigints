@@ -1,0 +1,11 @@
+[Package]
+name: "bigints"
+version: "0.1"
+author: "Dennis Felsing"
+description: "Arbitrary size integers"
+license: "MIT"
+
+srcDir: "src"
+
+[Deps]
+requires: "nimrod > 0.9.4"
