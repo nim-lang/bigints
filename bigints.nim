@@ -38,13 +38,16 @@ proc initBigInt*[T: int|int16|int32|uint|uint16|uint32](val: T): BigInt =
 const null = initBigInt(0)
 const one = initBigInt(1)
 
-proc unsignedCmpInt(a: BigInt, b: int32): int64 =
+proc unsignedCmp(a: BigInt, b: int32): int64 =
   result = int64(a.limbs.len) - 1
 
   if result != 0:
     return
 
   result = int64(a.limbs[0]) - int64(b)
+
+proc unsignedCmp(a: int32, b: BigInt): int64 =
+  -unsignedCmp(b, a)
 
 proc unsignedCmp(a, b: BigInt): int64 =
   result = int64(a.limbs.len) - int64(b.limbs.len)
@@ -70,11 +73,41 @@ proc cmp*(a, b: BigInt): int64 =
     else:
       return unsignedCmp(a, b)
 
+proc cmp*(a: int32, b: BigInt): int64 =
+  if a < 0:
+    if Negative in b.flags:
+      return unsignedCmp(b, a)
+    else:
+      return -1
+  else:
+    if Negative in b.flags:
+      return 1
+    else:
+      return unsignedCmp(a, b)
+
+proc cmp*(a: BigInt, b: int32): int64 =
+  if Negative in a.flags:
+    if b < 0:
+      return unsignedCmp(b, a)
+    else:
+      return -1
+  else:
+    if b < 0:
+      return 1
+    else:
+      return unsignedCmp(a, b)
+
 proc `<` *(a, b: BigInt): bool = cmp(a, b) < 0
+proc `<` *(a: BigInt, b: int32): bool = cmp(a, b) < 0
+proc `<` *(a: int32, b: BigInt): bool = cmp(a, b) < 0
 
 proc `<=` *(a, b: BigInt): bool = cmp(a, b) <= 0
+proc `<=` *(a: BigInt, b: int32): bool = cmp(a, b) <= 0
+proc `<=` *(a: int32, b: BigInt): bool = cmp(a, b) <= 0
 
 proc `==` *(a, b: BigInt): bool = cmp(a, b) == 0
+proc `==` *(a: BigInt, b: int32): bool = cmp(a, b) == 0
+proc `==` *(a: int32, b: BigInt): bool = cmp(a, b) == 0
 
 template addParts(toAdd) =
   tmp += toAdd
@@ -198,7 +231,7 @@ template realUnsignedSubtraction(a: var BigInt, b, c: BigInt) =
     a.limbs.add(uint32(tmp))
 
 proc unsignedSubtractionInt(a: var BigInt, b: BigInt, c: int32) =
-  if unsignedCmpInt(b, c) >= 0:
+  if unsignedCmp(b, c) >= 0:
     realUnsignedSubtractionInt(a, b, c)
   else:
     # TODO: is this right?
@@ -465,7 +498,7 @@ proc reset(a: var BigInt) =
   a.limbs[0] = 0
   a.flags = {}
 
-proc unsignedSmallDivRem(q: var BigInt, r: var uint32, n: BigInt, d: uint32) =
+proc unsignedDivRem(q: var BigInt, r: var uint32, n: BigInt, d: uint32) =
   q.limbs.setLen(n.limbs.len)
   r = 0
 
@@ -488,7 +521,7 @@ proc bits(d: uint32): int =
   result += bitLengths[int(d)]
 
 # From Knuth and Python
-proc unsignedDivrem(q, r: var BigInt, n, d: BigInt) =
+proc unsignedDivRem(q, r: var BigInt, n, d: BigInt) =
   var
     nn = n.limbs.len
     dn = d.limbs.len
@@ -501,7 +534,7 @@ proc unsignedDivrem(q, r: var BigInt, n, d: BigInt) =
     q.reset()
   elif dn == 1:
     var x: uint32
-    unsignedSmallDivRem(q, x, n, d.limbs[0])
+    unsignedDivRem(q, x, n, d.limbs[0])
     r.limbs.setLen(1)
     r.limbs[0] = x
     r.flags = {}
@@ -574,7 +607,7 @@ proc unsignedDivrem(q, r: var BigInt, n, d: BigInt) =
     normalize(q)
 
 proc division(q, r: var BigInt, n, d: BigInt) =
-  unsignedDivrem(q, r, n, d)
+  unsignedDivRem(q, r, n, d)
 
   # set signs
   if n < null xor d < null:
@@ -593,6 +626,43 @@ proc division(q, r: var BigInt, n, d: BigInt) =
     r += d
     q -= one
 
+proc division(q, r: var BigInt, n: BigInt, d: int32) =
+  r.reset()
+  # TODO: is this correct?
+  unsignedDivRem(q, r.limbs[0], n, uint32(d))
+
+  # set signs
+  if n < null xor d < 0:
+    q.flags.incl(Negative)
+  else:
+    q.flags.excl(Negative)
+
+  if n < null and r != null:
+    r.flags.incl(Negative)
+  else:
+    r.flags.excl(Negative)
+
+  # divrem -> divmod
+  if (r < 0 and d > 0) or
+     (r > 0 and d < 0):
+    r += d
+    q -= one
+
+proc `div` *(a: BigInt, b: int32): BigInt =
+  result = null
+  var tmp = null
+  division(result, tmp, a, b)
+
+proc `mod` *(a: BigInt, b: int32): BigInt =
+  result = null
+  var tmp = null
+  division(tmp, result, a, b)
+
+proc `divmod` *(a: BigInt, b: int32): tuple[q, r: BigInt] =
+  result.q = null
+  result.r = null
+  division(result.q, result.r, a, b)
+
 proc `div` *(a, b: BigInt): BigInt =
   result = null
   var tmp = null
@@ -608,7 +678,8 @@ proc `divmod` *(a, b: BigInt): tuple[q, r: BigInt] =
   result.r = null
   division(result.q, result.r, a, b)
 
-# TODO: Figure out what's wrong with this and pidigits
+# TODO: This doesn't work because it's applied before the other rules, which
+# should take precedence. This also doesn't work for x = y etc
 #template optDiv*{x = y div z}(x,y,z: BigInt) =
 #  var tmp = null
 #  division(x, tmp, y, z)
@@ -703,14 +774,14 @@ proc `^`* [T](base, exp: T): T =
     exp = exp shr 1
     base *= base
 
-proc `^`*(base, exp: BigInt): BigInt =
+proc pow*(base: int32|BigInt, exp: int32|BigInt): BigInt =
   var
-    base = base
+    base = initBigInt(base)
     exp = exp
   result = one
 
-  while exp != null:
-    if (exp mod initBigInt(2)) > null:
+  while exp != 0:
+    if (exp mod 2) > 0:
       result *= base
     exp = exp shr 1
     var tmp = base
@@ -733,7 +804,7 @@ proc toString*(a: BigInt, base: range[2..36] = 10): string =
     result.add('-')
 
   while tmp > null:
-    unsignedSmallDivRem(tmp, c, tmp, d)
+    unsignedDivRem(tmp, c, tmp, d)
     for i in 1 .. sizes[base]:
       s.add(digits[int(c mod base)])
       c = c div base
