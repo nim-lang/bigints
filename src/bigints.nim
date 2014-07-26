@@ -8,14 +8,6 @@ type
     limbs: seq[uint32]
     flags: set[Flags]
 
-proc `$`*(a: BigInt) : string
-
-const debug = false
-
-template log(x) =
-  if debug:
-    debugEcho x
-
 const maxInt = int64(high uint32)
 
 proc normalize(a: var BigInt) =
@@ -339,7 +331,7 @@ template `-=` *(a: var BigInt, b: BigInt) =
 
 template optSub*{x = y - z}(x,y,z: BigInt) = subtraction(x, y, z)
 
-template unsignedMultiplicationInt*(a: BigInt, b: BigInt, c: int32, bl) =
+template unsignedMultiplicationInt(a: BigInt, b: BigInt, c: int32, bl) =
   for i in 0 .. < bl:
     tmp += uint64(b.limbs[i]) * uint64(c)
     a.limbs[i] = uint32(tmp)
@@ -350,7 +342,7 @@ template unsignedMultiplicationInt*(a: BigInt, b: BigInt, c: int32, bl) =
 
   normalize(a)
 
-template unsignedMultiplication*(a: BigInt, b, c: BigInt, bl, cl) =
+template unsignedMultiplication(a: BigInt, b, c: BigInt, bl, cl) =
   for i in 0 .. < bl:
     tmp += uint64(b.limbs[i]) * uint64(c.limbs[0])
     a.limbs[i] = uint32(tmp)
@@ -653,7 +645,17 @@ proc `div` *(a: BigInt, b: int32): BigInt =
   var tmp = null
   division(result, tmp, a, b)
 
+proc `div` *(a, b: BigInt): BigInt =
+  result = null
+  var tmp = null
+  division(result, tmp, a, b)
+
 proc `mod` *(a: BigInt, b: int32): BigInt =
+  result = null
+  var tmp = null
+  division(tmp, result, a, b)
+
+proc `mod` *(a, b: BigInt): BigInt =
   result = null
   var tmp = null
   division(tmp, result, a, b)
@@ -662,16 +664,6 @@ proc `divmod` *(a: BigInt, b: int32): tuple[q, r: BigInt] =
   result.q = null
   result.r = null
   division(result.q, result.r, a, b)
-
-proc `div` *(a, b: BigInt): BigInt =
-  result = null
-  var tmp = null
-  division(result, tmp, a, b)
-
-proc `mod` *(a, b: BigInt): BigInt =
-  result = null
-  var tmp = null
-  division(tmp, result, a, b)
 
 proc `divmod` *(a, b: BigInt): tuple[q, r: BigInt] =
   result.q = null
@@ -775,9 +767,11 @@ proc `^`* [T](base, exp: T): T =
     base *= base
 
 proc pow*(base: int32|BigInt, exp: int32|BigInt): BigInt =
-  var
-    base = initBigInt(base)
-    exp = exp
+  when type(base) is BigInt:
+    var base = base
+  else:
+    var base = initBigInt(base)
+  var exp = exp
   result = one
 
   while exp != 0:
