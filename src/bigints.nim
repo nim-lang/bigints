@@ -485,7 +485,7 @@ proc `shl` *(x: BigInt, y: int): BigInt =
 
 template optShl*{x = y shl z}(x, y: BigInt, z) = shiftLeft(x, y, z)
 
-proc reset(a: var BigInt) =
+proc reset*(a: var BigInt) =
   a.limbs.setLen(1)
   a.limbs[0] = 0
   a.flags = {}
