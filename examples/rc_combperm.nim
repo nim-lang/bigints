@@ -1,4 +1,4 @@
-# Solution for http://rosettacode.org/wiki/Combinations_with_repetitions
+# Solution for http://rosettacode.org/wiki/Combinations_and_permutations
 import bigints
 
 proc perm(n, k: int32): BigInt =
