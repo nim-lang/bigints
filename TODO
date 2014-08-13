@@ -1,3 +1,4 @@
+- Throw an error on invalid initBigInt values
 - Fix the library on 32bit
 - Fix the templates so they work with uninitialized (nil) values!
 - karatsuba multiplication
