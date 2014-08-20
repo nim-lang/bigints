@@ -557,6 +557,8 @@ proc unsignedDivRem(q, r: var BigInt, n, d: BigInt) =
 
     var zhi = 0.initBigInt
     var z = 0.initBigInt
+    var qib = 0.initBigInt
+    var q1b = 0.initBigInt
 
     for v in countdown(k-1, 0):
       # estimate quotient digit, may rarely overestimate by 1
@@ -574,19 +576,27 @@ proc unsignedDivRem(q, r: var BigInt, n, d: BigInt) =
 
       assert q1 <= uint64(uint32.high)
 
+      q1b.limbs[0] = uint32(q1)
+
       # subtract
-      zhi = 0.initBigInt
+      zhi.reset()
       for i in 0 .. <dn:
-        z = q.limbs[v+i].initBigInt + zhi - (r.limbs[i].initBigInt * q1.uint32.initBigInt)
+        z.reset()
+        z.limbs[0] = r.limbs[i]
+        z *= q1b
+        z.flags.incl Negative
+        z += zhi
+        qib.limbs[0] = q.limbs[v+i]
+        z += qib
         q.limbs[v+i] = not z.limbs[0] + 1
         if z.limbs.len > 1:
-          zhi = z.limbs[1].initBigInt + 1
+          zhi.limbs[0] = z.limbs[1] + 1
           zhi.flags.incl Negative
         elif z < 0:
-          zhi = 1.initBigInt
+          zhi.limbs[0] = 1
           zhi.flags.incl Negative
         else:
-          zhi = 0.initBigInt
+          zhi.reset()
 
       # add back if was too large (rare branch)
       if vtop.initBigInt + zhi < 0:
