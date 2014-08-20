@@ -54,8 +54,8 @@ proc unsignedCmp(a, b: BigInt): int64 =
       return
 
 proc cmp*(a, b: BigInt): int64 =
-  if Negative in a.flags:
-    if Negative in b.flags:
+  if Negative in a.flags and a.limbs != @[0'u32]:
+    if Negative in b.flags and b.limbs != @[0'u32]:
       return unsignedCmp(b, a)
     else:
       return -1
@@ -67,7 +67,7 @@ proc cmp*(a, b: BigInt): int64 =
 
 proc cmp*(a: int32, b: BigInt): int64 =
   if a < 0:
-    if Negative in b.flags:
+    if Negative in b.flags and b.limbs != @[0'u32]:
       return unsignedCmp(b, a)
     else:
       return -1
@@ -78,7 +78,7 @@ proc cmp*(a: int32, b: BigInt): int64 =
       return unsignedCmp(a, b)
 
 proc cmp*(a: BigInt, b: int32): int64 =
-  if Negative in a.flags:
+  if Negative in a.flags and a.limbs != @[0'u32]:
     if b < 0:
       return unsignedCmp(b, a)
     else:
@@ -550,6 +550,9 @@ proc unsignedDivRem(q, r: var BigInt, n, d: BigInt) =
     let wm2 = r.limbs[r.limbs.high-1]
     var ak = k
 
+    var zhi = 0.initBigInt
+    var z = 0.initBigInt
+
     for v in countdown(k-1, 0):
       # estimate quotient digit, may rarely overestimate by 1
       let vtop = q.limbs[v + dn]
@@ -558,7 +561,7 @@ proc unsignedDivRem(q, r: var BigInt, n, d: BigInt) =
       var q1 = uint64(vv) div wm1
       var r1 = uint64(vv) mod wm1
 
-      while (uint64(wm2)*uint64(q1)) > ((uint64(r1) shl 32) or q.limbs[v+dn-2]):
+      while (uint64(wm2)*q1) > ((r1 shl 32) or q.limbs[v+dn-2]):
         dec(q1)
         r1 += wm1
         if r1 > uint64(uint32.high):
@@ -567,17 +570,15 @@ proc unsignedDivRem(q, r: var BigInt, n, d: BigInt) =
       assert q1 <= uint64(uint32.high)
 
       # subtract
-      var zhi: int64 = 0
+      zhi = 0.initBigInt
       for i in 0 .. <dn:
-        var z = int64(q.limbs[v+i]) + zhi - int64(q1 * uint64(r.limbs[i]))
-        q.limbs[v+i] = uint32(z)
-        if z < 0:
-          zhi = -1 - ((-1 - z) shr 32)
-        else:
-          zhi = z shr 32
+        z = q.limbs[v+i].initBigInt + zhi - (r.limbs[i].initBigInt * q1.uint32.initBigInt)
+        q.limbs[v+i] = not z.limbs[0] + 1
+        zhi = z.limbs[1].initBigInt + 1
+        zhi.flags.incl Negative
 
       # add back if was too large (rare branch)
-      if int64(vtop) + zhi < 0:
+      if vtop.initBigInt + zhi < 0:
         carry = 0
         for i in 0 .. <dn:
           carry += q.limbs[v+i] + r.limbs[i]
@@ -1028,3 +1029,16 @@ when isMainModule:
   #echo a
   #echo b
   #echo c
+
+  #var a = 0.initBigInt
+  #var b = 0.initBigInt
+  #division(a, b, initBigInt("756628490253123014067933708583503295844929075882239485540431356534910033618830501144105195285364489562157441837796863614070956636498456792910898817389940831543204657474297072356228690296487944931559885281889207062770782744748470400"), initBigInt("115792089237316195423570985008687907853269984665640564039457584007908834671663"))
+  #echo a.toString(16)
+  #echo "6534371175412604458958908912693048525839811796587982546211129043135405424530153901770406203935164968917121831102336830270909059548152185210409961777233761".initBigInt.toString(16)
+  #echo "---"
+  #echo b.toString(16)
+  #echo "91914383230618135761690975197207778399550061809281766160147273830617914855857".initBigInt.toString(16)
+
+  var x: BigInt = @[175614014'u32, 1225800181'u32].initBigInt
+  x = x shr 32
+  echo x

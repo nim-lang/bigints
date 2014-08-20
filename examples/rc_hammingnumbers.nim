@@ -26,8 +26,7 @@ proc hamming(limit): BigInt =
   result = h[h.high]
 
 for i in 1 .. 20:
-  echo hamming(i)
+  stdout.write hamming(i), " "
 
 echo hamming(1691)
 echo hamming(1_000_000)
-echo hamming(10_000_000)
