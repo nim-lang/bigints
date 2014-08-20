@@ -450,12 +450,16 @@ template optMulSame*{x = `*`(x, z)}(x,z: BigInt) = x *= z
 proc shiftRight(a: var BigInt, b: BigInt, c: int) =
   a.limbs.setLen(b.limbs.len)
   var carry: uint64
-  let mask: uint32 = 1'u32 shl uint32(c) - 1
+  let d = c div 32
+  let e = c mod 32
+  let mask: uint32 = 1'u32 shl uint32(e) - 1
 
-  for i in countdown(b.limbs.high, 0):
+  for i in countdown(b.limbs.high, d):
     let acc: uint64 = (carry shl 32) or b.limbs[i]
     carry = uint32(acc and mask)
-    a.limbs[i] = uint32(acc shr uint32(c))
+    a.limbs[i - d] = uint32(acc shr uint32(e))
+
+  a.limbs.setLen(a.limbs.len - d)
 
   if a.limbs.len > 1 and a.limbs[a.limbs.high] == 0:
     a.limbs.setLen(a.limbs.high)
@@ -1053,7 +1057,8 @@ when isMainModule:
   #echo "48317604920791681227269902149572831041666497563152549156566744096979700087652"
   #echo x mod y
 
-  # TODO: Fix me
-  var x: BigInt = @[175614014'u32, 1225800181'u32].initBigInt
-  x = x shr 32
-  echo x
+  #var x: BigInt = @[175614014'u32, 1225800181'u32].initBigInt
+  #echo x shr 32
+
+  #var y: BigInt = @[175614014'u32, 1225800181'u32].initBigInt
+  #echo y shr 16
