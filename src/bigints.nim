@@ -574,8 +574,14 @@ proc unsignedDivRem(q, r: var BigInt, n, d: BigInt) =
       for i in 0 .. <dn:
         z = q.limbs[v+i].initBigInt + zhi - (r.limbs[i].initBigInt * q1.uint32.initBigInt)
         q.limbs[v+i] = not z.limbs[0] + 1
-        zhi = z.limbs[1].initBigInt + 1
-        zhi.flags.incl Negative
+        if z.limbs.len > 1:
+          zhi = z.limbs[1].initBigInt + 1
+          zhi.flags.incl Negative
+        elif z < 0:
+          zhi = 1.initBigInt
+          zhi.flags.incl Negative
+        else:
+          zhi = 0.initBigInt
 
       # add back if was too large (rare branch)
       if vtop.initBigInt + zhi < 0:
@@ -1039,6 +1045,15 @@ when isMainModule:
   #echo b.toString(16)
   #echo "91914383230618135761690975197207778399550061809281766160147273830617914855857".initBigInt.toString(16)
 
+  #var x = initBigInt("2255875222507173014903831549779832674595557833545810114678871681588232398142786344083210556465068007125337448701463750107379031912851019881138289772814467603519957280600094236460918741699178978152447128809716538793960237414981350687")
+  #var y = initBigInt("115792089237316195423570985008687907853269984665640564039457584007908834671663")
+  #echo "19482118660833131143565059488889132062536031277944370802080045650318995799224424488550052744512926453902359616090610097833707910217541850445599669546171445"
+  #echo x div y
+  #echo "---"
+  #echo "48317604920791681227269902149572831041666497563152549156566744096979700087652"
+  #echo x mod y
+
+  # TODO: Fix me
   var x: BigInt = @[175614014'u32, 1225800181'u32].initBigInt
   x = x shr 32
   echo x
