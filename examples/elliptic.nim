@@ -1,3 +1,5 @@
+# By Cyther606: http://forum.nimrod-lang.org/t/522
+# Adapted from: https://github.com/wobine/blackboard101/blob/master/EllipticCurvesPart4-PrivateKeyToPublicKey.py
 import bigints, math, strutils
 
 proc `^`(base: int; exp: int): BigInt =
