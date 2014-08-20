@@ -22,6 +22,7 @@ proc initBigInt*(vals: seq[uint32], flags: set[Flags] = {}): BigInt =
   result.flags = flags
 
 proc initBigInt*[T: int|int16|int32|uint|uint16|uint32](val: T): BigInt =
+  # TODO: int64
   result.limbs = @[uint32(abs(int64(val)))]
   result.flags = {}
   if int64(val) < 0:
@@ -848,8 +849,8 @@ proc initBigInt*(str: string, base: range[2..36] = 10): BigInt =
       let c = toLower(str[j])
 
       # This is pretty expensive
-      #if not (c in digits[0..base]):
-      #  raise newException(EInvalidValue, "Invalid input: " & str[j])
+      if not (c in digits[0..base]):
+        raise newException(EInvalidValue, "Invalid input: " & str[j])
 
       case c
       of '0'..'9': num += smul * uint32(ord(c) - ord('0'))
