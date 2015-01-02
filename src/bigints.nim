@@ -860,12 +860,12 @@ proc initBigInt*(str: string, base: range[2..36] = 10): BigInt =
 
       # This is pretty expensive
       if not (c in digits[0..base]):
-        raise newException(EInvalidValue, "Invalid input: " & str[j])
+        raise newException(ValueError, "Invalid input: " & str[j])
 
       case c
       of '0'..'9': num += smul * uint32(ord(c) - ord('0'))
       of 'a'..'z': num += smul * uint32(ord(c) - ord('a') + 10)
-      else: raise newException(EInvalidValue, "Invalid input: " & str[j])
+      else: raise newException(ValueError, "Invalid input: " & str[j])
 
       smul *= base
     result += mul * initBigInt(num)
