@@ -54,7 +54,7 @@ proc ecDouble(a: tuple): tuple =
 
 proc ecMultiply(genPoint: tuple, scalarHex): tuple =
   if scalarHex == 0 or scalarHex >= N:
-    raise newException(E_base, "Invalid Scalar/Private Key")
+    raise newException(Exception, "Invalid Scalar/Private Key")
   var
     scalarBin = scalarHex.toString(base = 2)
     q = genPoint
