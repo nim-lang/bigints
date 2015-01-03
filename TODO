@@ -1,7 +1,5 @@
 - Fix the library on 32bit
 - Fix the templates so they work with uninitialized (nil) values!
-- Use implicit converters to comfortably use integer literals and conversions
-  from ints
 - karatsuba multiplication
 - better addition
 - everything in combination with normal ints and uints too
