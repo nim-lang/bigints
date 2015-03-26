@@ -881,6 +881,14 @@ proc inc*(a: var BigInt, b: int32 = 1) =
   let c = a
   additionInt(a, c, b)
 
+proc dec*(a: var BigInt, b: BigInt) =
+  let c = a
+  subtraction(a, c, b)
+
+proc dec*(a: var BigInt, b: int32 = 1) =
+  let c = a
+  subtractionInt(a, c, b)
+
 iterator countdown*(a, b: BigInt, step: int32 = 1) {.inline.} =
   var res = a
   while res >= b:
@@ -1102,5 +1110,5 @@ when isMainModule:
 
   #let two = 2.initBigInt
   #let n = initBigInt "19482118660833131143565059488889132062536031277944370802080045650318995799224424488550052744512926453902359616090610097833707910217541850445599669546171445"
-  #for i in two .. n:
+  #for i in countdown(n, two):
   #  echo i
