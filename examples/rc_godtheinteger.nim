@@ -3,7 +3,7 @@ import bigints
 
 var cache = @[@[1.initBigInt]]
 
-proc cumu(n): seq[BigInt] =
+proc cumu(n: int): seq[BigInt] =
   for l in cache.len .. n:
     var r = @[0.initBigInt]
     for x in 1..l:
@@ -11,7 +11,7 @@ proc cumu(n): seq[BigInt] =
     cache.add r
   result = cache[n]
 
-proc row(n): seq[BigInt] =
+proc row(n: int): seq[BigInt] =
   let r = cumu n
   result = @[]
   for i in 0 .. <n:

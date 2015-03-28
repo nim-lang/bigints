@@ -37,14 +37,14 @@ proc modinv(a: BigInt): BigInt =
     swap highm, lowm
   result = lm mod Pcurve
 
-proc ecAdd(a: tuple, b: tuple): tuple =
+proc ecAdd(a: tuple, b: tuple): (BigInt, BigInt) =
   let
     lamAdd = ((b[1] - a[1]) * modinv(b[0] - a[0])) mod Pcurve
     x = (lamAdd * lamAdd - a[0] - b[0]) mod Pcurve
     y = (lamAdd * (a[0] - x) - a[1]) mod Pcurve
   result = (x, y)
 
-proc ecDouble(a: tuple): tuple =
+proc ecDouble(a: tuple): (BigInt, BigInt) =
   var
     lam = ((3.initBigInt * a[0] * a[0] + Acurve) * modinv(2.initBigInt * a[1]))
     x = ((lam * lam) - (2.initBigInt * a[0])) mod Pcurve
@@ -52,7 +52,7 @@ proc ecDouble(a: tuple): tuple =
   lam = lam mod Pcurve
   result = (x, y)
 
-proc ecMultiply(genPoint: tuple, scalarHex): tuple =
+proc ecMultiply(genPoint: tuple, scalarHex: BigInt): (BigInt, BigInt) =
   if scalarHex == 0 or scalarHex >= N:
     raise newException(Exception, "Invalid Scalar/Private Key")
   var
@@ -62,7 +62,7 @@ proc ecMultiply(genPoint: tuple, scalarHex): tuple =
     q = ecDouble(q)
     if scalarBin[i] == '1':
       q = ecAdd(q, genPoint)
-  result = (q)
+  result = q
 
 proc main() =
   let publicKey = ecMultiply(Gpoint, privKey)

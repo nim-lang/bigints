@@ -3,7 +3,7 @@ import bigints
 
 const
   nMax: int32 = 250
-  nBranches = 4
+  nBranches: int32 = 4
 
 var rooted, unrooted: array[nMax + 1, BigInt]
 rooted[0..1] = [1.initBigInt, 1.initBigInt]
@@ -12,7 +12,7 @@ for i in 2 .. nMax:
   rooted[i] = 0.initBigInt
   unrooted[i] = 0.initBigInt
 
-proc choose(m, k): BigInt =
+proc choose(m: BigInt, k: int32): BigInt =
   result = m
   if k == 1: return
   for i in 1 .. < k:
@@ -32,7 +32,7 @@ proc tree(br, n, l, sum: int32, cnt: BigInt) =
     for m in countdown(n-1, 1):
       tree b, m, l, s, c
 
-proc bicenter(s) =
+proc bicenter(s: int32) =
   if (s and 1) == 0:
     unrooted[s] += rooted[s div 2] * (rooted[s div 2] + 1) div 2
 

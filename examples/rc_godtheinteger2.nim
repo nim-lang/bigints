@@ -3,7 +3,7 @@ import bigints
 
 var p = @[1.initBigInt]
 
-proc partitions(n): BigInt =
+proc partitions(n: int): BigInt =
   p.add 0.initBigInt
 
   for k in 1..n:

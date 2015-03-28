@@ -2,7 +2,7 @@
 
 import bigints, math
 
-proc hamming(limit): BigInt =
+proc hamming(limit: int): BigInt =
   var
     h = newSeq[BigInt](limit)
     x2 = initBigInt(2)
