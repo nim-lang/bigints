@@ -437,13 +437,11 @@ template `*=` *(a: var BigInt, b: BigInt) =
   var c = a
   multiplication(a, c, b)
 
-# noalias doesn't work yet (i think): https://github.com/Araq/Nimrod/issues/206
-# so we set the templates in the correct order instead
-template optMulInt*{x = `*`(y, z)}(x,y: BigInt, z: int32) = multiplicationInt(x, y, z)
+template optMulInt*{x = `*`(y, z)}(x: BigInt{noalias}, y: BigInt, z: int32) = multiplicationInt(x, y, z)
 
 template optMulSameInt*{x = `*`(x, z)}(x: BigInt, z: int32) = x *= z
 
-template optMul*{x = `*`(y, z)}(x,y,z: BigInt) = multiplication(x, y, z)
+template optMul*{x = `*`(y, z)}(x: BigInt{noalias}, y, z: BigInt) = multiplication(x, y, z)
 
 template optMulSame*{x = `*`(x, z)}(x,z: BigInt) = x *= z
 
