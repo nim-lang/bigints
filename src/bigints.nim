@@ -275,11 +275,11 @@ proc `+` *(a, b: BigInt): BigInt=
   addition(result, a, b)
 
 template `+=` *(a: var BigInt, b: BigInt) =
-  let c = a
+  var c = a
   addition(a, c, b)
 
 template `+=` *(a: var BigInt, b: int32) =
-  let c = a
+  var c = a
   additionInt(a, c, b)
 
 template optAddInt*{x = y + z}(x,y: BigInt, z: int32) = additionInt(x, y, z)
@@ -319,7 +319,7 @@ proc `-` *(a: BigInt, b: int32): BigInt=
   subtractionInt(result, a, b)
 
 template `-=` *(a: var BigInt, b: int32) =
-  let c = a
+  var c = a
   subtractionInt(a, c, b)
 
 proc `-` *(a, b: BigInt): BigInt=
@@ -327,7 +327,7 @@ proc `-` *(a, b: BigInt): BigInt=
   subtraction(result, a, b)
 
 template `-=` *(a: var BigInt, b: BigInt) =
-  let c = a
+  var c = a
   subtraction(a, c, b)
 
 template optSub*{x = y - z}(x,y,z: BigInt) = subtraction(x, y, z)
@@ -426,7 +426,7 @@ proc `*` *(a: BigInt, b: int32): BigInt =
   multiplicationInt(result, a, b)
 
 template `*=` *(a: var BigInt, b: int32) =
-  let c = a
+  var c = a
   multiplicationInt(a, c, b)
 
 proc `*` *(a, b: BigInt): BigInt =
@@ -434,7 +434,7 @@ proc `*` *(a, b: BigInt): BigInt =
   multiplication(result, a, b)
 
 template `*=` *(a: var BigInt, b: BigInt) =
-  let c = a
+  var c = a
   multiplication(a, c, b)
 
 # noalias doesn't work yet (i think): https://github.com/Araq/Nimrod/issues/206
@@ -874,19 +874,19 @@ proc initBigInt*(str: string, base: range[2..36] = 10): BigInt =
   result.flags = fs
 
 proc inc*(a: var BigInt, b: BigInt) =
-  let c = a
+  var c = a
   addition(a, c, b)
 
 proc inc*(a: var BigInt, b: int32 = 1) =
-  let c = a
+  var c = a
   additionInt(a, c, b)
 
 proc dec*(a: var BigInt, b: BigInt) =
-  let c = a
+  var c = a
   subtraction(a, c, b)
 
 proc dec*(a: var BigInt, b: int32 = 1) =
-  let c = a
+  var c = a
   subtractionInt(a, c, b)
 
 iterator countdown*(a, b: BigInt, step: int32 = 1) {.inline.} =
