@@ -1,6 +1,6 @@
 [Package]
 name: "bigints"
-version: "0.2"
+version: "0.3"
 author: "Dennis Felsing"
 description: "Arbitrary-precision integers"
 license: "MIT"
@@ -8,4 +8,4 @@ license: "MIT"
 srcDir: "src"
 
 [Deps]
-requires: "nimrod > 0.9.4"
+requires: "nim > 0.10"
