@@ -887,19 +887,19 @@ proc dec*(a: var BigInt, b: int32 = 1) =
   var c = a
   subtractionInt(a, c, b)
 
-iterator countdown*(a, b: BigInt, step: int32 = 1) {.inline.} =
+iterator countdown*(a, b: BigInt, step: int32 = 1): BigInt {.inline.} =
   var res = a
   while res >= b:
     yield res
     dec(res, step)
 
-iterator countup*(a, b: BigInt, step: int32 = 1) {.inline.} =
+iterator countup*(a, b: BigInt, step: int32 = 1): BigInt {.inline.} =
   var res = a
   while res <= b:
     yield res
     inc(res, step)
 
-iterator `..`*(a, b: BigInt) {.inline.} =
+iterator `..`*(a, b: BigInt): BigInt {.inline.} =
   var res = a
   while res <= b:
     yield res
