@@ -1,4 +1,4 @@
-import unsigned, strutils
+import strutils
 
 type
   Flags = enum
