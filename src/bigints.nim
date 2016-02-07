@@ -166,6 +166,10 @@ proc negate(a: var BigInt) =
   else:
     a.flags.incl(Negative)
 
+proc `-`*(a: BigInt): BigInt =
+  result = a
+  result.flags.incl(Negative)
+
 # Works when a = b
 # Assumes positive parameters and b > c
 template realUnsignedSubtractionInt(a: var BigInt, b: BigInt, c: int32) =
