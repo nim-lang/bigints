@@ -1,6 +1,6 @@
 [Package]
 name: "bigints"
-version: "0.3"
+version: "0.4"
 author: "Dennis Felsing"
 description: "Arbitrary-precision integers"
 license: "MIT"
