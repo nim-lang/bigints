@@ -8,6 +8,12 @@ type
     limbs: seq[uint32]
     flags: set[Flags]
 
+proc setXLen[T](s: var seq[T]; newlen: Natural) =
+  if s.isNil:
+    s = newSeq[T](newlen)
+  else:
+    s.setLen(newlen)
+
 const maxInt = int64(high uint32)
 
 proc normalize(a: var BigInt) =
@@ -114,7 +120,7 @@ proc unsignedAdditionInt(a: var BigInt, b: BigInt, c: int32) =
   const cl = 1
   const m = 1
 
-  a.limbs.setLen(bl)
+  a.limbs.setXLen(bl)
 
   tmp = uint64(b.limbs[0]) + uint64(c)
   a.limbs[0] = uint32(tmp)
@@ -137,7 +143,7 @@ proc unsignedAddition(a: var BigInt, b, c: BigInt) =
     cl = c.limbs.len
   var m = if bl < cl: bl else: cl
 
-  a.limbs.setLen(if bl < cl: cl else: bl)
+  a.limbs.setXLen(if bl < cl: cl else: bl)
 
   for i in 0 .. < m:
     addParts(uint64(b.limbs[i]) + uint64(c.limbs[i]))
@@ -169,7 +175,7 @@ template realUnsignedSubtractionInt(a: var BigInt, b: BigInt, c: int32) =
   const cl = 1
   const m = cl
 
-  a.limbs.setLen(bl)
+  a.limbs.setXLen(bl)
 
   block:
     const i = 0
@@ -198,7 +204,7 @@ template realUnsignedSubtraction(a: var BigInt, b, c: BigInt) =
     cl = c.limbs.len
   var m = if bl < cl: bl else: cl
 
-  a.limbs.setLen(if bl < cl: cl else: bl)
+  a.limbs.setXLen(if bl < cl: cl else: bl)
 
   for i in 0 .. < m:
     tmp = int64(uint32.high) + 1 + int64(b.limbs[i]) - int64(c.limbs[i]) - tmp
@@ -380,7 +386,7 @@ proc multiplicationInt(a: var BigInt, b: BigInt, c: int32) =
   var
     tmp, tmp2, tmp3: uint64
 
-  a.limbs.setLen(bl + 1)
+  a.limbs.setXLen(bl + 1)
 
   unsignedMultiplicationInt(a, b, c, bl)
 
@@ -403,7 +409,7 @@ proc multiplication(a: var BigInt, b, c: BigInt) =
   var
     tmp, tmp2, tmp3: uint64
 
-  a.limbs.setLen(bl + cl)
+  a.limbs.setXLen(bl + cl)
 
   if cl > bl:
     unsignedMultiplication(a, c, b, cl, bl)
@@ -447,7 +453,7 @@ template optMulSame*{x = `*`(x, z)}(x,z: BigInt) = x *= z
 
 # Works when a = b
 proc shiftRight(a: var BigInt, b: BigInt, c: int) =
-  a.limbs.setLen(b.limbs.len)
+  a.limbs.setXLen(b.limbs.len)
   var carry: uint64
   let d = c div 32
   let e = c mod 32
@@ -458,10 +464,10 @@ proc shiftRight(a: var BigInt, b: BigInt, c: int) =
     carry = uint32(acc and mask)
     a.limbs[i - d] = uint32(acc shr uint32(e))
 
-  a.limbs.setLen(a.limbs.len - d)
+  a.limbs.setXLen(a.limbs.len - d)
 
   if a.limbs.len > 1 and a.limbs[a.limbs.high] == 0:
-    a.limbs.setLen(a.limbs.high)
+    a.limbs.setXLen(a.limbs.high)
 
 proc `shr` *(x: BigInt, y: int): BigInt =
   result = null
@@ -471,7 +477,7 @@ template optShr*{x = y shr z}(x, y: BigInt, z) = shiftRight(x, y, z)
 
 # Works when a = b
 proc shiftLeft(a: var BigInt, b: BigInt, c: int) =
-  a.limbs.setLen(b.limbs.len)
+  a.limbs.setXLen(b.limbs.len)
   var carry: uint32
 
   for i in 0..b.limbs.high:
@@ -489,12 +495,12 @@ proc `shl` *(x: BigInt, y: int): BigInt =
 template optShl*{x = y shl z}(x, y: BigInt, z) = shiftLeft(x, y, z)
 
 proc reset*(a: var BigInt) =
-  a.limbs.setLen(1)
+  a.limbs.setXLen(1)
   a.limbs[0] = 0
   a.flags = {}
 
 proc unsignedDivRem(q: var BigInt, r: var uint32, n: BigInt, d: uint32) =
-  q.limbs.setLen(n.limbs.len)
+  q.limbs.setXLen(n.limbs.len)
   r = 0
 
   for i in countdown(n.limbs.high, 0):
@@ -530,7 +536,7 @@ proc unsignedDivRem(q, r: var BigInt, n, d: BigInt) =
   elif dn == 1:
     var x: uint32
     unsignedDivRem(q, x, n, d.limbs[0])
-    r.limbs.setLen(1)
+    r.limbs.setXLen(1)
     r.limbs[0] = x
     r.flags = {}
   else:
@@ -611,7 +617,7 @@ proc unsignedDivRem(q, r: var BigInt, n, d: BigInt) =
       a.limbs[ak] = uint32(q1)
 
     # unshift remainder, we reuse w1 to store the result
-    q.limbs.setLen(dn)
+    q.limbs.setXLen(dn)
     r = q shr ls
 
     normalize(r)
