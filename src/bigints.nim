@@ -745,8 +745,7 @@ proc calcSizes(): array[2..36, int] =
 
 #const sizes: array[2..36, int] = [31,20,15,13,12,11,10,10,9,9,8,8,8,8,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,6,6,6,6,6,6]
 
-# not working with consts
-let sizes = calcSizes()
+const sizes = calcSizes()
 
 proc toStringMultipleTwo(a: BigInt, base: range[2..36] = 16): string =
   assert(base in multiples)
