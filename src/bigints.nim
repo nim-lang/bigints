@@ -594,11 +594,19 @@ proc unsignedDivRem(q, r: var BigInt, n, d: BigInt) =
         z *= q1b
         z.flags.incl Negative
         z += zhi
+        var z1 = z
         qib.limbs[0] = q.limbs[v+i]
         z += qib
-        q.limbs[v+i] = not z.limbs[0] + 1
+
+        if z < 0:
+          q.limbs[v+i] = not z.limbs[0] + 1
+        else:
+          q.limbs[v+i] = z.limbs[0]
+
         if z.limbs.len > 1:
-          zhi.limbs[0] = z.limbs[1] + 1
+          zhi.limbs[0] = z1.limbs[1]
+          if z1.limbs[0] > qib.limbs[0]:
+            zhi.limbs[0] += 1
           zhi.flags.incl Negative
         elif z < 0:
           zhi.limbs[0] = 1
@@ -610,7 +618,8 @@ proc unsignedDivRem(q, r: var BigInt, n, d: BigInt) =
       if vtop.initBigInt + zhi < 0:
         carry = 0
         for i in 0 .. <dn:
-          carry += q.limbs[v+i] + r.limbs[i]
+          carry += q.limbs[v+i]
+          carry += r.limbs[i]
           q.limbs[v+i] = uint32(carry)
           carry = carry shr 32
         dec(q1)
