@@ -1,11 +1,12 @@
-[Package]
-name: "bigints"
-version: "0.4.1"
-author: "Dennis Felsing"
-description: "Arbitrary-precision integers"
-license: "MIT"
+# Package
 
-srcDir: "src"
+version     = "0.4.1"
+author      = "Dennis Felsing"
+description = "Arbitrary-precision integers implemented in pure Nim"
+license     = "MIT"
 
-[Deps]
-requires: "nim > 0.10"
+srcDir      = "src"
+
+# Dependencies
+
+requires "nim > 0.10"
