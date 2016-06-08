@@ -10,3 +10,6 @@ srcDir      = "src"
 # Dependencies
 
 requires "nim > 0.10"
+
+task tests, "Test bigints":
+  exec "nim c -r tests/tester"
