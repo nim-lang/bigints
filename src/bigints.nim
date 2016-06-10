@@ -28,11 +28,34 @@ proc initBigInt*(vals: seq[uint32], flags: set[Flags] = {}): BigInt =
   result.flags = flags
 
 proc initBigInt*[T: int|int16|int32|uint|uint16|uint32](val: T): BigInt =
-  # TODO: int64
   result.limbs = @[uint32(abs(int64(val)))]
   result.flags = {}
   if int64(val) < 0:
     result.flags.incl(Negative)
+
+proc initBigInt*(val: int64): BigInt =
+  if val < int32.low or val > int32.high:
+    result.flags = {}
+    var x: uint64
+
+    if val < 0:
+      result.flags.incl Negative
+      x = uint64(not val) + 1
+    else:
+      x = val.uint64
+
+    result.limbs = @[(val mod (1 shl 32)).uint32]
+    result.limbs.add((val shr 32).uint32)
+  else:
+    result = int32(val).initBigInt
+
+proc initBigInt*(val: uint64): BigInt =
+  if val > uint32.high.uint64:
+    result.limbs = @[(val mod (1 shl 32)).uint32]
+    result.limbs.add((val shr 32).uint32)
+    result.flags = {}
+  else:
+    result = uint32(val).initBigInt
 
 const null = initBigInt(0)
 const one = initBigInt(1)
