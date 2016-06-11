@@ -1,5 +1,27 @@
 import bigints, unittest
 
+test "initBigInt":
+  let a = 1234567.initBigInt
+  check $a == "1234567"
+
+  let b = -1234567.initBigInt
+  check $b == "-1234567"
+
+  let c = 123456789012345678.initBigInt
+  check $c == "123456789012345678"
+
+  let d = -123456789012345678.initBigInt
+  check $d == "-123456789012345678"
+
+  let e = int64.high.initBigInt
+  check $e == $int64.high
+
+  let f = int64.low.initBigInt
+  check $f == $int64.low
+
+  let g = (1'u64 shl 63).initBigInt
+  check $g == $(1'u64 shl 63)
+
 test "range of bigint (https://github.com/def-/nim-bigints/issues/1)":
   let two = 2.initBigInt
   let n = "123".initBigInt
