@@ -742,6 +742,10 @@ proc `divmod` *(a, b: BigInt): tuple[q, r: BigInt] =
 #  var tmp = null
 #  division(tmp, x, y, z)
 
+proc `%%` *(a: BigInt, b: int32): BigInt = a mod b
+
+proc `%%` *(a, b: BigInt): BigInt = a mod b
+
 template optDivMod*{w = y div z; x = y mod z}(w,x,y,z: BigInt) =
   division(w, x, y, z)
 
