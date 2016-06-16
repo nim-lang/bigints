@@ -64,3 +64,20 @@ test "off by one in division (https://github.com/def-/nim-bigints/issues/5)":
     var x = initBigInt("815915283247897734345611269596115894272000000000")
     var y = initBigInt("20000000000")
     check x div y == initBigInt("40795764162394886717280563479805794713")
+
+test "Mod operators":
+  block:
+    let
+      x = 10.initBigInt
+      y = 2.initBigInt
+      z = 3.initBigInt
+    check x %% y == 0.initBigInt
+    check x %% z == 1.initBigInt
+
+  block:
+    let
+      x = 10.initBigInt
+      y = 2'i32
+      z = 3'i32
+    check x %% y == 0.initBigInt
+    check x %% z == 1.initBigInt
