@@ -22,6 +22,10 @@ test "initBigInt":
   let g = (1'u64 shl 63).initBigInt
   check $g == $(1'u64 shl 63)
 
+  let h = 1234567.initBigInt
+  let i = h.initBigInt
+  check $h == $i
+
 test "range of bigint (https://github.com/def-/nim-bigints/issues/1)":
   let two = 2.initBigInt
   let n = "123".initBigInt
