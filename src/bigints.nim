@@ -57,6 +57,9 @@ proc initBigInt*(val: uint64): BigInt =
   else:
     result = uint32(val).initBigInt
 
+proc initBigInt*(val: BigInt): BigInt =
+  result = val
+
 const null = initBigInt(0)
 const one = initBigInt(1)
 
