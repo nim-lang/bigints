@@ -194,7 +194,10 @@ proc negate(a: var BigInt) =
 
 proc `-`*(a: BigInt): BigInt =
   result = a
-  result.flags.incl(Negative)
+  if Negative in a.flags:
+    result.flags.excl(Negative)
+  else:
+    result.flags.incl(Negative)
 
 # Works when a = b
 # Assumes positive parameters and b > c
