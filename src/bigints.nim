@@ -14,8 +14,6 @@ proc setXLen[T](s: var seq[T]; newlen: Natural) =
   else:
     s.setLen(newlen)
 
-const maxInt = int64(high uint32)
-
 proc normalize(a: var BigInt) =
   for i in countdown(a.limbs.high, 0):
     if a.limbs[i] > 0'u32:
@@ -27,7 +25,7 @@ proc initBigInt*(vals: seq[uint32], flags: set[Flags] = {}): BigInt =
   result.limbs = vals
   result.flags = flags
 
-proc initBigInt*[T: int|int16|int32|uint|uint16|uint32](val: T): BigInt =
+proc initBigInt*[T: int8|int16|int32|uint|uint8|uint16|uint32](val: T): BigInt =
   result.limbs = @[uint32(abs(int64(val)))]
   result.flags = {}
   if int64(val) < 0:
@@ -143,7 +141,6 @@ proc unsignedAdditionInt(a: var BigInt, b: BigInt, c: int32) =
   var tmp: uint64
 
   let bl = b.limbs.len
-  const cl = 1
   const m = 1
 
   a.limbs.setXLen(bl)
@@ -416,8 +413,7 @@ template unsignedMultiplication(a: BigInt, b, c: BigInt, bl, cl) =
 # This doesn't work when a = b
 proc multiplicationInt(a: var BigInt, b: BigInt, c: int32) =
   let bl = b.limbs.len
-  var
-    tmp, tmp2, tmp3: uint64
+  var tmp: uint64
 
   a.limbs.setXLen(bl + 1)
 
@@ -439,8 +435,7 @@ proc multiplication(a: var BigInt, b, c: BigInt) =
   let
     bl = b.limbs.len
     cl = c.limbs.len
-  var
-    tmp, tmp2, tmp3: uint64
+  var tmp: uint64
 
   a.limbs.setXLen(bl + cl)
 
@@ -901,7 +896,7 @@ proc initBigInt*(str: string, base: range[2..36] = 10): BigInt =
     var smul = 1'u32
     var num: uint32
     for j in countdown(min(i + size - 1, str.high), max(i, first)):
-      let c = toLower(str[j])
+      let c = toLowerAscii(str[j])
 
       # This is pretty expensive
       if not (c in digits[0..base]):

@@ -12,7 +12,7 @@ proc hamming(limit: int): BigInt =
   for i in 0..h.high: h[i] = initBigInt(1)
 
   for n in 1 .. < limit:
-    h[n] = min(x2, x3, x5)
+    h[n] = min([x2, x3, x5])
     if x2 == h[n]:
       inc i
       x2 = h[i] * 2
