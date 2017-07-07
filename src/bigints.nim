@@ -58,7 +58,7 @@ proc initBigInt*(val: uint64): BigInt =
 proc initBigInt*(val: BigInt): BigInt =
   result = val
 
-const null = initBigInt(0)
+const zero = initBigInt(0)
 const one = initBigInt(1)
 
 proc unsignedCmp(a: BigInt, b: int32): int64 =
@@ -303,11 +303,11 @@ proc addition(a: var BigInt, b, c: BigInt) =
       unsignedAddition(a, b, c)
 
 proc `+` *(a: BigInt, b: int32): BigInt=
-  result = null
+  result = zero
   additionInt(result, a, b)
 
 proc `+` *(a, b: BigInt): BigInt=
-  result = null
+  result = zero
   addition(result, a, b)
 
 template `+=` *(a: var BigInt, b: BigInt) =
@@ -351,7 +351,7 @@ proc subtraction(a: var BigInt, b, c: BigInt) =
       unsignedSubtraction(a, b, c)
 
 proc `-` *(a: BigInt, b: int32): BigInt=
-  result = null
+  result = zero
   subtractionInt(result, a, b)
 
 template `-=` *(a: var BigInt, b: int32) =
@@ -359,7 +359,7 @@ template `-=` *(a: var BigInt, b: int32) =
   subtractionInt(a, c, b)
 
 proc `-` *(a, b: BigInt): BigInt=
-  result = null
+  result = zero
   subtraction(result, a, b)
 
 template `-=` *(a: var BigInt, b: BigInt) =
@@ -456,7 +456,7 @@ proc multiplication(a: var BigInt, b, c: BigInt) =
       a.flags.excl(Negative)
 
 proc `*` *(a: BigInt, b: int32): BigInt =
-  result = null
+  result = zero
   multiplicationInt(result, a, b)
 
 template `*=` *(a: var BigInt, b: int32) =
@@ -464,7 +464,7 @@ template `*=` *(a: var BigInt, b: int32) =
   multiplicationInt(a, c, b)
 
 proc `*` *(a, b: BigInt): BigInt =
-  result = null
+  result = zero
   multiplication(result, a, b)
 
 template `*=` *(a: var BigInt, b: BigInt) =
@@ -498,7 +498,7 @@ proc shiftRight(a: var BigInt, b: BigInt, c: int) =
     a.limbs.setXLen(a.limbs.high)
 
 proc `shr` *(x: BigInt, y: int): BigInt =
-  result = null
+  result = zero
   shiftRight(result, x, y)
 
 template optShr*{x = y shr z}(x, y: BigInt, z) = shiftRight(x, y, z)
@@ -517,7 +517,7 @@ proc shiftLeft(a: var BigInt, b: BigInt, c: int) =
     a.limbs.add(carry)
 
 proc `shl` *(x: BigInt, y: int): BigInt =
-  result = null
+  result = zero
   shiftLeft(result, x, y)
 
 template optShl*{x = y shl z}(x, y: BigInt, z) = shiftLeft(x, y, z)
@@ -581,7 +581,7 @@ proc unsignedDivRem(q, r: var BigInt, n, d: BigInt) =
 
     let k = nn - dn
     assert k >= 0
-    var a = null
+    var a = zero
     a.limbs.setLen(k)
     let wm1 = r.limbs[r.limbs.high]
     let wm2 = r.limbs[r.limbs.high-1]
@@ -704,43 +704,43 @@ proc division(q, r: var BigInt, n: BigInt, d: int32) =
     q -= one
 
 proc `div` *(a: BigInt, b: int32): BigInt =
-  result = null
-  var tmp = null
+  result = zero
+  var tmp = zero
   division(result, tmp, a, b)
 
 proc `div` *(a, b: BigInt): BigInt =
-  result = null
-  var tmp = null
+  result = zero
+  var tmp = zero
   division(result, tmp, a, b)
 
 proc `mod` *(a: BigInt, b: int32): BigInt =
-  result = null
-  var tmp = null
+  result = zero
+  var tmp = zero
   division(tmp, result, a, b)
 
 proc `mod` *(a, b: BigInt): BigInt =
-  result = null
-  var tmp = null
+  result = zero
+  var tmp = zero
   division(tmp, result, a, b)
 
 proc `divmod` *(a: BigInt, b: int32): tuple[q, r: BigInt] =
-  result.q = null
-  result.r = null
+  result.q = zero
+  result.r = zero
   division(result.q, result.r, a, b)
 
 proc `divmod` *(a, b: BigInt): tuple[q, r: BigInt] =
-  result.q = null
-  result.r = null
+  result.q = zero
+  result.r = zero
   division(result.q, result.r, a, b)
 
 # TODO: This doesn't work because it's applied before the other rules, which
 # should take precedence. This also doesn't work for x = y etc
 #template optDiv*{x = y div z}(x,y,z: BigInt) =
-#  var tmp = null
+#  var tmp = zero
 #  division(x, tmp, y, z)
 #
 #template optMod*{x = y mod z}(x,y,z: BigInt) =
-#  var tmp = null
+#  var tmp = zero
 #  division(tmp, x, y, z)
 
 template optDivMod*{w = y div z; x = y mod z}(w,x,y,z: BigInt) =
