@@ -947,6 +947,12 @@ iterator `..`*(a, b: BigInt): BigInt {.inline.} =
     yield res
     inc res
 
+iterator `..<`*(a, b: BigInt): BigInt {.inline.} =
+  var res = a
+  while res < b:
+    yield res
+    inc res
+
 when isMainModule:
   # We're about twice as slow as GMP in these microbenchmarks:
 
