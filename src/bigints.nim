@@ -25,35 +25,43 @@ proc initBigInt*(vals: seq[uint32], flags: set[Flags] = {}): BigInt =
   result.limbs = vals
   result.flags = flags
 
-proc initBigInt*[T: int8|int16|int32|uint|uint8|uint16|uint32](val: T): BigInt =
-  result.limbs = @[uint32(abs(int64(val)))]
+proc initBigInt*[T: int8|int16|int32](val: T): BigInt =
+  if val < 0:
+    result.limbs = @[not(val.int32.uint32) + 1]
+    result.flags = {Negative}
+  else:
+    result.limbs = @[val.int32.uint32]
+    result.flags = {}
+
+proc initBigInt*[T: uint8|uint16|uint32](val: T): BigInt =
+  result.limbs = @[val.uint32]
   result.flags = {}
-  if int64(val) < 0:
-    result.flags.incl(Negative)
 
 proc initBigInt*(val: int64): BigInt =
-  if val < int32.low or val > int32.high:
-    result.flags = {}
-    var x: uint64
-
-    if val < 0:
-      result.flags.incl Negative
-      x = uint64(not val) + 1
-    else:
-      x = val.uint64
-
-    result.limbs = @[(val mod (1 shl 32)).uint32]
-    result.limbs.add((val shr 32).uint32)
+  var a = val.uint64
+  if val < 0:
+    a = not(a) + 1
+    result.flags = {Negative}
   else:
-    result = int32(val).initBigInt
+    result.flags = {}
+  if a > uint32.high.uint64:
+    result.limbs = @[a.uint32, (a shr 32).uint32]
+  else:
+    result.limbs = @[a.uint32]
 
 proc initBigInt*(val: uint64): BigInt =
   if val > uint32.high.uint64:
-    result.limbs = @[(val mod (1 shl 32)).uint32]
-    result.limbs.add((val shr 32).uint32)
-    result.flags = {}
+    result.limbs = @[val.uint32, (val shr 32).uint32]
   else:
-    result = uint32(val).initBigInt
+    result.limbs = @[val.uint32]
+  result.flags = {}
+
+when sizeof(int) == 4:
+  template initBigInt*(val: int): BigInt = initBigInt(val.int32)
+  template initBigInt*(val: uint): BigInt = initBigInt(val.uint32)
+else:
+  template initBigInt*(val: int): BigInt = initBigInt(val.int64)
+  template initBigInt*(val: uint): BigInt = initBigInt(val.uint64)
 
 proc initBigInt*(val: BigInt): BigInt =
   result = val

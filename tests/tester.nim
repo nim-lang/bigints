@@ -26,6 +26,23 @@ test "initBigInt":
   let i = h.initBigInt
   check $h == $i
 
+  # test various bit patterns at power-of-two boundaries
+  block:
+    proc chk[T](v: T) =
+      check $v == $(v.initBigInt)
+    for bits in 0 .. 63:
+      let x = 1'u64 shl bits
+      let start = if x >= 8'u64: x - 8 else: 0'u64
+      let stop = x + 8
+      for vv in start .. stop:
+        for v in [vv, not(vv)]:
+          chk v.int
+          chk v.uint
+          chk v.int64
+          chk v.uint64
+          chk v.int32
+          chk v.uint32
+
 test "range of bigint (https://github.com/def-/nim-bigints/issues/1)":
   let two = 2.initBigInt
   let n = "123".initBigInt
