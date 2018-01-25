@@ -81,3 +81,23 @@ test "off by one in division (https://github.com/def-/nim-bigints/issues/5)":
     var x = initBigInt("815915283247897734345611269596115894272000000000")
     var y = initBigInt("20000000000")
     check x div y == initBigInt("40795764162394886717280563479805794713")
+
+test "negative zero flags (https://github.com/def-/nim-bigints/issues/16)":
+  let 
+    a = initBigInt("828478292990482")
+    b = initBigInt(9283)
+    c = initBigInt("-828478292990482")
+    d = initBigInt(-9283)
+    e = initBigInt(0)
+  check b + d == e
+  check a + c == e
+
+  check d + b == e
+  check c + a == e
+
+  check b - b == e
+  check d - d == e
+
+  check d * e == e
+  check b * e == e
+  check e div d == e
