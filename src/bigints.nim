@@ -273,14 +273,16 @@ proc unsignedSubtractionInt(a: var BigInt, b: BigInt, c: int32) =
   else:
     # TODO: is this right?
     realUnsignedSubtractionInt(a, b, c)
-    negate(a)
+    if a.limbs != @[0'u32]:
+      negate(a)
 
 proc unsignedSubtraction(a: var BigInt, b, c: BigInt) =
   if unsignedCmp(b, c) > 0:
     realUnsignedSubtraction(a, b, c)
   else:
     realUnsignedSubtraction(a, c, b)
-    negate(a)
+    if a.limbs != @[0'u32]:
+      negate(a)
 
 proc additionInt(a: var BigInt, b: BigInt, c: int32) =
   if Negative in b.flags:
@@ -427,6 +429,9 @@ proc multiplicationInt(a: var BigInt, b: BigInt, c: int32) =
 
   unsignedMultiplicationInt(a, b, c, bl)
 
+  if a.limbs == @[0'u32]:
+    return
+
   if Negative in b.flags:
     if c < 0:
       a.flags.excl(Negative)
@@ -451,6 +456,9 @@ proc multiplication(a: var BigInt, b, c: BigInt) =
     unsignedMultiplication(a, c, b, cl, bl)
   else:
     unsignedMultiplication(a, b, c, bl, cl)
+
+  if a.limbs == @[0'u32]:
+    return
 
   if Negative in b.flags:
     if Negative in c.flags:
@@ -689,6 +697,12 @@ proc division(q, r: var BigInt, n, d: BigInt) =
     r += d
     q -= one
 
+  if q.limbs == @[0'u32]:
+    q.flags.excl(Negative)
+
+  if r.limbs == @[0'u32]:
+    r.flags.excl(Negative)
+
 proc division(q, r: var BigInt, n: BigInt, d: int32) =
   r.reset()
   # TODO: is this correct?
@@ -710,6 +724,12 @@ proc division(q, r: var BigInt, n: BigInt, d: int32) =
      (r > 0 and d < 0):
     r += d
     q -= one
+
+  if q.limbs == @[0'u32]:
+    q.flags.excl(Negative)
+
+  if r.limbs == @[0'u32]:
+    r.flags.excl(Negative)
 
 proc `div` *(a: BigInt, b: int32): BigInt =
   result = zero
