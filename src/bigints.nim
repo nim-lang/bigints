@@ -9,7 +9,7 @@ type
     flags: set[Flags]
 
 proc setXLen[T](s: var seq[T]; newlen: Natural) =
-  if s.isNil:
+  if s == @[]:
     s = newSeq[T](newlen)
   else:
     s.setLen(newlen)

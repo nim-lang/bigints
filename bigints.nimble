@@ -1,6 +1,6 @@
 # Package
 
-version     = "0.4.1"
+version     = "0.4.2"
 author      = "Dennis Felsing"
 description = "Arbitrary-precision integers implemented in pure Nim"
 license     = "MIT"
