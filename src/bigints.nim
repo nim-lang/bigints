@@ -822,8 +822,8 @@ proc toStringMultipleTwo(a: BigInt, base: range[2..36] = 16): string =
   # Special case for the highest
   var x = a.limbs[a.limbs.high]
   while x > 0'u32:
-    cs.add(digits[int(x mod base)])
-    x = x div base
+    cs.add(digits[int(x mod base.uint32)])
+    x = x div base.uint32
   for j in countdown(cs.high, 0):
     result.add(cs[j])
 
@@ -832,8 +832,8 @@ proc toStringMultipleTwo(a: BigInt, base: range[2..36] = 16): string =
   for i in countdown(a.limbs.high - 1, 0):
     var x = a.limbs[i]
     for i in 0 .. < size:
-      cs[size - i - 1] = digits[int(x mod base)]
-      x = x div base
+      cs[size - i - 1] = digits[int(x mod base.uint32)]
+      x = x div base.uint32
     result.add(cs)
 
   if result.len == 0:
@@ -890,8 +890,8 @@ proc toString*(a: BigInt, base: range[2..36] = 10): string =
   while tmp > 0:
     unsignedDivRem(tmp, c, tmp, d)
     for i in 1 .. sizes[base]:
-      s.add(digits[int(c mod base)])
-      c = c div base
+      s.add(digits[int(c mod base.uint32)])
+      c = c div base.uint32
 
   var lastDigit = s.high
   while lastDigit > 0:
@@ -935,7 +935,7 @@ proc initBigInt*(str: string, base: range[2..36] = 10): BigInt =
       of 'a'..'z': num += smul * uint32(ord(c) - ord('a') + 10)
       else: raise newException(ValueError, "Invalid input: " & str[j])
 
-      smul *= base
+      smul *= base.uint32
     result += mul * initBigInt(num)
     mul *= initBigInt(smul)
 
