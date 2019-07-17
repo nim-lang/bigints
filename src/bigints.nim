@@ -1,3 +1,4 @@
+{.rangeChecks: off.}
 import strutils
 
 type
