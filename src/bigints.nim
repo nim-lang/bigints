@@ -157,7 +157,7 @@ proc unsignedAdditionInt(a: var BigInt, b: BigInt, c: int32) =
   a.limbs[0] = uint32(tmp)
   tmp = tmp shr 32
 
-  for i in m .. < bl:
+  for i in m ..< bl:
     addParts(uint64(b.limbs[i]))
 
   if tmp > 0'u64:
@@ -176,14 +176,14 @@ proc unsignedAddition(a: var BigInt, b, c: BigInt) =
 
   a.limbs.setXLen(if bl < cl: cl else: bl)
 
-  for i in 0 .. < m:
+  for i in 0 ..< m:
     addParts(uint64(b.limbs[i]) + uint64(c.limbs[i]))
 
   if bl < cl:
-    for i in m .. < cl:
+    for i in m ..< cl:
       addParts(uint64(c.limbs[i]))
   else:
-    for i in m .. < bl:
+    for i in m ..< bl:
       addParts(uint64(b.limbs[i]))
 
   if tmp > 0'u64:
@@ -221,7 +221,7 @@ template realUnsignedSubtractionInt(a: var BigInt, b: BigInt, c: int32) =
     a.limbs[i] = uint32(tmp)
     tmp = 1 - (tmp shr 32)
 
-  for i in m .. < bl:
+  for i in m ..< bl:
     tmp = int64(uint32.high) + 1 + int64(b.limbs[i]) - tmp
     a.limbs[i] = uint32(tmp)
     tmp = 1 - (tmp shr 32)
@@ -244,19 +244,19 @@ template realUnsignedSubtraction(a: var BigInt, b, c: BigInt) =
 
   a.limbs.setXLen(if bl < cl: cl else: bl)
 
-  for i in 0 .. < m:
+  for i in 0 ..< m:
     tmp = int64(uint32.high) + 1 + int64(b.limbs[i]) - int64(c.limbs[i]) - tmp
     a.limbs[i] = uint32(tmp)
     tmp = 1 - (tmp shr 32)
 
   if bl < cl:
-    for i in m .. < cl:
+    for i in m ..< cl:
       tmp = int64(uint32.high) + 1 - int64(c.limbs[i]) - tmp
       a.limbs[i] = uint32(tmp)
       tmp = 1 - (tmp shr 32)
     a.flags.incl(Negative)
   else:
-    for i in m .. < bl:
+    for i in m ..< bl:
       tmp = int64(uint32.high) + 1 + int64(b.limbs[i]) - tmp
       a.limbs[i] = uint32(tmp)
       tmp = 1 - (tmp shr 32)
@@ -379,7 +379,7 @@ template `-=` *(a: var BigInt, b: BigInt) =
 template optSub*{x = y - z}(x,y,z: BigInt) = subtraction(x, y, z)
 
 template unsignedMultiplicationInt(a: BigInt, b: BigInt, c: int32, bl) =
-  for i in 0 .. < bl:
+  for i in 0 ..< bl:
     tmp += uint64(b.limbs[i]) * uint64(c)
     a.limbs[i] = uint32(tmp)
     tmp = tmp shr 32
@@ -390,12 +390,12 @@ template unsignedMultiplicationInt(a: BigInt, b: BigInt, c: int32, bl) =
   normalize(a)
 
 template unsignedMultiplication(a: BigInt, b, c: BigInt, bl, cl) =
-  for i in 0 .. < bl:
+  for i in 0 ..< bl:
     tmp += uint64(b.limbs[i]) * uint64(c.limbs[0])
     a.limbs[i] = uint32(tmp)
     tmp = tmp shr 32
 
-  for i in bl .. < bl + cl:
+  for i in bl ..< bl + cl:
     a.limbs[i] = 0
 
   var pos = bl
@@ -405,8 +405,8 @@ template unsignedMultiplication(a: BigInt, b, c: BigInt, bl, cl) =
     tmp = tmp shr 32
     pos.inc()
 
-  for j in 1 .. < cl:
-    for i in 0 .. < bl:
+  for j in 1 ..< cl:
+    for i in 0 ..< bl:
       tmp += uint64(a.limbs[j + i]) + uint64(b.limbs[i]) * uint64(c.limbs[j])
       a.limbs[j + i] = uint32(tmp)
       tmp = tmp shr 32
@@ -628,7 +628,7 @@ proc unsignedDivRem(q, r: var BigInt, n, d: BigInt) =
 
       # subtract
       zhi.reset()
-      for i in 0 .. <dn:
+      for i in 0 ..< dn:
         z.reset()
         z.limbs[0] = r.limbs[i]
         z *= q1b
@@ -657,7 +657,7 @@ proc unsignedDivRem(q, r: var BigInt, n, d: BigInt) =
       # add back if was too large (rare branch)
       if vtop.initBigInt + zhi < 0:
         carry = 0
-        for i in 0 .. <dn:
+        for i in 0 ..< dn:
           carry += q.limbs[v+i]
           carry += r.limbs[i]
           q.limbs[v+i] = uint32(carry)
@@ -831,7 +831,7 @@ proc toStringMultipleTwo(a: BigInt, base: range[2..36] = 16): string =
 
   for i in countdown(a.limbs.high - 1, 0):
     var x = a.limbs[i]
-    for i in 0 .. < size:
+    for i in 0 ..< size:
       cs[size - i - 1] = digits[int(x mod base.uint32)]
       x = x div base.uint32
     result.add(cs)
