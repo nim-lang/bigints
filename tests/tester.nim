@@ -101,3 +101,11 @@ test "negative zero flags (https://github.com/def-/nim-bigints/issues/16)":
   check d * e == e
   check b * e == e
   check e div d == e
+
+test "validate digits in string parsing (https://github.com/def-/nim-bigints/issues/22)":
+  check initBigInt("1", 2) == initBigInt(1)
+  check initBigInt("z", 36) == initBigInt(35)
+  expect ValueError:
+    discard initBigInt("2", 2)
+  expect ValueError:
+    discard initBigInt("z", 35)
