@@ -35,13 +35,13 @@ test "initBigInt":
       let start = if x >= 8'u64: x - 8 else: 0'u64
       let stop = x + 8
       for vv in start .. stop:
-        for v in [vv, not(vv)]:
+        for v in [vv, not vv]:
           chk v.int
           chk v.uint
           chk v.int64
           chk v.uint64
-          chk v.int32
-          chk v.uint32
+          chk (v and int32.high.uint64).int32
+          chk (v and uint32.high).uint32
 
 test "range of bigint (https://github.com/def-/nim-bigints/issues/1)":
   let two = 2.initBigInt
