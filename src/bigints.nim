@@ -1,4 +1,3 @@
-{.rangeChecks: off.}
 import strutils
 
 type
@@ -28,7 +27,7 @@ proc initBigInt*(vals: seq[uint32], flags: set[Flags] = {}): BigInt =
 
 proc initBigInt*[T: int8|int16|int32](val: T): BigInt =
   if val < 0:
-    result.limbs = @[not(val.int32.uint32) + 1]
+    result.limbs = @[(not val.int32).uint32 + 1]
     result.flags = {Negative}
   else:
     result.limbs = @[val.int32.uint32]
@@ -41,18 +40,18 @@ proc initBigInt*[T: uint8|uint16|uint32](val: T): BigInt =
 proc initBigInt*(val: int64): BigInt =
   var a = val.uint64
   if val < 0:
-    a = not(a) + 1
+    a = not a + 1
     result.flags = {Negative}
   else:
     result.flags = {}
   if a > uint32.high.uint64:
-    result.limbs = @[a.uint32, (a shr 32).uint32]
+    result.limbs = @[(a and uint32.high).uint32, (a shr 32).uint32]
   else:
     result.limbs = @[a.uint32]
 
 proc initBigInt*(val: uint64): BigInt =
   if val > uint32.high.uint64:
-    result.limbs = @[val.uint32, (val shr 32).uint32]
+    result.limbs = @[(val and uint32.high).uint32, (val shr 32).uint32]
   else:
     result.limbs = @[val.uint32]
   result.flags = {}
@@ -143,7 +142,7 @@ proc `==` *(a: int32, b: BigInt): bool = cmp(a, b) == 0
 
 template addParts(toAdd) =
   tmp += toAdd
-  a.limbs[i] = uint32(tmp)
+  a.limbs[i] = uint32(tmp and uint32.high)
   tmp = tmp shr 32
 
 proc unsignedAdditionInt(a: var BigInt, b: BigInt, c: int32) =
@@ -155,7 +154,7 @@ proc unsignedAdditionInt(a: var BigInt, b: BigInt, c: int32) =
   a.limbs.setXLen(bl)
 
   tmp = uint64(b.limbs[0]) + uint64(c)
-  a.limbs[0] = uint32(tmp)
+  a.limbs[0] = uint32(tmp and uint32.high)
   tmp = tmp shr 32
 
   for i in m ..< bl:
@@ -219,12 +218,12 @@ template realUnsignedSubtractionInt(a: var BigInt, b: BigInt, c: int32) =
   block:
     const i = 0
     tmp = int64(uint32.high) + 1 + int64(b.limbs[i]) - int64(c)
-    a.limbs[i] = uint32(tmp)
+    a.limbs[i] = uint32(tmp and int64(uint32.high))
     tmp = 1 - (tmp shr 32)
 
   for i in m ..< bl:
     tmp = int64(uint32.high) + 1 + int64(b.limbs[i]) - tmp
-    a.limbs[i] = uint32(tmp)
+    a.limbs[i] = uint32(tmp and int64(uint32.high))
     tmp = 1 - (tmp shr 32)
   a.flags.excl(Negative)
 
@@ -247,19 +246,19 @@ template realUnsignedSubtraction(a: var BigInt, b, c: BigInt) =
 
   for i in 0 ..< m:
     tmp = int64(uint32.high) + 1 + int64(b.limbs[i]) - int64(c.limbs[i]) - tmp
-    a.limbs[i] = uint32(tmp)
+    a.limbs[i] = uint32(tmp and int64(uint32.high))
     tmp = 1 - (tmp shr 32)
 
   if bl < cl:
     for i in m ..< cl:
       tmp = int64(uint32.high) + 1 - int64(c.limbs[i]) - tmp
-      a.limbs[i] = uint32(tmp)
+      a.limbs[i] = uint32(tmp and int64(uint32.high))
       tmp = 1 - (tmp shr 32)
     a.flags.incl(Negative)
   else:
     for i in m ..< bl:
       tmp = int64(uint32.high) + 1 + int64(b.limbs[i]) - tmp
-      a.limbs[i] = uint32(tmp)
+      a.limbs[i] = uint32(tmp and int64(uint32.high))
       tmp = 1 - (tmp shr 32)
     a.flags.excl(Negative)
 
@@ -382,10 +381,10 @@ template optSub*{x = y - z}(x,y,z: BigInt) = subtraction(x, y, z)
 template unsignedMultiplicationInt(a: BigInt, b: BigInt, c: int32, bl) =
   for i in 0 ..< bl:
     tmp += uint64(b.limbs[i]) * uint64(c)
-    a.limbs[i] = uint32(tmp)
+    a.limbs[i] = uint32(tmp and uint32.high)
     tmp = tmp shr 32
 
-  a.limbs[bl] = uint32(tmp)
+  a.limbs[bl] = uint32(tmp and uint32.high)
   tmp = tmp shr 32
 
   normalize(a)
@@ -393,7 +392,7 @@ template unsignedMultiplicationInt(a: BigInt, b: BigInt, c: int32, bl) =
 template unsignedMultiplication(a: BigInt, b, c: BigInt, bl, cl) =
   for i in 0 ..< bl:
     tmp += uint64(b.limbs[i]) * uint64(c.limbs[0])
-    a.limbs[i] = uint32(tmp)
+    a.limbs[i] = uint32(tmp and uint32.high)
     tmp = tmp shr 32
 
   for i in bl ..< bl + cl:
@@ -402,20 +401,20 @@ template unsignedMultiplication(a: BigInt, b, c: BigInt, bl, cl) =
   var pos = bl
 
   while tmp > 0'u64:
-    a.limbs[pos] = uint32(tmp)
+    a.limbs[pos] = uint32(tmp and uint32.high)
     tmp = tmp shr 32
     pos.inc()
 
   for j in 1 ..< cl:
     for i in 0 ..< bl:
       tmp += uint64(a.limbs[j + i]) + uint64(b.limbs[i]) * uint64(c.limbs[j])
-      a.limbs[j + i] = uint32(tmp)
+      a.limbs[j + i] = uint32(tmp and uint32.high)
       tmp = tmp shr 32
 
     pos = j + bl
     while tmp > 0'u64:
       tmp += uint64(a.limbs[pos])
-      a.limbs[pos] = uint32(tmp)
+      a.limbs[pos] = uint32(tmp and uint32.high)
       tmp = tmp shr 32
       pos.inc()
 
@@ -527,7 +526,7 @@ proc shiftLeft(a: var BigInt, b: BigInt, c: int) =
 
   for i in 0..b.limbs.high:
     let acc = (uint64(b.limbs[i]) shl uint64(c)) or carry
-    a.limbs[i] = uint32(acc)
+    a.limbs[i] = uint32(acc and uint32.high)
     carry = uint32(acc shr 32)
 
   if carry > 0'u32:
@@ -661,7 +660,7 @@ proc unsignedDivRem(q, r: var BigInt, n, d: BigInt) =
         for i in 0 ..< dn:
           carry += q.limbs[v+i]
           carry += r.limbs[i]
-          q.limbs[v+i] = uint32(carry)
+          q.limbs[v+i] = uint32(carry and uint32.high)
           carry = carry shr 32
         dec(q1)
 
