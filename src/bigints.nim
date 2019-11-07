@@ -927,7 +927,7 @@ proc initBigInt*(str: string, base: range[2..36] = 10): BigInt =
       let c = toLowerAscii(str[j])
 
       # This is pretty expensive
-      if not (c in digits[0..base]):
+      if not (c in digits[0..<base]):
         raise newException(ValueError, "Invalid input: " & str[j])
 
       case c
