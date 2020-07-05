@@ -1,7 +1,7 @@
 import strutils
 
 type
-  Flags = enum
+  Flags* = enum
     Negative
 
   BigInt* = tuple
