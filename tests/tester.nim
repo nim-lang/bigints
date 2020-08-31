@@ -36,9 +36,9 @@ test "initBigInt":
       let stop = x + 8
       for vv in start .. stop:
         for v in [vv, not vv]:
-          chk v.int
+          chk cast[int](v)
           chk v.uint
-          chk v.int64
+          chk cast[int64](v)
           chk v.uint64
           chk (v and int32.high.uint64).int32
           chk (v and uint32.high).uint32
@@ -83,7 +83,7 @@ test "off by one in division (https://github.com/def-/nim-bigints/issues/5)":
     check x div y == initBigInt("40795764162394886717280563479805794713")
 
 test "negative zero flags (https://github.com/def-/nim-bigints/issues/16)":
-  let 
+  let
     a = initBigInt("828478292990482")
     b = initBigInt(9283)
     c = initBigInt("-828478292990482")
@@ -109,4 +109,3 @@ test "validate digits in string parsing (https://github.com/def-/nim-bigints/iss
     discard initBigInt("2", 2)
   expect ValueError:
     discard initBigInt("z", 35)
- 
