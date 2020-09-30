@@ -1,0 +1,34 @@
+name: test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  skip:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Skip job"
+
+  before:
+    runs-on: ubuntu-latest
+    if: "! contains(github.event.head_commit.message, '[skip ci]')"
+    steps:
+      - run: echo "not contains '[skip ci]'"
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        nim-version:
+          - '1.0.8'
+          - '1.2.6'
+          - 'stable'
+    needs: before
+    steps:
+      - uses: actions/checkout@v1
+      - uses: jiro4989/setup-nim-action@v1
+        with:
+          nim-version: ${{ matrix.nim-version }}
+      - run: nimble install -Y
+      - run: nimble test -Y
