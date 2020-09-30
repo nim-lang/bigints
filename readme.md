@@ -1,1 +1,3 @@
-# Pure BigInts for Nim [![Build Status](https://circleci.com/gh/def-/nim-bigints.png)](https://circleci.com/gh/def-/nim-bigints)
+# Pure BigInts for Nim
+
+![test](https://github.com/def-/nim-bigints/workflows/test/badge.svg)
