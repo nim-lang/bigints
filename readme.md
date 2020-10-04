@@ -106,42 +106,42 @@ proc cmp(a: int32; b: BigInt): int64
 proc cmp(a: BigInt; b: int32): int64
 ```
 
-## **proc** `&lt;`
+## **proc** `<`
 
 
 ```nim
 proc `<`(a, b: BigInt): bool
 ```
 
-## **proc** `&lt;`
+## **proc** `<`
 
 
 ```nim
 proc `<`(a: BigInt; b: int32): bool
 ```
 
-## **proc** `&lt;`
+## **proc** `<`
 
 
 ```nim
 proc `<`(a: int32; b: BigInt): bool
 ```
 
-## **proc** `&lt;=`
+## **proc** `<=`
 
 
 ```nim
 proc `<=`(a, b: BigInt): bool
 ```
 
-## **proc** `&lt;=`
+## **proc** `<=`
 
 
 ```nim
 proc `<=`(a: BigInt; b: int32): bool
 ```
 
-## **proc** `&lt;=`
+## **proc** `<=`
 
 
 ```nim
@@ -542,7 +542,7 @@ iterator countup(a, b: BigInt; step: int32 = 1): BigInt {.inline.}
 iterator `..`(a, b: BigInt): BigInt {.inline.}
 ```
 
-## **iterator** `..&lt;`
+## **iterator** `..<`
 
 
 ```nim
