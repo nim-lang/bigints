@@ -2,6 +2,32 @@
 
 ![test](https://github.com/def-/nim-bigints/workflows/test/badge.svg)
 
+This library provides a pure implementation for arbitrary precision integers in [Nim](https://nim-lang.org/).
+
+It can be installed through nimble with:
+
+```
+nimble install bigints
+```
+
+`bigints` provides a `BigInt` type and related operations with standard Nim syntax:
+
+- creation of `BigInt` from all standard integer types (`initBigInt`)
+- comparisons (`<`, `<=`, `==`)
+- addition, negation and subtraction (`+`, `-`, `+=` `-=`)
+- multiplication (`*`, `*=`)
+- bit shifts (`shr`, `shl`)
+- integer division and modulo operation (`div`, `mod`)
+- exponentiation (`^`, `pow`)
+- conversion of `BigInt` from/to strings supporting bases from 2 to 36 (`initBigInt`, `$`)
+- iteration utilities (`inc`, `dec`, `countdown`, `countup`, `..`, `..<`)
+
+Most of the operations above (all those for which it makes sense) are also available between a `BigInt` and a `int32`.
+
+For examples of usage see the [examples](examples) folder.
+
+## Full API documentation
+
 The following api documentation is generated with [mddoc](https://github.com/treeform/mddoc). To regenerate install `mddoc` with nimble and run
 
 ```
