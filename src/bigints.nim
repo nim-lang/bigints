@@ -66,8 +66,8 @@ else:
 proc initBigInt*(val: BigInt): BigInt =
   result = val
 
-const zero = initBigInt(0)
-const one = initBigInt(1)
+const zero* = initBigInt(0)
+const one* = initBigInt(1)
 
 proc unsignedCmp(a: BigInt, b: int32): int64 =
   result = int64(a.limbs.len) - 1
@@ -75,6 +75,7 @@ proc unsignedCmp(a: BigInt, b: int32): int64 =
   if result != 0:
     return
 
+  # here we are sure that a.limbs.len == 1
   result = int64(a.limbs[0]) - int64(b)
 
 proc unsignedCmp(a: int32, b: BigInt): int64 =
@@ -390,6 +391,8 @@ template unsignedMultiplicationInt(a: BigInt, b: BigInt, c: int32, bl) =
   normalize(a)
 
 template unsignedMultiplication(a: BigInt, b, c: BigInt, bl, cl) =
+  # always called with bl >= cl
+
   for i in 0 ..< bl:
     tmp += uint64(b.limbs[i]) * uint64(c.limbs[0])
     a.limbs[i] = uint32(tmp and uint32.high)
@@ -451,7 +454,6 @@ proc multiplication(a: var BigInt, b, c: BigInt) =
   var tmp: uint64
 
   a.limbs.setXLen(bl + cl)
-
   if cl > bl:
     unsignedMultiplication(a, c, b, cl, bl)
   else:

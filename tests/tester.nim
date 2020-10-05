@@ -109,3 +109,48 @@ test "validate digits in string parsing (https://github.com/def-/nim-bigints/iss
     discard initBigInt("2", 2)
   expect ValueError:
     discard initBigInt("z", 35)
+
+test "empty limbs when uninitialized (https://github.com/def-/nim-bigints/issues/26)":
+  # reported issue has an example about multiplication and it is due to a call to a.limbs[0] for an uninitialized a: BigInt
+  # besides multiplication, one could look at appearances of [0] in source to find possible failures
+  # failures bound to reaching a line with [0] are fatal
+  # besides appearances of [0], also logic implemented through a.limbs.len might (and indeed does) show error
+  # logic around sign might also play a role
+  var
+    zeroEmpty: BigInt # should be treated as zero, same with -zeroEmpty
+  let
+    zeroInt32: int32 = 0
+    oneInt32: int32 = 1
+  
+  # unsignedCmp(a: BigInt, b: int32) has [0]; used by public cmp and <
+  # never reached in the following cases (no fatal), since it cannot be reached (see comment in code)
+  # still, errors can be found in comparing zero to zero 
+  check zeroEmpty < oneInt32 # ok
+  check zeroEmpty > -oneInt32 # ok
+  check -zeroEmpty < oneInt32 # ok
+  check -zeroEmpty > -oneInt32 # ok
+  check not(zeroEmpty < zeroInt32) # error
+  check not(zeroEmpty > zeroInt32) # ok
+  check not(-zeroEmpty < zeroInt32) # error
+  check not(-zeroEmpty > zeroInt32) # ok
+  check zeroEmpty == zeroInt32 # error
+  check -zeroEmpty == zeroInt32 # error: note that -zeroEmpty is printed as -0 (another issue to be fixed)
+  
+  # this came up in the above testing and can be though as secondary effect of unitialization (fix in negate?)
+  check $zero == "0" # ok
+  check $zeroEmpty == "0" # ok
+  check $(-zeroEmpty) == "0" # error
+
+  # unsignedCmp(a, b: BigInt) has no [0] but it has logic with limbs.len
+  check zeroEmpty < one # ok
+  check zeroEmpty > -one # ok
+  check -zeroEmpty < one # ok
+  check -zeroEmpty > -one # ok
+  check not (zeroEmpty < zeroInt32) # error
+  check not (zeroEmpty > zeroInt32) # ok
+  check not (zeroEmpty < zero) # error
+  check not (zeroEmpty > zero) # ok
+  check zeroEmpty == zero # error
+  check -zeroEmpty == zero # error
+
+  # let's stop at comparison and fix it before passing to addition and multiplication
