@@ -129,28 +129,28 @@ test "empty limbs when uninitialized (https://github.com/def-/nim-bigints/issues
   check zeroEmpty > -oneInt32 # ok
   check -zeroEmpty < oneInt32 # ok
   check -zeroEmpty > -oneInt32 # ok
-  check not(zeroEmpty < zeroInt32) # error
+  check not(zeroEmpty < zeroInt32) # error: fixed
   check not(zeroEmpty > zeroInt32) # ok
-  check not(-zeroEmpty < zeroInt32) # error
+  check not(-zeroEmpty < zeroInt32) # error: fixed
   check not(-zeroEmpty > zeroInt32) # ok
-  check zeroEmpty == zeroInt32 # error
-  check -zeroEmpty == zeroInt32 # error: note that -zeroEmpty is printed as -0 (another issue to be fixed)
+  check zeroEmpty == zeroInt32 # error: fixed
+  check -zeroEmpty == zeroInt32 # error: fixed
   
   # this came up in the above testing and can be though as secondary effect of unitialization (fix in negate?)
   check $zero == "0" # ok
   check $zeroEmpty == "0" # ok
-  check $(-zeroEmpty) == "0" # error
+  check $(-zeroEmpty) == "0" # error: fixed
 
   # unsignedCmp(a, b: BigInt) has no [0] but it has logic with limbs.len
   check zeroEmpty < one # ok
   check zeroEmpty > -one # ok
   check -zeroEmpty < one # ok
   check -zeroEmpty > -one # ok
-  check not (zeroEmpty < zeroInt32) # error
+  check not (zeroEmpty < zeroInt32) # error: fixed
   check not (zeroEmpty > zeroInt32) # ok
-  check not (zeroEmpty < zero) # error
+  check not (zeroEmpty < zero) # error: fixed
   check not (zeroEmpty > zero) # ok
-  check zeroEmpty == zero # error
-  check -zeroEmpty == zero # error
+  check zeroEmpty == zero # error: fixed
+  check -zeroEmpty == zero # error: fixed
 
   # let's stop at comparison and fix it before passing to addition and multiplication

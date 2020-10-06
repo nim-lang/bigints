@@ -69,17 +69,29 @@ proc initBigInt*(val: BigInt): BigInt =
 const zero* = initBigInt(0)
 const one* = initBigInt(1)
 
+proc isZero*(a: BigInt): bool {.inline.} =
+  for i in countdown(a.limbs.high, 0):
+    if a.limbs[i] != 0'u32:
+      return false
+  return true
+
+proc isNegative*(a: BigInt): bool {.inline.} =
+  Negative in a.flags and not a.isZero
+
+proc isPositive*(a: BigInt): bool {.inline.} =
+  Negative notin a.flags and not a.isZero
+
 proc unsignedCmp(a: BigInt, b: int32): int64 =
+  # here a and b have same sign a none of them is zero.
+  # in particular we have that a.limbs.len >= 1
   result = int64(a.limbs.len) - 1
 
   if result != 0:
     return
 
-  # here we are sure that a.limbs.len == 1
   result = int64(a.limbs[0]) - int64(b)
 
-proc unsignedCmp(a: int32, b: BigInt): int64 =
-  -unsignedCmp(b, a)
+proc unsignedCmp(a: int32, b: BigInt): int64 = -unsignedCmp(b, a)
 
 proc unsignedCmp(a, b: BigInt): int64 =
   result = int64(a.limbs.len) - int64(b.limbs.len)
@@ -94,40 +106,52 @@ proc unsignedCmp(a, b: BigInt): int64 =
       return
 
 proc cmp*(a, b: BigInt): int64 =
-  if Negative in a.flags and a.limbs != @[0'u32]:
-    if Negative in b.flags and b.limbs != @[0'u32]:
-      return unsignedCmp(b, a)
-    else:
-      return -1
-  else:
-    if Negative in b.flags:
+  ## Returns:
+  ## * a value less than zero, if `a < b`
+  ## * a value greater than zero, if `a > b`
+  ## * zero, if `a == b`
+  if a.isZero:
+    if b.isZero:
+      return 0
+    elif Negative in b.flags: # b.isNegative
       return 1
     else:
-      return unsignedCmp(a, b)
-
-proc cmp*(a: int32, b: BigInt): int64 =
-  if a < 0:
-    if Negative in b.flags and b.limbs != @[0'u32]:
-      return unsignedCmp(b, a)
-    else:
       return -1
-  else:
-    if Negative in b.flags:
+  elif Negative in a.flags: # a.isNegative
+    if b.isZero or Negative notin b.flags: # b >= 0
+      return -1
+    else:
+      return unsignedCmp(b, a) 
+  else: # a > 0
+    if b.isZero or Negative in b.flags: # b <= 0
       return 1
     else:
       return unsignedCmp(a, b)
 
 proc cmp*(a: BigInt, b: int32): int64 =
-  if Negative in a.flags and a.limbs != @[0'u32]:
+  ## Returns:
+  ## * a value less than zero, if `a < b`
+  ## * a value greater than zero, if `a > b`
+  ## * zero, if `a == b`
+  if a.isZero:
+    if b < 0:
+      return 1
+    elif b == 0:
+      return 0
+    else:
+      return -1
+  elif Negative in a.flags:  # a.isNegative
     if b < 0:
       return unsignedCmp(b, a)
     else:
       return -1
-  else:
-    if b < 0:
+  else: # a > 0
+    if b <= 0:
       return 1
     else:
-      return unsignedCmp(a, b)
+      return unsignedCmp(b, a)
+
+proc cmp*(a: int32, b: BigInt): int64 = -cmp(b, a)
 
 proc `<` *(a, b: BigInt): bool = cmp(a, b) < 0
 proc `<` *(a: BigInt, b: int32): bool = cmp(a, b) < 0
@@ -874,6 +898,8 @@ proc pow*(base: int32|BigInt, exp: int32|BigInt): BigInt =
     base *= tmp
 
 proc toString*(a: BigInt, base: range[2..36] = 10): string =
+  if a.isZero:
+    return "0"
   if base in multiples:
     return toStringMultipleTwo(a, base)
 
