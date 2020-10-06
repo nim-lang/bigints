@@ -2,6 +2,42 @@
 
 ![test](https://github.com/def-/nim-bigints/workflows/test/badge.svg)
 
+This library provides a pure implementation for arbitrary precision integers in [Nim](https://nim-lang.org/).
+
+It can be installed through nimble with:
+
+```
+nimble install bigints
+```
+
+`bigints` provides a `BigInt` type and related operations with standard Nim syntax:
+
+- creation of `BigInt` from all standard integer types (`initBigInt`)
+- comparisons (`<`, `<=`, `==`)
+- addition, negation and subtraction (`+`, `-`, `+=` `-=`)
+- multiplication (`*`, `*=`)
+- bit shifts (`shr`, `shl`)
+- integer division and modulo operation (`div`, `mod`)
+- exponentiation (`^`, `pow`)
+- conversion of `BigInt` from/to strings supporting bases from 2 to 36 (`initBigInt`, `$`)
+- iteration utilities (`inc`, `dec`, `countdown`, `countup`, `..`, `..<`)
+
+Most of the operations above (all those for which it makes sense) are also available between a `BigInt` and a `int32`.
+
+For examples of usage see the [examples](examples) folder.
+
+## Current limitations and possible enhancements
+
+* cannot multiply a number with itself (x *= x). An issue like this exist also for addition (#27) and possibly other operations
+* an uninitialized `BigInt` might raise error when performing some operations (e.g. #26)
+* not expected to work on 32 bit
+* some common bitwise operations (`and`, `or`, `xor`, `not`) are not implemented
+* operations between `BigInt` and standard integer types besides `int32` are not implemented
+* api for `BigInt` type is probably unstable (currently it is a `tuple`, it might become an `object` or `ref object` in the future)
+* arithmetical operations such as addition, multiplication and division are not optimized for performance (e.g. [karatsuba multiplication](https://en.wikipedia.org/wiki/Karatsuba_algorithm) is not implemented)
+
+## Full API documentation
+
 The following api documentation is generated with [mddoc](https://github.com/treeform/mddoc). To regenerate install `mddoc` with nimble and run
 
 ```

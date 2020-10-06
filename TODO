@@ -1,8 +1,0 @@
-- Can't multiply number with itself x *= x, probably also same for other operations
-- Should probably use ref object instead of tuple for BigInt type
-- Fix the library on 32bit
-- Fix the templates so they work with uninitialized (nil) values!
-- karatsuba multiplication
-- better addition
-- everything in combination with normal ints and uints too
-(- better division)
