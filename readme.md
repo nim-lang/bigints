@@ -26,6 +26,16 @@ Most of the operations above (all those for which it makes sense) are also avail
 
 For examples of usage see the [examples](examples) folder.
 
+## Current limitations and possible enhancements
+
+* cannot multiply a number with itself (x *= x). An issue like this exist also for addition (#27) and possibly other operations
+* an uninitialized `BigInt` might raise error when performing some operations (e.g. #26)
+* not expected to work on 32 bit
+* some common bitwise operations (`and`, `or`, `xor`, `not`) are not implemented
+* operations between `BigInt` and standard integer types besides `int32` are not implemented
+* api for `BigInt` type is probably unstable (currently it is a `tuple`, it might become an `object` or `ref object` in the future)
+* arithmetical operations such as addition, multiplication and division are not optimized for performance (e.g. [karatsuba multiplication](https://en.wikipedia.org/wiki/Karatsuba_algorithm) is not implemented)
+
 ## Full API documentation
 
 The following api documentation is generated with [mddoc](https://github.com/treeform/mddoc). To regenerate install `mddoc` with nimble and run
