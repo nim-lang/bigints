@@ -29,7 +29,6 @@ For examples of usage see the [examples](examples) folder.
 ## Current limitations and possible enhancements
 
 * cannot multiply a number with itself (x *= x). An issue like this exist also for addition (#27) and possibly other operations
-* an uninitialized `BigInt` might raise error when performing some operations (e.g. #26)
 * not expected to work on 32 bit
 * some common bitwise operations (`and`, `or`, `xor`, `not`) are not implemented
 * operations between `BigInt` and standard integer types besides `int32` are not implemented
@@ -121,8 +120,26 @@ template initBigInt(val: uint): BigInt
 proc initBigInt(val: BigInt): BigInt
 ```
 
+## **const** zero
+
+
+```nim
+zero = ([0'u], {})
+```
+
+## **const** one
+
+
+```nim
+one = ([1'u], {})
+```
+
 ## **proc** cmp
 
+Returns:
+ * a value less than zero, if <tt class="docutils literal"><span class="pre">a &lt; b</span></tt>
+ * a value greater than zero, if <tt class="docutils literal"><span class="pre">a > b</span></tt>
+ * zero, if <tt class="docutils literal"><span class="pre">a == b</span></tt>
 
 ```nim
 proc cmp(a, b: BigInt): int64
@@ -130,16 +147,20 @@ proc cmp(a, b: BigInt): int64
 
 ## **proc** cmp
 
+Returns:
+ * a value less than zero, if <tt class="docutils literal"><span class="pre">a &lt; b</span></tt>
+ * a value greater than zero, if <tt class="docutils literal"><span class="pre">a > b</span></tt>
+ * zero, if <tt class="docutils literal"><span class="pre">a == b</span></tt>
 
 ```nim
-proc cmp(a: int32; b: BigInt): int64
+proc cmp(a: BigInt; b: int32): int64
 ```
 
 ## **proc** cmp
 
 
 ```nim
-proc cmp(a: BigInt; b: int32): int64
+proc cmp(a: int32; b: BigInt): int64
 ```
 
 ## **proc** `<`
