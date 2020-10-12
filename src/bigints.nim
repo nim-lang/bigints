@@ -69,17 +69,11 @@ proc initBigInt*(val: BigInt): BigInt =
 const zero* = initBigInt(0)
 const one* = initBigInt(1)
 
-proc isZero*(a: BigInt): bool {.inline.} =
+proc isZero(a: BigInt): bool {.inline.} =
   for i in countdown(a.limbs.high, 0):
     if a.limbs[i] != 0'u32:
       return false
   return true
-
-proc isNegative*(a: BigInt): bool {.inline.} =
-  Negative in a.flags and not a.isZero
-
-proc isPositive*(a: BigInt): bool {.inline.} =
-  Negative notin a.flags and not a.isZero
 
 proc unsignedCmp(a: BigInt, b: int32): int64 =
   # here a and b have same sign a none of them is zero.
