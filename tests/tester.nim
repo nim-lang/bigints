@@ -217,3 +217,14 @@ test "empty limbs when uninitialized (https://github.com/def-/nim-bigints/issues
       b: BigInt = 12.initBigInt
 
     check a*b == 0
+  
+  # division does not have issues, but let's add some checks
+  check zeroEmpty div one == zero
+  check -zeroEmpty div one == zero
+  check zeroEmpty mod one == zero
+  check -zeroEmpty mod one == zero
+
+  check zeroEmpty div 1.int32 == zero
+  check -zeroEmpty div 1.int32 == zero
+  check zeroEmpty mod 1.int32 == zero
+  check -zeroEmpty mod 1.int32 == zero
