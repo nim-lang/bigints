@@ -29,7 +29,6 @@ For examples of usage see the [examples](examples) folder.
 ## Current limitations and possible enhancements
 
 * cannot multiply a number with itself (x *= x). An issue like this exist also for addition (#27) and possibly other operations
-* an uninitialized `BigInt` might raise error when performing some operations (e.g. #26)
 * not expected to work on 32 bit
 * some common bitwise operations (`and`, `or`, `xor`, `not`) are not implemented
 * operations between `BigInt` and standard integer types besides `int32` are not implemented
