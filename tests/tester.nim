@@ -201,3 +201,19 @@ test "empty limbs when uninitialized (https://github.com/def-/nim-bigints/issues
   check -bigOne - -zeroEmpty == -bigOne # ok
   check zeroEmpty - -bigOne == bigOne # ok
   check -zeroEmpty - -bigOne == bigOne # ok
+
+  # multiplication
+  check zeroEmpty * 1.int32 == zero
+  check -zeroEmpty * 1.int32 == zero
+  check zeroEmpty * one == zero
+  check -zeroEmpty * one == zero
+  check one * zeroEmpty == zero
+  check one * -zeroEmpty == zero
+
+  # https://github.com/def-/nim-bigints/issues/26
+  block:
+    var
+      a: BigInt
+      b: BigInt = 12.initBigInt
+
+    check a*b == 0

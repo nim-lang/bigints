@@ -476,6 +476,9 @@ proc multiplicationInt(a: var BigInt, b: BigInt, c: int32) =
 
 # This doesn't work when a = b
 proc multiplication(a: var BigInt, b, c: BigInt) =
+  if b.isZero or c.isZero:
+    a = zero
+    return
   let
     bl = b.limbs.len
     cl = c.limbs.len
@@ -486,9 +489,6 @@ proc multiplication(a: var BigInt, b, c: BigInt) =
     unsignedMultiplication(a, c, b, cl, bl)
   else:
     unsignedMultiplication(a, b, c, bl, cl)
-
-  if a.limbs == @[0'u32]:
-    return
 
   if Negative in b.flags:
     if Negative in c.flags:
