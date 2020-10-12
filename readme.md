@@ -120,8 +120,26 @@ template initBigInt(val: uint): BigInt
 proc initBigInt(val: BigInt): BigInt
 ```
 
+## **const** zero
+
+
+```nim
+zero = ([0'u], {})
+```
+
+## **const** one
+
+
+```nim
+one = ([1'u], {})
+```
+
 ## **proc** cmp
 
+Returns:
+ * a value less than zero, if <tt class="docutils literal"><span class="pre">a &lt; b</span></tt>
+ * a value greater than zero, if <tt class="docutils literal"><span class="pre">a > b</span></tt>
+ * zero, if <tt class="docutils literal"><span class="pre">a == b</span></tt>
 
 ```nim
 proc cmp(a, b: BigInt): int64
@@ -129,16 +147,20 @@ proc cmp(a, b: BigInt): int64
 
 ## **proc** cmp
 
+Returns:
+ * a value less than zero, if <tt class="docutils literal"><span class="pre">a &lt; b</span></tt>
+ * a value greater than zero, if <tt class="docutils literal"><span class="pre">a > b</span></tt>
+ * zero, if <tt class="docutils literal"><span class="pre">a == b</span></tt>
 
 ```nim
-proc cmp(a: int32; b: BigInt): int64
+proc cmp(a: BigInt; b: int32): int64
 ```
 
 ## **proc** cmp
 
 
 ```nim
-proc cmp(a: BigInt; b: int32): int64
+proc cmp(a: int32; b: BigInt): int64
 ```
 
 ## **proc** `<`
