@@ -310,7 +310,9 @@ proc unsignedSubtraction(a: var BigInt, b, c: BigInt) =
       negate(a)
 
 proc additionInt(a: var BigInt, b: BigInt, c: int32) =
-  if Negative in b.flags:
+  if b.isZero:
+    a = c.initBigInt
+  elif Negative in b.flags:
     if c < 0:
       unsignedAdditionInt(a, b, c)
       a.flags.incl(Negative)
@@ -358,7 +360,9 @@ template optAddInt*{x = y + z}(x,y: BigInt, z: int32) = additionInt(x, y, z)
 template optAdd*{x = y + z}(x,y,z: BigInt) = addition(x, y, z)
 
 proc subtractionInt(a: var BigInt, b: BigInt, c: int32) =
-  if Negative in b.flags:
+  if b.isZero:
+    a = (-c).initBigInt
+  elif Negative in b.flags:
     if c < 0:
       # TODO: is this right?
       unsignedSubtractionInt(a, b, c)

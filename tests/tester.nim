@@ -118,7 +118,6 @@ test "empty limbs when uninitialized (https://github.com/def-/nim-bigints/issues
   # logic around sign might also play a role
   var
     zeroEmpty: BigInt # should be treated as zero, same with -zeroEmpty
-    result: BigInt
   let
     zeroInt32: int32 = 0
     oneInt32: int32 = 1
@@ -156,10 +155,10 @@ test "empty limbs when uninitialized (https://github.com/def-/nim-bigints/issues
   check -zeroEmpty == zero # error: fixed
 
   # proc unsignedAdditionInt(a: var BigInt, b: BigInt, c: int32)
-  check zeroEmpty + 1.int32 == one # fatal[IndexError] in bigints.nim(181) unsignedAdditionInt
-  check -zeroEmpty + 1.int32 == one # fatal[IndexError] in bigints.nim(245) unsignedSubtractionInt
-  check zeroEmpty + (-1).int32 == -one # fatal[IndexError] in bigints.nim(245) unsignedSubtractionInt
-  check -zeroEmpty + (-1).int32 == -one # fatal[IndexError] in bigints.nim(181) unsignedAdditionInt
+  check zeroEmpty + 1.int32 == one # fixed: fatal[IndexError] in bigints.nim(181) unsignedAdditionInt
+  check -zeroEmpty + 1.int32 == one # fixed: fatal[IndexError] in bigints.nim(245) unsignedSubtractionInt
+  check zeroEmpty + (-1).int32 == -one # fixed: fatal[IndexError] in bigints.nim(245) unsignedSubtractionInt
+  check -zeroEmpty + (-1).int32 == -one # fixed: fatal[IndexError] in bigints.nim(181) unsignedAdditionInt
 
   # proc unsignedAddition(a: var BigInt, b, c: BigInt)
   check zeroEmpty + one == one # ok
@@ -180,10 +179,10 @@ test "empty limbs when uninitialized (https://github.com/def-/nim-bigints/issues
   check -zeroEmpty + -bigOne == -bigOne # ok
 
   # proc unsignedSubtractionInt(a: var BigInt, b: BigInt, c: int32)
-  check zeroEmpty - 1.int32 == -one # fatal[IndexError] in bigints.nim(245) unsignedSubtractionInt
-  check -zeroEmpty - 1.int32 == -one # fatal[IndexError] in bigints.nim(181) unsignedAdditionInt
-  check zeroEmpty - (-1).int32 == one # fatal[IndexError] in bigints.nim(181) unsignedAdditionInt
-  check -zeroEmpty - (-1).int32 == one # fatal[IndexError] in bigints.nim(245) unsignedSubtractionInt
+  check zeroEmpty - 1.int32 == -one # fixed: fatal[IndexError] in bigints.nim(245) unsignedSubtractionInt
+  check -zeroEmpty - 1.int32 == -one # fixed: fatal[IndexError] in bigints.nim(181) unsignedAdditionInt
+  check zeroEmpty - (-1).int32 == one # fixed: fatal[IndexError] in bigints.nim(181) unsignedAdditionInt
+  check -zeroEmpty - (-1).int32 == one # fixed: fatal[IndexError] in bigints.nim(245) unsignedSubtractionInt
 
   # proc unsignedSubtraction(a: var BigInt, b, c: BigInt)
   check zeroEmpty - one == -one # ok
