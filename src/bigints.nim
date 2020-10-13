@@ -196,7 +196,7 @@ proc unsignedAddition(a: var BigInt, b, c: BigInt) =
   a.limbs.setXLen(if bl < cl: cl else: bl)
 
   for i in 0 ..< m:
-    addParts(uint64(b.limbs[i]) + uint64(c.limbs[i]))
+    addParts(uint64(b.limbs[i]) + uint64(c.limbs[i]))  # error here for addition (tissue27)
 
   if bl < cl:
     for i in m ..< cl:
@@ -416,7 +416,7 @@ template unsignedMultiplication(a: BigInt, b, c: BigInt, bl, cl) =
   # always called with bl >= cl
 
   for i in 0 ..< bl:
-    tmp += uint64(b.limbs[i]) * uint64(c.limbs[0])
+    tmp += uint64(b.limbs[i]) * uint64(c.limbs[0])  # error about multiplication here (cleanup later): index out of bounds, the container is empty [IndexError]
     a.limbs[i] = uint32(tmp and uint32.high)
     tmp = tmp shr 32
 

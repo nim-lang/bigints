@@ -228,3 +228,12 @@ test "empty limbs when uninitialized (https://github.com/def-/nim-bigints/issues
   check -zeroEmpty div 1.int32 == zero
   check zeroEmpty mod 1.int32 == zero
   check -zeroEmpty mod 1.int32 == zero
+
+test "operations with self (e.g. https://github.com/def-/nim-bigints/issues/27)":
+  var
+    a = 0.initBigInt
+    b = "359097073186387306".initBigInt
+    x = one
+  
+  a = a + b; check a == b  # this does not fail here, but it fails if tested separately (!???): nimble test27
+  x *= x; check x == one
