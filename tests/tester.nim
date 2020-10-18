@@ -237,3 +237,4 @@ test "operations with self (e.g. https://github.com/def-/nim-bigints/issues/27)"
   
   a = a + b; check a == b  # this does not fail here, but it fails if tested separately: nimble test27
   x *= x; check x == one
+  b = b * 2.int32
