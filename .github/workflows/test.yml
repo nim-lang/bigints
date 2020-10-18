@@ -32,3 +32,4 @@ jobs:
           nim-version: ${{ matrix.nim-version }}
       - run: nimble install -Y
       - run: nimble test -Y
+      - run: nimble test27 -Y

@@ -1,4 +1,3 @@
-# remove this file at the end or not?
 import bigints
 
 var
