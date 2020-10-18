@@ -184,7 +184,6 @@ proc unsignedAdditionInt(a: var BigInt, b: BigInt, c: int32) =
 
   a.flags.excl(Negative)
 
-# Works when a = b
 proc unsignedAddition(a: var BigInt, b, c: BigInt) =
   var tmp: uint64
 
@@ -196,7 +195,7 @@ proc unsignedAddition(a: var BigInt, b, c: BigInt) =
   a.limbs.setXLen(if bl < cl: cl else: bl)
 
   for i in 0 ..< m:
-    addParts(uint64(b.limbs[i]) + uint64(c.limbs[i]))  # error here for addition (tissue27)
+    addParts(uint64(b.limbs[i]) + uint64(c.limbs[i]))
 
   if bl < cl:
     for i in m ..< cl:
@@ -223,7 +222,6 @@ proc `-`*(a: BigInt): BigInt =
   else:
     result.flags.incl(Negative)
 
-# Works when a = b
 # Assumes positive parameters and b > c
 template realUnsignedSubtractionInt(a: var BigInt, b: BigInt, c: int32) =
   var tmp: int64
@@ -251,7 +249,6 @@ template realUnsignedSubtractionInt(a: var BigInt, b: BigInt, c: int32) =
   if tmp > 0:
     a.limbs.add(uint32(tmp))
 
-# Works when a = b
 # Assumes positive parameters and b > c
 template realUnsignedSubtraction(a: var BigInt, b, c: BigInt) =
   var tmp: int64
@@ -416,7 +413,7 @@ template unsignedMultiplication(a: BigInt, b, c: BigInt, bl, cl) =
   # always called with bl >= cl
 
   for i in 0 ..< bl:
-    tmp += uint64(b.limbs[i]) * uint64(c.limbs[0])  # error about multiplication here (cleanup later): index out of bounds, the container is empty [IndexError]
+    tmp += uint64(b.limbs[i]) * uint64(c.limbs[0])
     a.limbs[i] = uint32(tmp and uint32.high)
     tmp = tmp shr 32
 
@@ -445,7 +442,6 @@ template unsignedMultiplication(a: BigInt, b, c: BigInt, bl, cl) =
 
   normalize(a)
 
-# This doesn't work when a = b
 proc multiplicationInt(a: var BigInt, b: BigInt, c: int32) =
   let bl = b.limbs.len
   var tmp: uint64
@@ -468,7 +464,6 @@ proc multiplicationInt(a: var BigInt, b: BigInt, c: int32) =
     else:
       a.flags.excl(Negative)
 
-# This doesn't work when a = b
 proc multiplication(a: var BigInt, b, c: BigInt) =
   if b.isZero or c.isZero:
     a = zero
@@ -519,7 +514,6 @@ template optMul*{x = `*`(y, z)}(x: BigInt{noalias}, y, z: BigInt) = multiplicati
 
 template optMulSame*{x = `*`(x, z)}(x,z: BigInt) = x *= z
 
-# Works when a = b
 proc shiftRight(a: var BigInt, b: BigInt, c: int) =
   a.limbs.setXLen(b.limbs.len)
   var carry: uint64
@@ -543,7 +537,6 @@ proc `shr` *(x: BigInt, y: int): BigInt =
 
 template optShr*{x = y shr z}(x, y: BigInt, z) = shiftRight(x, y, z)
 
-# Works when a = b
 proc shiftLeft(a: var BigInt, b: BigInt, c: int) =
   a.limbs.setXLen(b.limbs.len)
   var carry: uint32
