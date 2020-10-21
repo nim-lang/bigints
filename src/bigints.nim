@@ -9,10 +9,16 @@ type
     flags: set[Flags]
 
 proc setXLen[T](s: var seq[T]; newlen: Natural) =
-  let t = s
-  s = newSeq[T](newlen)
-  for i in 0 ..< min(t.len, newLen):
-    s[i] = t[i]
+  when defined(bigintsUseOldSetXLen):
+    if s == @[]:
+      s = newSeq[T](newlen)
+    else:
+      s.setLen(newlen)
+  else:
+    let t = s
+    s = newSeq[T](newlen)
+    for i in 0 ..< min(t.len, newLen):
+      s[i] = t[i]
 
 proc normalize(a: var BigInt) =
   for i in countdown(a.limbs.high, 0):
