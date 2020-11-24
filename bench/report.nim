@@ -79,7 +79,7 @@ proc readBenchmarkByTask(files: seq[string]): BenchmarkByTask =
       result.add b, file
 
 func render(t: seq[BenchmarkRow]): string =
-  result = "| |cpuTimes|CI(lower)|CI(upper)|\n"
+  result = "| |cpuTimes|CI(lower)|CI(upper)|\n|---|---|---|---|\n"
   for row in t:
     result.add &"|{row.name}|{row.cpuTimes:.1f}|{row.ciLower:.1f}|{row.ciUpper:.1f}|\n"
 
