@@ -73,23 +73,16 @@ proc unsignedCmp(a: BigInt, b: int32): int64 =
   # here a and b have same sign a none of them is zero.
   # in particular we have that a.limbs.len >= 1
   result = int64(a.limbs.len) - 1
-
-  if result != 0:
-    return
-
+  if result != 0: return
   result = int64(a.limbs[0]) - int64(b)
 
 proc unsignedCmp(a: int32, b: BigInt): int64 = -unsignedCmp(b, a)
 
 proc unsignedCmp(a, b: BigInt): int64 =
   result = int64(a.limbs.len) - int64(b.limbs.len)
-
-  if result != 0:
-    return
-
+  if result != 0: return
   for i in countdown(a.limbs.high, 0):
     result = int64(a.limbs[i]) - int64(b.limbs[i])
-
     if result != 0:
       return
 
@@ -141,17 +134,17 @@ proc cmp*(a: BigInt, b: int32): int64 =
 
 proc cmp*(a: int32, b: BigInt): int64 = -cmp(b, a)
 
-proc `<` *(a, b: BigInt): bool = cmp(a, b) < 0
-proc `<` *(a: BigInt, b: int32): bool = cmp(a, b) < 0
-proc `<` *(a: int32, b: BigInt): bool = cmp(a, b) < 0
+proc `<`*(a, b: BigInt): bool = cmp(a, b) < 0
+proc `<`*(a: BigInt, b: int32): bool = cmp(a, b) < 0
+proc `<`*(a: int32, b: BigInt): bool = cmp(a, b) < 0
 
-proc `<=` *(a, b: BigInt): bool = cmp(a, b) <= 0
-proc `<=` *(a: BigInt, b: int32): bool = cmp(a, b) <= 0
-proc `<=` *(a: int32, b: BigInt): bool = cmp(a, b) <= 0
+proc `<=`*(a, b: BigInt): bool = cmp(a, b) <= 0
+proc `<=`*(a: BigInt, b: int32): bool = cmp(a, b) <= 0
+proc `<=`*(a: int32, b: BigInt): bool = cmp(a, b) <= 0
 
-proc `==` *(a, b: BigInt): bool = cmp(a, b) == 0
-proc `==` *(a: BigInt, b: int32): bool = cmp(a, b) == 0
-proc `==` *(a: int32, b: BigInt): bool = cmp(a, b) == 0
+proc `==`*(a, b: BigInt): bool = cmp(a, b) == 0
+proc `==`*(a: BigInt, b: int32): bool = cmp(a, b) == 0
+proc `==`*(a: int32, b: BigInt): bool = cmp(a, b) == 0
 
 template addParts(toAdd) =
   tmp += toAdd
@@ -163,7 +156,6 @@ proc unsignedAdditionInt(a: var BigInt, b: BigInt, c: int32) =
 
   let bl = b.limbs.len
   const m = 1
-
   a.limbs.setLen(bl)
 
   tmp = uint64(b.limbs[0]) + uint64(c)
@@ -172,36 +164,29 @@ proc unsignedAdditionInt(a: var BigInt, b: BigInt, c: int32) =
 
   for i in m ..< bl:
     addParts(uint64(b.limbs[i]))
-
   if tmp > 0'u64:
     a.limbs.add(uint32(tmp))
-
   a.flags.excl(Negative)
 
 # Works when a = b
 proc unsignedAddition(a: var BigInt, b, c: BigInt) =
   var tmp: uint64
-
   let
     bl = b.limbs.len
     cl = c.limbs.len
   var m = if bl < cl: bl else: cl
-
   a.limbs.setLen(if bl < cl: cl else: bl)
 
   for i in 0 ..< m:
     addParts(uint64(b.limbs[i]) + uint64(c.limbs[i]))
-
   if bl < cl:
     for i in m ..< cl:
       addParts(uint64(c.limbs[i]))
   else:
     for i in m ..< bl:
       addParts(uint64(b.limbs[i]))
-
   if tmp > 0'u64:
     a.limbs.add(uint32(tmp))
-
   a.flags.excl(Negative)
 
 proc negate(a: var BigInt) =
@@ -225,7 +210,6 @@ template realUnsignedSubtractionInt(a: var BigInt, b: BigInt, c: int32) =
   let bl = b.limbs.len
   const cl = 1
   const m = cl
-
   a.limbs.setLen(bl)
 
   block:
@@ -241,7 +225,6 @@ template realUnsignedSubtractionInt(a: var BigInt, b: BigInt, c: int32) =
   a.flags.excl(Negative)
 
   normalize(a)
-
   if tmp > 0:
     a.limbs.add(uint32(tmp))
 
@@ -249,19 +232,16 @@ template realUnsignedSubtractionInt(a: var BigInt, b: BigInt, c: int32) =
 # Assumes positive parameters and b > c
 template realUnsignedSubtraction(a: var BigInt, b, c: BigInt) =
   var tmp: int64
-
   let
     bl = b.limbs.len
     cl = c.limbs.len
   var m = if bl < cl: bl else: cl
-
   a.limbs.setLen(if bl < cl: cl else: bl)
 
   for i in 0 ..< m:
     tmp = int64(uint32.high) + 1 + int64(b.limbs[i]) - int64(c.limbs[i]) - tmp
     a.limbs[i] = uint32(tmp and int64(uint32.high))
     tmp = 1 - (tmp shr 32)
-
   if bl < cl:
     for i in m ..< cl:
       tmp = int64(uint32.high) + 1 - int64(c.limbs[i]) - tmp
@@ -276,7 +256,6 @@ template realUnsignedSubtraction(a: var BigInt, b, c: BigInt) =
     a.flags.excl(Negative)
 
   normalize(a)
-
   if tmp > 0:
     a.limbs.add(uint32(tmp))
 
@@ -327,19 +306,19 @@ proc addition(a: var BigInt, b, c: BigInt) =
     else:
       unsignedAddition(a, b, c)
 
-proc `+` *(a: BigInt, b: int32): BigInt=
+proc `+`*(a: BigInt, b: int32): BigInt=
   result = zero
   additionInt(result, a, b)
 
-proc `+` *(a, b: BigInt): BigInt=
+proc `+`*(a, b: BigInt): BigInt=
   result = zero
   addition(result, a, b)
 
-template `+=` *(a: var BigInt, b: BigInt) =
+template `+=`*(a: var BigInt, b: BigInt) =
   var c = a
   addition(a, c, b)
 
-template `+=` *(a: var BigInt, b: int32) =
+template `+=`*(a: var BigInt, b: int32) =
   var c = a
   additionInt(a, c, b)
 
@@ -377,19 +356,19 @@ proc subtraction(a: var BigInt, b, c: BigInt) =
     else:
       unsignedSubtraction(a, b, c)
 
-proc `-` *(a: BigInt, b: int32): BigInt=
+proc `-`*(a: BigInt, b: int32): BigInt=
   result = zero
   subtractionInt(result, a, b)
 
-template `-=` *(a: var BigInt, b: int32) =
+template `-=`*(a: var BigInt, b: int32) =
   var c = a
   subtractionInt(a, c, b)
 
-proc `-` *(a, b: BigInt): BigInt=
+proc `-`*(a, b: BigInt): BigInt=
   result = zero
   subtraction(result, a, b)
 
-template `-=` *(a: var BigInt, b: BigInt) =
+template `-=`*(a: var BigInt, b: BigInt) =
   var c = a
   subtraction(a, c, b)
 
@@ -403,7 +382,6 @@ template unsignedMultiplicationInt(a: BigInt, b: BigInt, c: int32, bl) =
 
   a.limbs[bl] = uint32(tmp and uint32.high)
   tmp = tmp shr 32
-
   normalize(a)
 
 template unsignedMultiplication(a: BigInt, b, c: BigInt, bl, cl) =
@@ -416,7 +394,6 @@ template unsignedMultiplication(a: BigInt, b, c: BigInt, bl, cl) =
 
   for i in bl ..< bl + cl:
     a.limbs[i] = 0
-
   var pos = bl
 
   while tmp > 0'u64:
@@ -429,7 +406,6 @@ template unsignedMultiplication(a: BigInt, b, c: BigInt, bl, cl) =
       tmp += uint64(a.limbs[j + i]) + uint64(b.limbs[i]) * uint64(c.limbs[j])
       a.limbs[j + i] = uint32(tmp and uint32.high)
       tmp = tmp shr 32
-
     pos = j + bl
     while tmp > 0'u64:
       tmp += uint64(a.limbs[pos])
@@ -443,7 +419,6 @@ template unsignedMultiplication(a: BigInt, b, c: BigInt, bl, cl) =
 proc multiplicationInt(a: var BigInt, b: BigInt, c: int32) =
   let bl = b.limbs.len
   var tmp: uint64
-
   a.limbs.setLen(bl + 1)
 
   unsignedMultiplicationInt(a, b, c, bl)
@@ -489,19 +464,19 @@ proc multiplication(a: var BigInt, b, c: BigInt) =
     else:
       a.flags.excl(Negative)
 
-proc `*` *(a: BigInt, b: int32): BigInt =
+proc `*`*(a: BigInt, b: int32): BigInt =
   result = zero
   multiplicationInt(result, a, b)
 
-template `*=` *(a: var BigInt, b: int32) =
+template `*=`*(a: var BigInt, b: int32) =
   var c = a
   multiplicationInt(a, c, b)
 
-proc `*` *(a, b: BigInt): BigInt =
+proc `*`*(a, b: BigInt): BigInt =
   result = zero
   multiplication(result, a, b)
 
-template `*=` *(a: var BigInt, b: BigInt) =
+template `*=`*(a: var BigInt, b: BigInt) =
   var c = a
   multiplication(a, c, b)
 
@@ -531,7 +506,7 @@ proc shiftRight(a: var BigInt, b: BigInt, c: int) =
   if a.limbs.len > 1 and a.limbs[a.limbs.high] == 0:
     a.limbs.setLen(a.limbs.high)
 
-proc `shr` *(x: BigInt, y: int): BigInt =
+proc `shr`*(x: BigInt, y: int): BigInt =
   result = zero
   shiftRight(result, x, y)
 
@@ -550,7 +525,7 @@ proc shiftLeft(a: var BigInt, b: BigInt, c: int) =
   if carry > 0'u32:
     a.limbs.add(carry)
 
-proc `shl` *(x: BigInt, y: int): BigInt =
+proc `shl`*(x: BigInt, y: int): BigInt =
   result = zero
   shiftLeft(result, x, y)
 
@@ -564,12 +539,10 @@ proc reset*(a: var BigInt) =
 proc unsignedDivRem(q: var BigInt, r: var uint32, n: BigInt, d: uint32) =
   q.limbs.setLen(n.limbs.len)
   r = 0
-
   for i in countdown(n.limbs.high, 0):
     let tmp: uint64 = uint64(n.limbs[i]) + uint64(r) shl 32
     q.limbs[i] = uint32(tmp div d)
     r = uint32(tmp mod d)
-
   while q.limbs.len > 1 and q.limbs[q.limbs.high] == 0:
     q.limbs.setLen(q.limbs.high)
 
@@ -577,7 +550,6 @@ proc bits(d: uint32): int =
   const bitLengths = [0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
                       5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5]
   var d = d
-
   while d >= 32'u32:
     result += 6
     d = d shr 6
@@ -745,36 +717,35 @@ proc division(q, r: var BigInt, n: BigInt, d: int32) =
 
   if q.limbs == @[0'u32]:
     q.flags.excl(Negative)
-
   if r.limbs == @[0'u32]:
     r.flags.excl(Negative)
 
-proc `div` *(a: BigInt, b: int32): BigInt =
+proc `div`*(a: BigInt, b: int32): BigInt =
   result = zero
   var tmp = zero
   division(result, tmp, a, b)
 
-proc `div` *(a, b: BigInt): BigInt =
+proc `div`*(a, b: BigInt): BigInt =
   result = zero
   var tmp = zero
   division(result, tmp, a, b)
 
-proc `mod` *(a: BigInt, b: int32): BigInt =
+proc `mod`*(a: BigInt, b: int32): BigInt =
   result = zero
   var tmp = zero
   division(tmp, result, a, b)
 
-proc `mod` *(a, b: BigInt): BigInt =
+proc `mod`*(a, b: BigInt): BigInt =
   result = zero
   var tmp = zero
   division(tmp, result, a, b)
 
-proc `divmod` *(a: BigInt, b: int32): tuple[q, r: BigInt] =
+proc `divmod`*(a: BigInt, b: int32): tuple[q, r: BigInt] =
   result.q = zero
   result.r = zero
   division(result.q, result.r, a, b)
 
-proc `divmod` *(a, b: BigInt): tuple[q, r: BigInt] =
+proc `divmod`*(a, b: BigInt): tuple[q, r: BigInt] =
   result.q = zero
   result.r = zero
   division(result.q, result.r, a, b)
@@ -822,7 +793,6 @@ proc calcSizes(): array[2..36, int] =
       x = x div i
       result[i].inc()
 
-#const sizes: array[2..36, int] = [31,20,15,13,12,11,10,10,9,9,8,8,8,8,7,7,7,7,7,7,7,7,6,6,6,6,6,6,6,6,6,6,6,6,6]
 
 const sizes = calcSizes()
 
@@ -835,7 +805,6 @@ proc toStringMultipleTwo(a: BigInt, base: range[2..36] = 16): string =
   result = newStringOfCap(size * a.limbs.len + 1)
   if Negative in a.flags:
     result.add('-')
-  #result.add("0x")
 
   # Special case for the highest
   var x = a.limbs[a.limbs.high]
@@ -894,14 +863,11 @@ proc toString*(a: BigInt, base: range[2..36] = 10): string =
     return "0"
   if base in multiples:
     return toStringMultipleTwo(a, base)
-
   var
     tmp = a
     c = 0'u32
     d = uint32(base) ^ uint32(sizes[base])
     s = ""
-
-  result = ""
 
   if Negative in a.flags:
     tmp.flags.excl(Negative)
