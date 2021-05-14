@@ -5,12 +5,9 @@
 import strutils
 
 type
-  Flags = enum
-    Negative
-
   BigInt* = object
     limbs: seq[uint32]
-    flags: set[Flags]
+    isNegative: bool
 
 proc normalize(a: var BigInt) =
   for i in countdown(a.limbs.high, 0):
@@ -19,34 +16,31 @@ proc normalize(a: var BigInt) =
       return
   a.limbs.setLen(1)
 
-proc initBigInt*(vals: seq[uint32], flags: set[Flags] = {}): BigInt =
+proc initBigInt*(vals: sink seq[uint32], isNegative = false): BigInt =
   ## Initialize BigInt from a sequence of `uint32` values.
   runnableExamples:
     let a = @[10'u32, 2'u32].initBigInt
     let b = 10 + 2 shl 32
     assert $a == $b
   result.limbs = vals
-  result.flags = flags
+  result.isNegative = isNegative
 
 proc initBigInt*[T: int8|int16|int32](val: T): BigInt =
   if val < 0:
     result.limbs = @[(not val.int32).uint32 + 1]
-    result.flags = {Negative}
+    result.isNegative = true
   else:
     result.limbs = @[val.int32.uint32]
-    result.flags = {}
+    result.isNegative = false
 
 proc initBigInt*[T: uint8|uint16|uint32](val: T): BigInt =
   result.limbs = @[val.uint32]
-  result.flags = {}
 
 proc initBigInt*(val: int64): BigInt =
   var a = val.uint64
   if val < 0:
     a = not a + 1
-    result.flags = {Negative}
-  else:
-    result.flags = {}
+    result.isNegative = true
   if a > uint32.high.uint64:
     result.limbs = @[(a and uint32.high).uint32, (a shr 32).uint32]
   else:
@@ -57,7 +51,6 @@ proc initBigInt*(val: uint64): BigInt =
     result.limbs = @[(val and uint32.high).uint32, (val shr 32).uint32]
   else:
     result.limbs = @[val.uint32]
-  result.flags = {}
 
 when sizeof(int) == 4:
   template initBigInt*(val: int): BigInt = initBigInt(val.int32)
@@ -104,17 +97,17 @@ proc cmp(a, b: BigInt): int64 =
   if a.isZero:
     if b.isZero:
       return 0
-    elif Negative in b.flags: # b.isNegative
+    elif b.isNegative:
       return 1
     else:
       return -1
-  elif Negative in a.flags: # a.isNegative
-    if b.isZero or Negative notin b.flags: # b >= 0
+  elif a.isNegative:
+    if b.isZero or not b.isNegative:
       return -1
     else:
       return unsignedCmp(b, a) 
   else: # a > 0
-    if b.isZero or Negative in b.flags: # b <= 0
+    if b.isZero or b.isNegative:
       return 1
     else:
       return unsignedCmp(a, b)
@@ -131,7 +124,7 @@ proc cmp(a: BigInt, b: int32): int64 =
       return 0
     else:
       return -1
-  elif Negative in a.flags:  # a.isNegative
+  elif a.isNegative:
     if b < 0:
       return unsignedCmp(b, a)
     else:
@@ -199,7 +192,7 @@ proc unsignedAdditionInt(a: var BigInt, b: BigInt, c: int32) =
     addParts(uint64(b.limbs[i]))
   if tmp > 0'u64:
     a.limbs.add(uint32(tmp))
-  a.flags.excl(Negative)
+  a.isNegative = false
 
 proc unsignedAddition(a: var BigInt, b, c: BigInt) =
   var tmp: uint64
@@ -219,13 +212,10 @@ proc unsignedAddition(a: var BigInt, b, c: BigInt) =
       addParts(uint64(b.limbs[i]))
   if tmp > 0'u64:
     a.limbs.add(uint32(tmp))
-  a.flags.excl(Negative)
+  a.isNegative = false
 
 proc negate(a: var BigInt) =
-  if Negative in a.flags:
-    a.flags.excl(Negative)
-  else:
-    a.flags.incl(Negative)
+  a.isNegative = not a.isNegative
 
 proc `-`*(a: BigInt): BigInt =
   ## Unary minus for `BigInt`.
@@ -236,10 +226,7 @@ proc `-`*(a: BigInt): BigInt =
     assert (-a) == -5'bi
     assert (-b) == 10'bi
   result = a
-  if Negative in a.flags:
-    result.flags.excl(Negative)
-  else:
-    result.flags.incl(Negative)
+  negate(result)
 
 template realUnsignedSubtractionInt(a: var BigInt, b: BigInt, c: int32) =
   var tmp: int64
@@ -259,7 +246,7 @@ template realUnsignedSubtractionInt(a: var BigInt, b: BigInt, c: int32) =
     tmp = int64(uint32.high) + 1 + int64(b.limbs[i]) - tmp
     a.limbs[i] = uint32(tmp and int64(uint32.high))
     tmp = 1 - (tmp shr 32)
-  a.flags.excl(Negative)
+  a.isNegative = false
 
   normalize(a)
   if tmp > 0:
@@ -282,13 +269,13 @@ template realUnsignedSubtraction(a: var BigInt, b, c: BigInt) =
       tmp = int64(uint32.high) + 1 - int64(c.limbs[i]) - tmp
       a.limbs[i] = uint32(tmp and int64(uint32.high))
       tmp = 1 - (tmp shr 32)
-    a.flags.incl(Negative)
+    a.isNegative = true
   else:
     for i in m ..< bl:
       tmp = int64(uint32.high) + 1 + int64(b.limbs[i]) - tmp
       a.limbs[i] = uint32(tmp and int64(uint32.high))
       tmp = 1 - (tmp shr 32)
-    a.flags.excl(Negative)
+    a.isNegative = false
 
   normalize(a)
   if tmp > 0:
@@ -313,10 +300,10 @@ proc unsignedSubtraction(a: var BigInt, b, c: BigInt) =
 proc additionInt(a: var BigInt, b: BigInt, c: int32) =
   if b.isZero:
     a = c.initBigInt
-  elif Negative in b.flags:
+  elif b.isNegative:
     if c < 0:
       unsignedAdditionInt(a, b, c)
-      a.flags.incl(Negative)
+      a.isNegative = true
     else:
       unsignedSubtractionInt(a, b, c)
   else:
@@ -327,14 +314,14 @@ proc additionInt(a: var BigInt, b: BigInt, c: int32) =
       unsignedAdditionInt(a, b, c)
 
 proc addition(a: var BigInt, b, c: BigInt) =
-  if Negative in b.flags:
-    if Negative in c.flags:
+  if b.isNegative:
+    if c.isNegative:
       unsignedAddition(a, b, c)
-      a.flags.incl(Negative)
+      a.isNegative = true
     else:
       unsignedSubtraction(a, c, b)
   else:
-    if Negative in c.flags:
+    if c.isNegative:
       unsignedSubtraction(a, b, c)
     else:
       unsignedAddition(a, b, c)
@@ -361,13 +348,13 @@ template `+=`*(a: var BigInt, b: BigInt) =
 proc subtractionInt(a: var BigInt, b: BigInt, c: int32) =
   if b.isZero:
     a = (-c).initBigInt
-  elif Negative in b.flags:
+  elif b.isNegative:
     if c < 0:
       unsignedSubtractionInt(a, b, c)
-      a.flags.incl(Negative)
+      a.isNegative = true
     else:
       unsignedAdditionInt(a, b, c)
-      a.flags.incl(Negative)
+      a.isNegative = true
   else:
     if c < 0:
       unsignedAdditionInt(a, b, c)
@@ -375,14 +362,14 @@ proc subtractionInt(a: var BigInt, b: BigInt, c: int32) =
       unsignedSubtractionInt(a, b, c)
 
 proc subtraction(a: var BigInt, b, c: BigInt) =
-  if Negative in b.flags:
-    if Negative in c.flags:
+  if b.isNegative:
+    if c.isNegative:
       unsignedSubtraction(a, c, b)
     else:
       unsignedAddition(a, b, c)
-      a.flags.incl(Negative)
+      a.isNegative = true
   else:
-    if Negative in c.flags:
+    if c.isNegative:
       unsignedAddition(a, b, c)
     else:
       unsignedSubtraction(a, b, c)
@@ -451,17 +438,7 @@ proc multiplication(a: var BigInt, b, c: BigInt) =
     unsignedMultiplication(a, c, b, cl, bl)
   else:
     unsignedMultiplication(a, b, c, bl, cl)
-
-  if Negative in b.flags:
-    if Negative in c.flags:
-      a.flags.excl(Negative)
-    else:
-      a.flags.incl(Negative)
-  else:
-    if Negative in c.flags:
-      a.flags.incl(Negative)
-    else:
-      a.flags.excl(Negative)
+  a.isNegative = b.isNegative xor c.isNegative
 
 proc `*`*(a, b: BigInt): BigInt =
   runnableExamples:
@@ -527,11 +504,11 @@ proc `shl`*(x: BigInt, y: int): BigInt =
   result = zero
   shiftLeft(result, x, y)
 
-proc reset*(a: var BigInt) =
+proc reset(a: var BigInt) =
   ## Resets a `BigInt` back to the zero value.
   a.limbs.setLen(1)
   a.limbs[0] = 0
-  a.flags = {}
+  a.isNegative = false
 
 proc unsignedDivRem(q: var BigInt, r: var uint32, n: BigInt, d: uint32) =
   q.limbs.setLen(n.limbs.len)
@@ -569,7 +546,7 @@ proc unsignedDivRem(q, r: var BigInt, n, d: BigInt) =
     unsignedDivRem(q, x, n, d.limbs[0])
     r.limbs.setLen(1)
     r.limbs[0] = x
-    r.flags = {}
+    r.isNegative = false
   else:
     assert nn >= dn and dn >= 2
     var carry: uint64
@@ -619,7 +596,7 @@ proc unsignedDivRem(q, r: var BigInt, n, d: BigInt) =
         z.reset()
         z.limbs[0] = r.limbs[i]
         z *= q1b
-        z.flags.incl Negative
+        z.isNegative = true
         z += zhi
         var z1 = z
         qib.limbs[0] = q.limbs[v+i]
@@ -634,10 +611,10 @@ proc unsignedDivRem(q, r: var BigInt, n, d: BigInt) =
           zhi.limbs[0] = z1.limbs[1]
           if z1.limbs[0] > qib.limbs[0]:
             zhi.limbs[0] += 1
-          zhi.flags.incl Negative
+          zhi.isNegative = true
         elif z < 0:
           zhi.limbs[0] = 1
-          zhi.flags.incl Negative
+          zhi.isNegative = true
         else:
           zhi.reset()
 
@@ -667,16 +644,8 @@ proc unsignedDivRem(q, r: var BigInt, n, d: BigInt) =
 proc division(q, r: var BigInt, n, d: BigInt) =
   unsignedDivRem(q, r, n, d)
 
-  # set signs
-  if n < 0 xor d < 0:
-    q.flags.incl(Negative)
-  else:
-    q.flags.excl(Negative)
-
-  if n < 0 and r != 0:
-    r.flags.incl(Negative)
-  else:
-    r.flags.excl(Negative)
+  q.isNegative = n < 0 xor d < 0
+  r.isNegative = n < 0 and r != 0
 
   # divrem -> divmod
   if (r < 0 and d > 0) or
@@ -685,10 +654,10 @@ proc division(q, r: var BigInt, n, d: BigInt) =
     q -= one
 
   if q.limbs == @[0'u32]:
-    q.flags.excl(Negative)
+    q.isNegative = false
 
   if r.limbs == @[0'u32]:
-    r.flags.excl(Negative)
+    r.isNegative = false
 
 proc `div`*(a, b: BigInt): BigInt =
   ## Computes the integer division of two `BigInt` numbers.
@@ -754,7 +723,7 @@ proc toStringMultipleTwo(a: BigInt, base: range[2..36] = 16): string =
     cs = newStringOfCap(size)
 
   result = newStringOfCap(size * a.limbs.len + 1)
-  if Negative in a.flags:
+  if a.isNegative:
     result.add('-')
 
   # Special case for the highest
@@ -813,8 +782,8 @@ proc toString*(a: BigInt, base: range[2..36] = 10): string =
     d = uint32(base) ^ uint32(sizes[base])
     s = ""
 
-  if Negative in a.flags:
-    tmp.flags.excl(Negative)
+  if a.isNegative:
+    tmp.isNegative = false
     result.add('-')
 
   while tmp > 0:
@@ -846,17 +815,17 @@ proc initBigInt*(str: string, base: range[2..36] = 10): BigInt =
     assert a == 1234'bi
     assert b == 668'bi
   result.limbs = @[0'u32]
-  result.flags = {}
+  result.isNegative = false
 
   var mul = one
   let size = sizes[base]
   var first = 0
   var str = str
-  var fs: set[Flags]
+  var neg = false
 
   if str[0] == '-':
     first = 1
-    fs.incl(Negative)
+    neg = true
     str[0] = '0'
 
   for i in countdown((str.high div size) * size, 0, size):
@@ -877,7 +846,7 @@ proc initBigInt*(str: string, base: range[2..36] = 10): BigInt =
       smul *= base.uint32
     result += mul * initBigInt(num)
     mul *= initBigInt(smul)
-  result.flags = fs
+  result.isNegative = neg
 
 proc `'bi`*(s: string): BigInt =
   ## Create a `BigInt` from a literal, using the suffix `'bi`.
