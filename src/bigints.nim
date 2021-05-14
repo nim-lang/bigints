@@ -967,6 +967,14 @@ proc initBigInt*(str: string, base: range[2..36] = 10): BigInt =
 
   result.flags = fs
 
+
+proc `'bi`*(s: string): BigInt =
+  case s[0..min(s.high, 1)]
+  of "0x", "0X": initBigInt(s[2..s.high], base = 16)
+  of "0b", "0B": initBigInt(s[2..s.high], base = 2)
+  else: initBigInt(s)
+
+
 proc inc*(a: var BigInt, b: BigInt) =
   var c = a
   addition(a, c, b)
