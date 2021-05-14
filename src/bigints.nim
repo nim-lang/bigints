@@ -4,7 +4,7 @@ type
   Flags* = enum
     Negative
 
-  BigInt* = tuple
+  BigInt* = object
     limbs: seq[uint32]
     flags: set[Flags]
 
@@ -953,7 +953,7 @@ proc initBigInt*(str: string, base: range[2..36] = 10): BigInt =
       let c = toLowerAscii(str[j])
 
       # This is pretty expensive
-      if not (c in digits[0..<base]):
+      if c notin digits[0 .. base-1]:
         raise newException(ValueError, "Invalid input: " & str[j])
 
       case c
