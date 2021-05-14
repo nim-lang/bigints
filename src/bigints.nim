@@ -1,7 +1,7 @@
 import strutils
 
 type
-  Flags* = enum
+  Flags = enum
     Negative
 
   BigInt* = object
@@ -60,8 +60,9 @@ else:
 proc initBigInt*(val: BigInt): BigInt =
   result = val
 
-const zero* = initBigInt(0)
-const one* = initBigInt(1)
+const
+  zero* = initBigInt(0)
+  one* = initBigInt(1)
 
 proc isZero(a: BigInt): bool {.inline.} =
   for i in countdown(a.limbs.high, 0):
@@ -109,7 +110,7 @@ proc cmp*(a, b: BigInt): int64 =
     else:
       return unsignedCmp(a, b)
 
-proc cmp*(a: BigInt, b: int32): int64 =
+proc cmp(a: BigInt, b: int32): int64 =
   ## Returns:
   ## * a value less than zero, if `a < b`
   ## * a value greater than zero, if `a > b`
@@ -132,19 +133,16 @@ proc cmp*(a: BigInt, b: int32): int64 =
     else:
       return unsignedCmp(b, a)
 
-proc cmp*(a: int32, b: BigInt): int64 = -cmp(b, a)
+proc cmp(a: int32, b: BigInt): int64 = -cmp(b, a)
 
 proc `<`*(a, b: BigInt): bool = cmp(a, b) < 0
-proc `<`*(a: BigInt, b: int32): bool = cmp(a, b) < 0
-proc `<`*(a: int32, b: BigInt): bool = cmp(a, b) < 0
+proc `<`(a: BigInt, b: int32): bool = cmp(a, b) < 0
+proc `<`(a: int32, b: BigInt): bool = cmp(a, b) < 0
 
 proc `<=`*(a, b: BigInt): bool = cmp(a, b) <= 0
-proc `<=`*(a: BigInt, b: int32): bool = cmp(a, b) <= 0
-proc `<=`*(a: int32, b: BigInt): bool = cmp(a, b) <= 0
 
 proc `==`*(a, b: BigInt): bool = cmp(a, b) == 0
-proc `==`*(a: BigInt, b: int32): bool = cmp(a, b) == 0
-proc `==`*(a: int32, b: BigInt): bool = cmp(a, b) == 0
+proc `==`(a: BigInt, b: int32): bool = cmp(a, b) == 0
 
 template addParts(toAdd) =
   tmp += toAdd
@@ -306,10 +304,6 @@ proc addition(a: var BigInt, b, c: BigInt) =
     else:
       unsignedAddition(a, b, c)
 
-proc `+`*(a: BigInt, b: int32): BigInt=
-  result = zero
-  additionInt(result, a, b)
-
 proc `+`*(a, b: BigInt): BigInt=
   result = zero
   addition(result, a, b)
@@ -317,12 +311,6 @@ proc `+`*(a, b: BigInt): BigInt=
 template `+=`*(a: var BigInt, b: BigInt) =
   var c = a
   addition(a, c, b)
-
-template `+=`*(a: var BigInt, b: int32) =
-  var c = a
-  additionInt(a, c, b)
-
-template optAddInt*{x = y + z}(x,y: BigInt, z: int32) = additionInt(x, y, z)
 
 template optAdd*{x = y + z}(x,y,z: BigInt) = addition(x, y, z)
 
@@ -356,14 +344,6 @@ proc subtraction(a: var BigInt, b, c: BigInt) =
     else:
       unsignedSubtraction(a, b, c)
 
-proc `-`*(a: BigInt, b: int32): BigInt=
-  result = zero
-  subtractionInt(result, a, b)
-
-template `-=`*(a: var BigInt, b: int32) =
-  var c = a
-  subtractionInt(a, c, b)
-
 proc `-`*(a, b: BigInt): BigInt=
   result = zero
   subtraction(result, a, b)
@@ -374,15 +354,6 @@ template `-=`*(a: var BigInt, b: BigInt) =
 
 template optSub*{x = y - z}(x,y,z: BigInt) = subtraction(x, y, z)
 
-template unsignedMultiplicationInt(a: BigInt, b: BigInt, c: int32, bl) =
-  for i in 0 ..< bl:
-    tmp += uint64(b.limbs[i]) * uint64(c)
-    a.limbs[i] = uint32(tmp and uint32.high)
-    tmp = tmp shr 32
-
-  a.limbs[bl] = uint32(tmp and uint32.high)
-  tmp = tmp shr 32
-  normalize(a)
 
 template unsignedMultiplication(a: BigInt, b, c: BigInt, bl, cl) =
   # always called with bl >= cl
@@ -415,27 +386,6 @@ template unsignedMultiplication(a: BigInt, b, c: BigInt, bl, cl) =
 
   normalize(a)
 
-# This doesn't work when a = b
-proc multiplicationInt(a: var BigInt, b: BigInt, c: int32) =
-  let bl = b.limbs.len
-  var tmp: uint64
-  a.limbs.setLen(bl + 1)
-
-  unsignedMultiplicationInt(a, b, c, bl)
-
-  if a.limbs == @[0'u32]:
-    return
-
-  if Negative in b.flags:
-    if c < 0:
-      a.flags.excl(Negative)
-    else:
-      a.flags.incl(Negative)
-  else:
-    if c < 0:
-      a.flags.incl(Negative)
-    else:
-      a.flags.excl(Negative)
 
 # This doesn't work when a = b
 proc multiplication(a: var BigInt, b, c: BigInt) =
@@ -464,11 +414,7 @@ proc multiplication(a: var BigInt, b, c: BigInt) =
     else:
       a.flags.excl(Negative)
 
-proc `*`*(a: BigInt, b: int32): BigInt =
-  result = zero
-  multiplicationInt(result, a, b)
-
-template `*=`*(a: var BigInt, b: int32) =
+template `*=`(a: var BigInt, b: int32) =
   var c = a
   multiplicationInt(a, c, b)
 
@@ -479,10 +425,6 @@ proc `*`*(a, b: BigInt): BigInt =
 template `*=`*(a: var BigInt, b: BigInt) =
   var c = a
   multiplication(a, c, b)
-
-template optMulInt*{x = `*`(y, z)}(x: BigInt{noalias}, y: BigInt, z: int32) = multiplicationInt(x, y, z)
-
-template optMulSameInt*{x = `*`(x, z)}(x: BigInt, z: int32) = x *= z
 
 template optMul*{x = `*`(y, z)}(x: BigInt{noalias}, y, z: BigInt) = multiplication(x, y, z)
 
@@ -693,57 +635,15 @@ proc division(q, r: var BigInt, n, d: BigInt) =
   if r.limbs == @[0'u32]:
     r.flags.excl(Negative)
 
-proc division(q, r: var BigInt, n: BigInt, d: int32) =
-  r.reset()
-  # TODO: is this correct?
-  unsignedDivRem(q, r.limbs[0], n, uint32(d))
-
-  # set signs
-  if n < 0 xor d < 0:
-    q.flags.incl(Negative)
-  else:
-    q.flags.excl(Negative)
-
-  if n < 0 and r != 0:
-    r.flags.incl(Negative)
-  else:
-    r.flags.excl(Negative)
-
-  # divrem -> divmod
-  if (r < 0 and d > 0) or
-     (r > 0 and d < 0):
-    r += d
-    q -= one
-
-  if q.limbs == @[0'u32]:
-    q.flags.excl(Negative)
-  if r.limbs == @[0'u32]:
-    r.flags.excl(Negative)
-
-proc `div`*(a: BigInt, b: int32): BigInt =
-  result = zero
-  var tmp = zero
-  division(result, tmp, a, b)
-
 proc `div`*(a, b: BigInt): BigInt =
   result = zero
   var tmp = zero
   division(result, tmp, a, b)
 
-proc `mod`*(a: BigInt, b: int32): BigInt =
-  result = zero
-  var tmp = zero
-  division(tmp, result, a, b)
-
 proc `mod`*(a, b: BigInt): BigInt =
   result = zero
   var tmp = zero
   division(tmp, result, a, b)
-
-proc `divmod`*(a: BigInt, b: int32): tuple[q, r: BigInt] =
-  result.q = zero
-  result.r = zero
-  division(result.q, result.r, a, b)
 
 proc `divmod`*(a, b: BigInt): tuple[q, r: BigInt] =
   result.q = zero
@@ -831,32 +731,16 @@ proc reverse(a: string): string =
   for i, c in a:
     result[a.high - i] = c
 
-proc `^`* [T](base, exp: T): T =
+proc `^`(base, exp: uint32): uint32 =
   var
     base = base
     exp = exp
   result = 1
-
   while exp != 0:
     if (exp and 1) != 0:
       result *= base
     exp = exp shr 1
     base *= base
-
-proc pow*(base: int32|BigInt, exp: int32|BigInt): BigInt =
-  when type(base) is BigInt:
-    var base = base
-  else:
-    var base = initBigInt(base)
-  var exp = exp
-  result = one
-
-  while exp != 0:
-    if (exp mod 2) > 0:
-      result *= base
-    exp = exp shr 1
-    var tmp = base
-    base *= tmp
 
 proc toString*(a: BigInt, base: range[2..36] = 10): string =
   if a.isZero:
@@ -939,7 +823,7 @@ proc inc*(a: var BigInt, b: BigInt) =
   var c = a
   addition(a, c, b)
 
-proc inc*(a: var BigInt, b: int32 = 1) =
+proc inc(a: var BigInt, b: int32 = 1) =
   var c = a
   additionInt(a, c, b)
 
@@ -947,7 +831,7 @@ proc dec*(a: var BigInt, b: BigInt) =
   var c = a
   subtraction(a, c, b)
 
-proc dec*(a: var BigInt, b: int32 = 1) =
+proc dec(a: var BigInt, b: int32 = 1) =
   var c = a
   subtractionInt(a, c, b)
 
@@ -974,209 +858,3 @@ iterator `..<`*(a, b: BigInt): BigInt {.inline.} =
   while res < b:
     yield res
     inc res
-
-when isMainModule:
-  # We're about twice as slow as GMP in these microbenchmarks:
-
-  # 4.8 s vs 3.9 s GMP
-  #var a = initBigInt(1337)
-  #var b = initBigInt(42)
-  #var c = initBigInt(0)
-
-  #for i in 0..200000:
-  #  c = a + b
-  #  b = a + c
-  #  a = b + c
-  #c += c
-
-  # 1.0 s vs 0.7 s GMP
-  #var a = initBigInt(0xFFFFFFFF'u32)
-  #var b = initBigInt(0xFFFFFFFF'u32)
-  #var c = initBigInt(0)
-
-  #for i in 0..20_000:
-  #  c = a * b
-  #  a = c * b
-
-  #var a = initBigInt(@[0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32])
-  #var b = initBigInt(@[0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32])
-  #var c = initBigInt(0)
-
-  # 0.5 s vs 0.2 s GMP
-  #var a = initBigInt(@[0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32])
-  #var b = initBigInt(@[0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32, 0xFFFFFFFF'u32])
-  #var c = initBigInt(0)
-  #for i in 0..10_000_000:
-  #  c = a * b
-
-  #var a = initBigInt(1000000000)
-  #var b = initBigInt(1000000000)
-  #var c = a+a+a+a+a+a+a+a+a+a+a+a+a+a+a+a+a+a
-  #echo c.toString()
-
-  #var a = initBigInt(@[0xFEDCBA98'u32, 0xFFFFFFFF'u32, 0x12345678'u32, 0xFFFFFFFF'u32])
-  #var b = initBigInt(0)
-  #echo a
-  #b = a shl 205
-  #echo b
-  #a = a shl 205
-  #echo a
-  #for i in 0..100000000:
-  #  shiftLeft(b, a, 24)
-  #echo b
-  #shiftLeft(a, b, 24)
-  #echo a
-  #shiftRight(a, b, 20000)
-  #echo a
-
-  #echo a
-  #c = a * b
-  #echo c
-  #for i in 0..50000:
-  #  a *= b
-  #echo a
-
-  #echo cmp(a,a)
-  #echo cmp(a,b)
-  #echo cmp(b,a)
-  #echo cmp(a,c)
-  #echo cmp(c,a)
-  #echo cmp(b,c)
-  #echo cmp(b,b)
-  #echo cmp(c,c)
-
-  #for i in 0..1000000:
-  #  var x = initBigInt("0000111122223333444455556666777788889999")
-  #var x = initBigInt("0000111122223333444455556666777788889999", 16)
-  #var x = initBigInt("11", 16)
-  #echo x
-  #var y = initBigInt("-0000110000000000000000000000000000000000", 16)
-  #var y = initBigInt("-11", 16)
-  #echo y
-
-  #var a = initBigInt("222222222222222222222222222222222222222222222222222222222222222222222222222222", 16)
-  #var b = initBigInt("1111111111111111111111111111111111111111111111111111111111111111111111111", 16)
-  #var q = initBigInt(0)
-  #var r = initBigInt(0)
-  #division(q,r,a,b)
-  #echo q.limbs
-  #echo r.limbs
-
-  #var a = initBigInt("fffffffffffffffffffffffff", 16)
-  #var b = initBigInt("fffffffffffffffffffffffff", 16)
-  #echo a
-  #echo b
-  #echo a * b
-
-  #var a = initBigInt("111122223333444455556666777788889999", 10)
-  #var b = 0'u32
-  #var c = initBigInt(0)
-
-  #echo a.limbs
-  #division(c, b, a, 100)
-  #echo c
-  #echo b
-
-  #echo a.toString(10)
-
-  #var a = initBigInt("111122223333444455556666777788889999", 10)
-  #var b = initBigInt(0)
-  #var c = initBigInt(0)
-
-  #echo a.limbs
-  #division(c, b, a, initBigInt("556666777788889999", 10))
-  #echo c
-  #echo b
-
-  #echo a.toString(10)
-
-  #var a = initBigInt(@[4294967295'u32, 0'u32, 1'u32])
-  #var b = initBigInt(0)
-  #a = a shl 31
-  ##var b = a shl 1
-  #for i in countdown(a.limbs.high, 0):
-  #  stdout.write(toHex(int64(a.limbs[i]), 8) & " ")
-  #echo "\n ----- "
-  #for i in countdown(b.limbs.high, 0):
-  #  stdout.write(toHex(int64(b.limbs[i]), 8) & " ")
-
-  #var a = initBigInt(0)
-  #a.limbs.setLen(20001)
-  #for i in 0..20000:
-  #  a.limbs[i] = 0xFF_FF_FF_FF'u32
-  ##a.limbs[20001] = 0b0000_0001_1111_1111_1111_1111_1111_1111'u32
-
-  #var a = initBigInt(-13)
-  #var b = initBigInt(-10)
-  #echo a div b
-  #echo a mod b
-  #echo a.toString(10)
-
-  #var a = initBigInt(3)
-  #var b = initBigInt("100000000000000000")
-  #echo a - b
-
-  #a = a div b
-  #echo a
-
-  #var a = initBigInt("114563644360333347700372329626168316793115507959307062949710523744989695464449225205841634915762626460598360592957710138104092802289353468061413012636613144333838896336671958767939732533712207225240881417306586834931980305973362337217612343305405994503389889956658191787743071027072639968990356716036687103663834079725347692146897315979003906250")
-  #var b = initBigInt("37110314837047916227882694320360675271152660126976564204341054165582659066313003251294342658387330791109263639054518846261243201776403745881386398672927926765573625696633292384950281404347174511630802572216125672511290566438440980352276195055462659645876962628295015910491909958529441748144812127421727850262294140657104435376822948455810546875")
-  ##var c = a div b
-  #var d = a mod b
-  ##echo c
-  #echo a
-  #echo b
-  #echo d
-
-  #var a = initBigInt(3225)
-  #var b = initBigInt(240)
-  #a += b
-  #echo a
-
-  #var a = initBigInt("176206390484111649670565285281535494096573857183344276918667663963221676301197729485410008095645976019172170391040222532126288730386146435153818474132388709061170722938476941658754628345275176986460943315899031023622489897390090425887600422373020323833947861264392150228054803318242325151623477497569678695274872363196564000211830423270100846173925887876497546308817147991387816212128421014623672280450790006161488181500288969289620708421445635520413947028146871017121332770732190770726575692877757534865394691433859985510087629268621329076774293546349631593330716567725109440366992918345112005896305414469484767723908970046328045488303702537173428410107925617484663656273404571746913676830920092271554113099319300324096636450399568799275846937847473892408009795197569885285496759648162838267229246514158878204348299246423803547265912214453433448276097598585130404095115054589087489833596463142739580441144264799646634855889715254306793212890625")
-  #var b = initBigInt(0)
-  #var acc = initBigInt("861210082732066541532665887925299303579512781038289409489470886836236995532341661502300077529662592103949902897170235705942880440590653121006900618559776768310816610553371337447706999981577599375587341186749682484082350039871662512708747027935794011364002882479290935571588018504174265039105934908825594902472830871614778292875382370917452638932983308796613574868097761220057870728168147915772008453100610713188736271915262792413408620656544871809262305724051465756524682416577887280505693119967339110566033625292183037852238710834633719668887688918151471745620796224928388087679593585646815738655018105979481430851232357068527760908700832334635544169865534008118045857792961830603167249028302420612456968287955659132951856711104091884763609192744199821311720800038359880293199593290902312150930776977888986212927451017185789241644617568344066866602117874714001907745824210773602563102098490105135858430074335956305731087923049926757812500")
-  #var c = a * b
-  #echo c.limbs
-  #echo acc - c
-
-  #var a = initBigInt(0)
-  #a.flags.incl Negative
-  #var b = initBigInt(1)
-  #a -= one
-  #echo a
-
-  #var a = initBigInt("1667510816052609025")
-  #var b = initBigInt("1667510816052609025")
-  #var c = a * b
-  #echo a
-  #echo b
-  #echo c
-
-  #var a = 0.initBigInt
-  #var b = 0.initBigInt
-  #division(a, b, initBigInt("756628490253123014067933708583503295844929075882239485540431356534910033618830501144105195285364489562157441837796863614070956636498456792910898817389940831543204657474297072356228690296487944931559885281889207062770782744748470400"), initBigInt("115792089237316195423570985008687907853269984665640564039457584007908834671663"))
-  #echo a.toString(16)
-  #echo "6534371175412604458958908912693048525839811796587982546211129043135405424530153901770406203935164968917121831102336830270909059548152185210409961777233761".initBigInt.toString(16)
-  #echo "---"
-  #echo b.toString(16)
-  #echo "91914383230618135761690975197207778399550061809281766160147273830617914855857".initBigInt.toString(16)
-
-  #var x = initBigInt("2255875222507173014903831549779832674595557833545810114678871681588232398142786344083210556465068007125337448701463750107379031912851019881138289772814467603519957280600094236460918741699178978152447128809716538793960237414981350687")
-  #var y = initBigInt("115792089237316195423570985008687907853269984665640564039457584007908834671663")
-  #echo "19482118660833131143565059488889132062536031277944370802080045650318995799224424488550052744512926453902359616090610097833707910217541850445599669546171445"
-  #echo x div y
-  #echo "---"
-  #echo "48317604920791681227269902149572831041666497563152549156566744096979700087652"
-  #echo x mod y
-
-  #var x: BigInt = @[175614014'u32, 1225800181'u32].initBigInt
-  #echo x shr 32
-
-  #var y: BigInt = @[175614014'u32, 1225800181'u32].initBigInt
-  #echo y shr 16
-
-  #let two = 2.initBigInt
-  #let n = initBigInt "19482118660833131143565059488889132062536031277944370802080045650318995799224424488550052744512926453902359616090610097833707910217541850445599669546171445"
-  #for i in countdown(n, two):
-  #  echo i
