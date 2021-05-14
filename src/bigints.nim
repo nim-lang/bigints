@@ -1,3 +1,8 @@
+## The official library for arbitrary precision integers, implemented in pure
+## Nim, without any external dependencies.
+
+
+
 import strutils
 
 type
@@ -16,6 +21,11 @@ proc normalize(a: var BigInt) =
   a.limbs.setLen(1)
 
 proc initBigInt*(vals: seq[uint32], flags: set[Flags] = {}): BigInt =
+  ## Initialize BigInt from a sequence of `uint32` values.
+  runnableExamples:
+    let a = @[10'u32, 2'u32].initBigInt
+    let b = 10 + 2 shl 32
+    assert $a == $b
   result.limbs = vals
   result.flags = flags
 
@@ -61,8 +71,8 @@ proc initBigInt*(val: BigInt): BigInt =
   result = val
 
 const
-  zero* = initBigInt(0)
-  one* = initBigInt(1)
+  zero = initBigInt(0)
+  one = initBigInt(1)
 
 proc isZero(a: BigInt): bool {.inline.} =
   for i in countdown(a.limbs.high, 0):
@@ -87,7 +97,7 @@ proc unsignedCmp(a, b: BigInt): int64 =
     if result != 0:
       return
 
-proc cmp*(a, b: BigInt): int64 =
+proc cmp(a, b: BigInt): int64 =
   ## Returns:
   ## * a value less than zero, if `a < b`
   ## * a value greater than zero, if `a > b`
@@ -135,14 +145,40 @@ proc cmp(a: BigInt, b: int32): int64 =
 
 proc cmp(a: int32, b: BigInt): int64 = -cmp(b, a)
 
-proc `<`*(a, b: BigInt): bool = cmp(a, b) < 0
+proc `==`*(a, b: BigInt): bool =
+  ## Compares if two `BigInt` numbers are equal.
+  runnableExamples:
+    let
+      a = 5'bi
+      b = 3'bi
+      c = 2'bi
+    assert a == b + c
+    assert b != c
+  cmp(a, b) == 0
+
+proc `<`*(a, b: BigInt): bool =
+  runnableExamples:
+    let
+      a = 5'bi
+      b = 3'bi
+      c = 2'bi
+    assert b < a
+    assert b > c
+  cmp(a, b) < 0
+
+proc `<=`*(a, b: BigInt): bool =
+  runnableExamples:
+    let
+      a = 5'bi
+      b = 3'bi
+      c = 2'bi
+    assert a <= b + c
+    assert c <= b
+  cmp(a, b) <= 0
+
+proc `==`(a: BigInt, b: int32): bool = cmp(a, b) == 0
 proc `<`(a: BigInt, b: int32): bool = cmp(a, b) < 0
 proc `<`(a: int32, b: BigInt): bool = cmp(a, b) < 0
-
-proc `<=`*(a, b: BigInt): bool = cmp(a, b) <= 0
-
-proc `==`*(a, b: BigInt): bool = cmp(a, b) == 0
-proc `==`(a: BigInt, b: int32): bool = cmp(a, b) == 0
 
 template addParts(toAdd) =
   tmp += toAdd
@@ -194,6 +230,13 @@ proc negate(a: var BigInt) =
     a.flags.incl(Negative)
 
 proc `-`*(a: BigInt): BigInt =
+  ## Unary minus for `BigInt`.
+  runnableExamples:
+    let
+      a = 5'bi
+      b = -10'bi
+    assert (-a) == -5'bi
+    assert (-b) == 10'bi
   result = a
   if Negative in a.flags:
     result.flags.excl(Negative)
@@ -305,10 +348,21 @@ proc addition(a: var BigInt, b, c: BigInt) =
       unsignedAddition(a, b, c)
 
 proc `+`*(a, b: BigInt): BigInt=
+  runnableExamples:
+    let
+      a = 5'bi
+      b = 10'bi
+    assert a + b == 15'bi
+    assert (-a) + b == 5'bi
+    assert a + (-b) == -5'bi
   result = zero
   addition(result, a, b)
 
 template `+=`*(a: var BigInt, b: BigInt) =
+  runnableExamples:
+    var a = 5'bi
+    a += 2'bi
+    assert a == 7'bi
   var c = a
   addition(a, c, b)
 
@@ -345,10 +399,21 @@ proc subtraction(a: var BigInt, b, c: BigInt) =
       unsignedSubtraction(a, b, c)
 
 proc `-`*(a, b: BigInt): BigInt=
+  runnableExamples:
+    let
+      a = 15'bi
+      b = 10'bi
+    assert a - b == 5'bi
+    assert (-a) - b == -25'bi
+    assert a - (-b) == 25'bi
   result = zero
   subtraction(result, a, b)
 
 template `-=`*(a: var BigInt, b: BigInt) =
+  runnableExamples:
+    var a = 5'bi
+    a -= 2'bi
+    assert a == 3'bi
   var c = a
   subtraction(a, c, b)
 
@@ -414,15 +479,20 @@ proc multiplication(a: var BigInt, b, c: BigInt) =
     else:
       a.flags.excl(Negative)
 
-template `*=`(a: var BigInt, b: int32) =
-  var c = a
-  multiplicationInt(a, c, b)
-
 proc `*`*(a, b: BigInt): BigInt =
+  runnableExamples:
+    let
+      a = 421'bi
+      b = 200'bi
+    assert a * b == 84200'bi
   result = zero
   multiplication(result, a, b)
 
 template `*=`*(a: var BigInt, b: BigInt) =
+  runnableExamples:
+    var a = 15'bi
+    a *= 10'bi
+    assert a == 150'bi
   var c = a
   multiplication(a, c, b)
 
@@ -449,6 +519,11 @@ proc shiftRight(a: var BigInt, b: BigInt, c: int) =
     a.limbs.setLen(a.limbs.high)
 
 proc `shr`*(x: BigInt, y: int): BigInt =
+  ## Computes a right shift of a `BigInt`.
+  runnableExamples:
+    let a = 24'bi
+    assert a shr 1 == 12'bi
+    assert a shr 2 == 6'bi
   result = zero
   shiftRight(result, x, y)
 
@@ -468,12 +543,18 @@ proc shiftLeft(a: var BigInt, b: BigInt, c: int) =
     a.limbs.add(carry)
 
 proc `shl`*(x: BigInt, y: int): BigInt =
+  ## Computes a left shift of a `BigInt`.
+  runnableExamples:
+    let a = 24'bi
+    assert a shl 1 == 48'bi
+    assert a shl 2 == 96'bi
   result = zero
   shiftLeft(result, x, y)
 
 template optShl*{x = y shl z}(x, y: BigInt, z) = shiftLeft(x, y, z)
 
 proc reset*(a: var BigInt) =
+  ## Resets a `BigInt` back to the zero value.
   a.limbs.setLen(1)
   a.limbs[0] = 0
   a.flags = {}
@@ -636,16 +717,45 @@ proc division(q, r: var BigInt, n, d: BigInt) =
     r.flags.excl(Negative)
 
 proc `div`*(a, b: BigInt): BigInt =
+  ## Computes the integer division of two `BigInt` numbers.
+  ##
+  ## If you also need a modulo (remainder), use the `divmod` proc.
+  runnableExamples:
+    let
+      a = 17'bi
+      b = 5'bi
+    assert a div b == 3'bi
+    assert (-a) div b == -4'bi
+    assert a div (-b) == -4'bi
+    assert (-a) div (-b) == 3'bi
   result = zero
   var tmp = zero
   division(result, tmp, a, b)
 
 proc `mod`*(a, b: BigInt): BigInt =
+  ## Computes the integer modulo (remainder) of two `BigInt` numbers.
+  ##
+  ## If you also need an integer division, use the `divmod` proc.
+  runnableExamples:
+    let
+      a = 17'bi
+      b = 5'bi
+    assert a mod b == 2'bi
+    assert (-a) mod b == 3'bi
+    assert a mod (-b) == -3'bi
+    assert (-a) mod (-b) == -2'bi
   result = zero
   var tmp = zero
   division(tmp, result, a, b)
 
 proc `divmod`*(a, b: BigInt): tuple[q, r: BigInt] =
+  ## Computes both the integer division and modulo (remainder) of two
+  ## `BigInt` numbers.
+  runnableExamples:
+    let
+      a = 17'bi
+      b = 5'bi
+    assert divmod(a, b) == (3'bi, 2'bi)
   result.q = zero
   result.r = zero
   division(result.q, result.r, a, b)
@@ -743,6 +853,15 @@ proc `^`(base, exp: uint32): uint32 =
     base *= base
 
 proc toString*(a: BigInt, base: range[2..36] = 10): string =
+  ## Produces a string representation of a `BigInt` in a specified
+  ## `base`.
+  ##
+  ## Doesn't produce any prefixes (`0x`, `0b`, etc.).
+  runnableExamples:
+    let a = 55'bi
+    assert toString(a) == "55"
+    assert toString(a, 2) == "110111"
+    assert toString(a, 16) == "37"
   if a.isZero:
     return "0"
   if base in multiples:
@@ -773,9 +892,18 @@ proc toString*(a: BigInt, base: range[2..36] = 10): string =
   if s.len == 0: s = "0"
   result.add(reverse(s))
 
-proc `$`*(a: BigInt) : string = toString(a, 10)
+proc `$`*(a: BigInt): string =
+  ## String representation of a `BigInt` in base 10.
+  toString(a, 10)
 
 proc initBigInt*(str: string, base: range[2..36] = 10): BigInt =
+  ## Create a `BigInt` from a string.
+  runnableExamples:
+    let
+      a = initBigInt("1234")
+      b = initBigInt("1234", base = 8)
+    assert a == 1234'bi
+    assert b == 668'bi
   result.limbs = @[0'u32]
   result.flags = {}
 
@@ -808,44 +936,57 @@ proc initBigInt*(str: string, base: range[2..36] = 10): BigInt =
       smul *= base.uint32
     result += mul * initBigInt(num)
     mul *= initBigInt(smul)
-
   result.flags = fs
 
-
 proc `'bi`*(s: string): BigInt =
+  ## Create a `BigInt` from a literal, using the suffix `'bi`.
+  runnableExamples:
+    let
+      a = 123'bi
+      b = 0xFF'bi
+      c = 0b1011'bi
+    assert $a == "123"
+    assert $b == "255"
+    assert $c == "11"
   case s[0..min(s.high, 1)]
   of "0x", "0X": initBigInt(s[2..s.high], base = 16)
   of "0b", "0B": initBigInt(s[2..s.high], base = 2)
   else: initBigInt(s)
 
-
-proc inc*(a: var BigInt, b: BigInt) =
-  var c = a
-  addition(a, c, b)
-
-proc inc(a: var BigInt, b: int32 = 1) =
+proc inc*(a: var BigInt, b: int32 = 1) =
+  ## Increase a value of a `BigInt` by the specified amount (default: 1).
+  runnableExamples:
+    var a = 15'bi
+    inc a
+    assert a == 16'bi
+    inc(a, 7)
+    assert a == 23'bi
   var c = a
   additionInt(a, c, b)
 
-proc dec*(a: var BigInt, b: BigInt) =
-  var c = a
-  subtraction(a, c, b)
-
-proc dec(a: var BigInt, b: int32 = 1) =
+proc dec*(a: var BigInt, b: int32 = 1) =
+  ## Decrease a value of a `BigInt` by the specified amount (default: 1).
+  runnableExamples:
+    var a = 15'bi
+    dec a
+    assert a == 14'bi
+    dec(a, 5)
+    assert a == 9'bi
   var c = a
   subtractionInt(a, c, b)
 
-iterator countdown*(a, b: BigInt, step: int32 = 1): BigInt {.inline.} =
-  var res = a
-  while res >= b:
-    yield res
-    dec(res, step)
 
 iterator countup*(a, b: BigInt, step: int32 = 1): BigInt {.inline.} =
   var res = a
   while res <= b:
     yield res
     inc(res, step)
+
+iterator countdown*(a, b: BigInt, step: int32 = 1): BigInt {.inline.} =
+  var res = a
+  while res >= b:
+    yield res
+    dec(res, step)
 
 iterator `..`*(a, b: BigInt): BigInt {.inline.} =
   var res = a

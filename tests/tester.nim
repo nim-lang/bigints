@@ -1,5 +1,9 @@
 import bigints, unittest
 
+const
+  zero = initBigInt(0)
+  one = initBigInt(1)
+
 test "initBigInt":
   let a = 1234567.initBigInt
   let aa = 1234567'bi
@@ -137,24 +141,8 @@ test "empty limbs when uninitialized (https://github.com/def-/nim-bigints/issues
   var
     zeroEmpty: BigInt # should be treated as zero, same with -zeroEmpty
   let
-    zeroInt32: int32 = 0
-    oneInt32: int32 = 1
     bigOne: BigInt = initBigInt(@[0.uint32, 1])
-  
-  # unsignedCmp(a: BigInt, b: int32) has [0]; used by public cmp and <
-  # never reached in the following cases (no fatal), since it cannot be reached (see comment in code)
-  # still, errors can be found in comparing zero to zero 
-  check zeroEmpty < oneInt32 # ok
-  check zeroEmpty > -oneInt32 # ok
-  check -zeroEmpty < oneInt32 # ok
-  check -zeroEmpty > -oneInt32 # ok
-  check not(zeroEmpty < zeroInt32) # error: fixed
-  check not(zeroEmpty > zeroInt32) # ok
-  check not(-zeroEmpty < zeroInt32) # error: fixed
-  check not(-zeroEmpty > zeroInt32) # ok
-  check zeroEmpty == zeroInt32 # error: fixed
-  check -zeroEmpty == zeroInt32 # error: fixed
-  
+
   # this came up in the above testing and can be though as secondary effect of unitialization (fix in negate?)
   check $zero == "0" # ok
   check $zeroEmpty == "0" # ok
@@ -165,18 +153,10 @@ test "empty limbs when uninitialized (https://github.com/def-/nim-bigints/issues
   check zeroEmpty > -one # ok
   check -zeroEmpty < one # ok
   check -zeroEmpty > -one # ok
-  check not (zeroEmpty < zeroInt32) # error: fixed
-  check not (zeroEmpty > zeroInt32) # ok
   check not (zeroEmpty < zero) # error: fixed
   check not (zeroEmpty > zero) # ok
   check zeroEmpty == zero # error: fixed
   check -zeroEmpty == zero # error: fixed
-
-  # proc unsignedAdditionInt(a: var BigInt, b: BigInt, c: int32)
-  check zeroEmpty + 1.int32 == one # fixed: fatal[IndexError] in bigints.nim(181) unsignedAdditionInt
-  check -zeroEmpty + 1.int32 == one # fixed: fatal[IndexError] in bigints.nim(245) unsignedSubtractionInt
-  check zeroEmpty + (-1).int32 == -one # fixed: fatal[IndexError] in bigints.nim(245) unsignedSubtractionInt
-  check -zeroEmpty + (-1).int32 == -one # fixed: fatal[IndexError] in bigints.nim(181) unsignedAdditionInt
 
   # proc unsignedAddition(a: var BigInt, b, c: BigInt)
   check zeroEmpty + one == one # ok
@@ -195,12 +175,6 @@ test "empty limbs when uninitialized (https://github.com/def-/nim-bigints/issues
   check -bigOne + -zeroEmpty == -bigOne # ok
   check zeroEmpty + -bigOne == -bigOne # ok
   check -zeroEmpty + -bigOne == -bigOne # ok
-
-  # proc unsignedSubtractionInt(a: var BigInt, b: BigInt, c: int32)
-  check zeroEmpty - 1.int32 == -one # fixed: fatal[IndexError] in bigints.nim(245) unsignedSubtractionInt
-  check -zeroEmpty - 1.int32 == -one # fixed: fatal[IndexError] in bigints.nim(181) unsignedAdditionInt
-  check zeroEmpty - (-1).int32 == one # fixed: fatal[IndexError] in bigints.nim(181) unsignedAdditionInt
-  check -zeroEmpty - (-1).int32 == one # fixed: fatal[IndexError] in bigints.nim(245) unsignedSubtractionInt
 
   # proc unsignedSubtraction(a: var BigInt, b, c: BigInt)
   check zeroEmpty - one == -one # ok
@@ -221,8 +195,6 @@ test "empty limbs when uninitialized (https://github.com/def-/nim-bigints/issues
   check -zeroEmpty - -bigOne == bigOne # ok
 
   # multiplication
-  check zeroEmpty * 1.int32 == zero
-  check -zeroEmpty * 1.int32 == zero
   check zeroEmpty * one == zero
   check -zeroEmpty * one == zero
   check one * zeroEmpty == zero
@@ -234,15 +206,10 @@ test "empty limbs when uninitialized (https://github.com/def-/nim-bigints/issues
       a: BigInt
       b: BigInt = 12.initBigInt
 
-    check a*b == 0
-  
+    check a*b == 0'bi
+
   # division does not have issues, but let's add some checks
   check zeroEmpty div one == zero
   check -zeroEmpty div one == zero
   check zeroEmpty mod one == zero
   check -zeroEmpty mod one == zero
-
-  check zeroEmpty div 1.int32 == zero
-  check -zeroEmpty div 1.int32 == zero
-  check zeroEmpty mod 1.int32 == zero
-  check -zeroEmpty mod 1.int32 == zero
