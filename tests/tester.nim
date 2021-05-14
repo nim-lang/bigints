@@ -6,24 +6,16 @@ const
 
 test "initBigInt":
   let a = 1234567.initBigInt
-  let aa = 1234567'bi
   check $a == "1234567"
-  check $aa == "1234567"
 
   let b = -1234567.initBigInt
-  let bb = -1234567'bi
   check $b == "-1234567"
-  check $bb == "-1234567"
 
   let c = 123456789012345678.initBigInt
-  let cc = 123456789012345678'bi
   check $c == "123456789012345678"
-  check $cc == "123456789012345678"
 
   let d = -123456789012345678.initBigInt
-  let dd = -123456789012345678'bi
   check $d == "-123456789012345678"
-  check $dd == "-123456789012345678"
 
   let e = int64.high.initBigInt
   check $e == $int64.high
@@ -35,18 +27,8 @@ test "initBigInt":
   check $g == $(1'u64 shl 63)
 
   let h = 1234567.initBigInt
-  let hh = 1234567'bi
   let i = h.initBigInt
-  let ii = hh.initBigInt
   check $h == $i
-  check $hh == $ii
-
-  let j = 0xff00'bi
-  check $j == "65280"
-  let k = 0b1010101010101010101010101010101010101010'bi
-  check $k == "733007751850"
-  let l = 0X123456789ABCDEF'bi
-  check $l == "81985529216486895"
 
   # test various bit patterns at power-of-two boundaries
   block:
@@ -64,6 +46,13 @@ test "initBigInt":
           chk v.uint64
           chk (v and int32.high.uint64).int32
           chk (v and uint32.high).uint32
+
+
+when (NimMajor, NimMinor) >= (1, 5):
+  test "literals":
+    # workaround
+    include "tliterals"
+
 
 test "range of bigint (https://github.com/def-/nim-bigints/issues/1)":
   let two = 2.initBigInt
@@ -206,7 +195,7 @@ test "empty limbs when uninitialized (https://github.com/def-/nim-bigints/issues
       a: BigInt
       b: BigInt = 12.initBigInt
 
-    check a*b == 0'bi
+    check a*b == 0.initBigInt
 
   # division does not have issues, but let's add some checks
   check zeroEmpty div one == zero
