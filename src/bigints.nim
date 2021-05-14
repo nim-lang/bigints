@@ -298,7 +298,6 @@ proc unsignedSubtractionInt(a: var BigInt, b: BigInt, c: int32) =
   if unsignedCmp(b, c) >= 0:
     realUnsignedSubtractionInt(a, b, c)
   else:
-    # TODO: is this right?
     realUnsignedSubtractionInt(a, b, c)
     if a.limbs != @[0'u32]:
       negate(a)
@@ -319,7 +318,6 @@ proc additionInt(a: var BigInt, b: BigInt, c: int32) =
       unsignedAdditionInt(a, b, c)
       a.flags.incl(Negative)
     else:
-      # TODO: is this right?
       unsignedSubtractionInt(a, b, c)
   else:
     if c < 0:
@@ -365,7 +363,6 @@ proc subtractionInt(a: var BigInt, b: BigInt, c: int32) =
     a = (-c).initBigInt
   elif Negative in b.flags:
     if c < 0:
-      # TODO: is this right?
       unsignedSubtractionInt(a, b, c)
       a.flags.incl(Negative)
     else:
