@@ -9,7 +9,8 @@ type
     flags: set[Flags]
 
 proc setXLen[T](s: var seq[T]; newlen: Natural) =
-  when defined(bigintsUseOldSetXLen):
+  # bigintsLegacySetXLen can be more performant in some cases, for details https://github.com/def-/nim-bigints/pull/35
+  when defined(bigintsLegacySetXLen):
     if s == @[]:
       s = newSeq[T](newlen)
     else:
