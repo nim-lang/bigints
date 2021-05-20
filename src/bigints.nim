@@ -9,10 +9,17 @@ type
     flags: set[Flags]
 
 proc setXLen[T](s: var seq[T]; newlen: Natural) =
-  if s == @[]:
-    s = newSeq[T](newlen)
+  # bigintsLegacySetXLen can be more performant in some cases, for details https://github.com/def-/nim-bigints/pull/35
+  when defined(bigintsLegacySetXLen):
+    if s == @[]:
+      s = newSeq[T](newlen)
+    else:
+      s.setLen(newlen)
   else:
-    s.setLen(newlen)
+    let t = s
+    s = newSeq[T](newlen)
+    for i in 0 ..< min(t.len, newLen):
+      s[i] = t[i]
 
 proc normalize(a: var BigInt) =
   for i in countdown(a.limbs.high, 0):
@@ -184,7 +191,6 @@ proc unsignedAdditionInt(a: var BigInt, b: BigInt, c: int32) =
 
   a.flags.excl(Negative)
 
-# Works when a = b
 proc unsignedAddition(a: var BigInt, b, c: BigInt) =
   var tmp: uint64
 
@@ -223,7 +229,6 @@ proc `-`*(a: BigInt): BigInt =
   else:
     result.flags.incl(Negative)
 
-# Works when a = b
 # Assumes positive parameters and b > c
 template realUnsignedSubtractionInt(a: var BigInt, b: BigInt, c: int32) =
   var tmp: int64
@@ -251,7 +256,6 @@ template realUnsignedSubtractionInt(a: var BigInt, b: BigInt, c: int32) =
   if tmp > 0:
     a.limbs.add(uint32(tmp))
 
-# Works when a = b
 # Assumes positive parameters and b > c
 template realUnsignedSubtraction(a: var BigInt, b, c: BigInt) =
   var tmp: int64
@@ -445,7 +449,6 @@ template unsignedMultiplication(a: BigInt, b, c: BigInt, bl, cl) =
 
   normalize(a)
 
-# This doesn't work when a = b
 proc multiplicationInt(a: var BigInt, b: BigInt, c: int32) =
   let bl = b.limbs.len
   var tmp: uint64
@@ -468,7 +471,6 @@ proc multiplicationInt(a: var BigInt, b: BigInt, c: int32) =
     else:
       a.flags.excl(Negative)
 
-# This doesn't work when a = b
 proc multiplication(a: var BigInt, b, c: BigInt) =
   if b.isZero or c.isZero:
     a = zero
@@ -519,7 +521,6 @@ template optMul*{x = `*`(y, z)}(x: BigInt{noalias}, y, z: BigInt) = multiplicati
 
 template optMulSame*{x = `*`(x, z)}(x,z: BigInt) = x *= z
 
-# Works when a = b
 proc shiftRight(a: var BigInt, b: BigInt, c: int) =
   a.limbs.setXLen(b.limbs.len)
   var carry: uint64
@@ -543,7 +544,6 @@ proc `shr` *(x: BigInt, y: int): BigInt =
 
 template optShr*{x = y shr z}(x, y: BigInt, z) = shiftRight(x, y, z)
 
-# Works when a = b
 proc shiftLeft(a: var BigInt, b: BigInt, c: int) =
   a.limbs.setXLen(b.limbs.len)
   var carry: uint32
