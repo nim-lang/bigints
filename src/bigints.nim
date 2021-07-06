@@ -105,7 +105,7 @@ proc cmp(a, b: BigInt): int64 =
     if b.isZero or not b.isNegative:
       return -1
     else:
-      return unsignedCmp(b, a) 
+      return unsignedCmp(b, a)
   else: # a > 0
     if b.isZero or b.isNegative:
       return 1
@@ -483,17 +483,17 @@ proc `shr`*(x: BigInt, y: int): BigInt =
   result = zero
   shiftRight(result, x, y)
 
-proc shiftLeft(a: var BigInt, b: BigInt, c: int) =
-  a.limbs.setLen(b.limbs.len)
-  var carry: uint32
+proc pow*(x: BigInt, y: int): BigInt =
+  var base = x
+  var exp = y
+  result = one
 
-  for i in 0..b.limbs.high:
-    let acc = (uint64(b.limbs[i]) shl uint64(c)) or carry
-    a.limbs[i] = uint32(acc and uint32.high)
-    carry = uint32(acc shr 32)
-
-  if carry > 0'u32:
-    a.limbs.add(carry)
+  while exp > 0:
+    if exp mod 2 > 0:
+      result *= base
+    exp = exp div 2
+    var tmp = base
+    base *= tmp
 
 proc `shl`*(x: BigInt, y: int): BigInt =
   ## Computes a left shift of a `BigInt`.
@@ -501,8 +501,8 @@ proc `shl`*(x: BigInt, y: int): BigInt =
     let a = 24.initBigInt
     assert a shl 1 == 48.initBigInt
     assert a shl 2 == 96.initBigInt
-  result = zero
-  shiftLeft(result, x, y)
+  var powerOfTwo = pow(2.initBigInt, y)
+  result = x * powerOfTwo
 
 proc reset(a: var BigInt) =
   ## Resets a `BigInt` back to the zero value.

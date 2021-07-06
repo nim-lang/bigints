@@ -202,3 +202,15 @@ test "empty limbs when uninitialized (https://github.com/def-/nim-bigints/issues
   check -zeroEmpty div one == zero
   check zeroEmpty mod one == zero
   check -zeroEmpty mod one == zero
+
+test "shift left":
+  let a63 = "9223372036854775808".initBigInt
+  let a64 = "18446744073709551616".initBigInt
+  let a65 = "36893488147419103232".initBigInt
+  let a128 = "340282366920938463463374607431768211456".initBigInt
+  let one = 1.initBigInt
+
+  check one shl 63 == a63
+  check one shl 64 == a64
+  check one shl 65 == a65
+  check one shl 128 == a128
