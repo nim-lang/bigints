@@ -214,3 +214,27 @@ test "shift left":
   check one shl 64 == a64
   check one shl 65 == a65
   check one shl 128 == a128
+
+test "bitwise operations":
+  let
+    a = "123456789123456789123456789".initBigInt
+    b = 567.initBigInt
+    c = 1234.initBigInt
+    d = "340282366920938463463374607431768211456".initBigInt
+    e = 1.initBigInt
+
+  check (a and b) == 533.initBigInt
+  check (a and c) == 1040.initBigInt
+  check (b and c) == 18.initBigInt
+  check (a and d) == 0.initBigInt
+  check (b and d) == 0.initBigInt
+  check (a and e) == 1.initBigInt
+  check (d and e) == 0.initBigInt
+
+  check (a or b) == "123456789123456789123456823".initBigInt
+  check (a or c) == "123456789123456789123456983".initBigInt
+  check (b or c) == 1783.initBigInt
+  check (a or d) == "340282366921061920252498064220891668245".initBigInt
+  check (b or d) == "340282366920938463463374607431768212023".initBigInt
+  check (a or e) == a
+  check (d or e) == (d + e)

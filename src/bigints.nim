@@ -504,6 +504,28 @@ proc `shl`*(x: BigInt, y: int): BigInt =
   var powerOfTwo = pow(2.initBigInt, y)
   result = x * powerOfTwo
 
+proc bitwiseAnd(a: var BigInt, b, c: BigInt) =
+  a.limbs.setLen(min(b.limbs.len, c.limbs.len))
+  for i in 0 ..< a.limbs.len:
+    a.limbs[i] = b.limbs[i] and c.limbs[i]
+
+proc `and`*(a, b: BigInt): BigInt =
+  bitwiseAnd(result, a, b)
+
+proc bitwiseOr(a: var BigInt, b, c: BigInt) =
+  # `b` must be smaller than `c`
+  a.limbs.setLen(c.limbs.len)
+  for i in 0 ..< b.limbs.len:
+    a.limbs[i] = b.limbs[i] or c.limbs[i]
+  for i in b.limbs.len ..< c.limbs.len:
+    a.limbs[i] = c.limbs[i]
+
+proc `or`*(a, b: BigInt): BigInt =
+  if a.limbs.len <= b.limbs.len:
+    bitwiseOr(result, a, b)
+  else:
+    bitwiseOr(result, b, a)
+
 proc reset(a: var BigInt) =
   ## Resets a `BigInt` back to the zero value.
   a.limbs.setLen(1)
