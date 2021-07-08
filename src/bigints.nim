@@ -510,6 +510,7 @@ proc bitwiseAnd(a: var BigInt, b, c: BigInt) =
     a.limbs[i] = b.limbs[i] and c.limbs[i]
 
 proc `and`*(a, b: BigInt): BigInt =
+  assert (not a.isNegative) and (not b.isNegative)
   bitwiseAnd(result, a, b)
 
 proc bitwiseOr(a: var BigInt, b, c: BigInt) =
@@ -521,10 +522,26 @@ proc bitwiseOr(a: var BigInt, b, c: BigInt) =
     a.limbs[i] = c.limbs[i]
 
 proc `or`*(a, b: BigInt): BigInt =
+  assert (not a.isNegative) and (not b.isNegative)
   if a.limbs.len <= b.limbs.len:
     bitwiseOr(result, a, b)
   else:
     bitwiseOr(result, b, a)
+
+proc bitwiseXor(a: var BigInt, b, c: BigInt) =
+  # `b` must be smaller than `c`
+  a.limbs.setLen(c.limbs.len)
+  for i in 0 ..< b.limbs.len:
+    a.limbs[i] = b.limbs[i] xor c.limbs[i]
+  for i in b.limbs.len ..< c.limbs.len:
+    a.limbs[i] = c.limbs[i]
+
+proc `xor`*(a, b: BigInt): BigInt =
+  assert (not a.isNegative) and (not b.isNegative)
+  if a.limbs.len <= b.limbs.len:
+    bitwiseXor(result, a, b)
+  else:
+    bitwiseXor(result, b, a)
 
 proc reset(a: var BigInt) =
   ## Resets a `BigInt` back to the zero value.

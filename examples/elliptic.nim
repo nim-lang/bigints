@@ -58,7 +58,7 @@ proc ecMultiply(genPoint: tuple, scalarHex: BigInt): (BigInt, BigInt) =
   var
     scalarBin = scalarHex.toString(base = 2)
     q = genPoint
-  for i in 1 .. <scalarBin.len:
+  for i in 1 ..< scalarBin.len:
     q = ecDouble(q)
     if scalarBin[i] == '1':
       q = ecAdd(q, genPoint)

@@ -222,6 +222,7 @@ test "bitwise operations":
     c = 1234.initBigInt
     d = "340282366920938463463374607431768211456".initBigInt
     e = 1.initBigInt
+    f = 0.initBigInt
 
   check (a and b) == 533.initBigInt
   check (a and c) == 1040.initBigInt
@@ -238,3 +239,14 @@ test "bitwise operations":
   check (b or d) == "340282366920938463463374607431768212023".initBigInt
   check (a or e) == a
   check (d or e) == (d + e)
+
+  check (a xor b) == "123456789123456789123456290".initBigInt
+  check (a xor c) == "123456789123456789123455943".initBigInt
+  check (b xor c) == 1765.initBigInt
+  check (a xor d) == "340282366921061920252498064220891668245".initBigInt
+  check (b xor d) == "340282366920938463463374607431768212023".initBigInt
+  check (a xor e) == (a - e)
+  check (d xor e) == (d + e)
+  check (d xor d) == f
+  check (d xor f) == d
+
