@@ -26,9 +26,8 @@ nimble install https://github.com/nim-lang/bigints
 
 ## Current limitations and possible enhancements
 
-* cannot multiply a number with itself (`x *= x`)
 * not expected to work on 32 bit
-* some common bitwise operations (`and`, `or`, `xor`, `not`) are not implemented
+* bitwise `not` operation is not implemented
 * arithmetical operations such as addition, multiplication and division are not optimized for performance (e.g. [karatsuba multiplication](https://en.wikipedia.org/wiki/Karatsuba_algorithm) is not implemented)
 
 

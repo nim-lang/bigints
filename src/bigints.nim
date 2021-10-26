@@ -432,6 +432,7 @@ proc multiplication(a: var BigInt, b, c: BigInt) =
     bl = b.limbs.len
     cl = c.limbs.len
   var tmp: uint64
+  var c = c
 
   a.limbs.setLen(bl + cl)
   if cl > bl:

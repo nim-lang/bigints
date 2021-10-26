@@ -250,3 +250,21 @@ test "bitwise operations":
   check (d xor d) == f
   check (d xor f) == d
 
+test "self-multiplication":
+  var a = 12.initBigInt
+  a *= a
+  check a == 144.initBigInt
+  a *= a
+  check a == 20736.initBigInt
+  a *= a
+  check a == 429981696.initBigInt
+  a *= a
+  check a == "184884258895036416".initBigInt
+  var b = zero
+  b *= b
+  check b == zero
+  var c = one
+  c *= c
+  check c == one
+  a *= b
+  check a == zero
