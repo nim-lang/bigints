@@ -21,8 +21,7 @@ jobs:
     strategy:
       matrix:
         nim-version:
-          - '1.0.8'
-          - '1.2.6'
+          - '1.6.0'
           - 'stable'
     needs: before
     steps:
@@ -31,4 +30,4 @@ jobs:
         with:
           nim-version: ${{ matrix.nim-version }}
       - run: nimble install -Y
-      - run: nimble test -Y
+      - run: nimble tests -Y
