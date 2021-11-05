@@ -150,7 +150,7 @@ proc cmp*(a: BigInt, b: int32): int64 =
     if b <= 0:
       return 1
     else:
-      return unsignedCmp(b, a)
+      return unsignedCmp(a, b)
 
 proc cmp*(a: int32, b: BigInt): int64 = -cmp(b, a)
 

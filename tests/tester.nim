@@ -238,3 +238,18 @@ test "operations with self (e.g. https://github.com/def-/nim-bigints/issues/27)"
   a = a + b; check a == b  # this does not fail here, but it failed if tested separately: nim c -r tests/tissue_27
   x *= x; check x == one
   b = b * 2.int32
+
+test "simple comparisons":
+  var
+    hundred = 100.initBigInt
+    fifty = 50.initBigInt
+
+  check hundred > fifty
+  check fifty < hundred
+  check hundred != fifty
+
+  check 100 > fifty
+  check hundred > 50
+  check fifty < 100
+  check 50 < hundred
+
