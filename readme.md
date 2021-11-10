@@ -1,3 +1,12 @@
+# ⚠ Official bigints is now [nim-lang/bigints](https://github.com/nim-lang/bigints) ⚠
+
+Bigints library has now moved to [nim-lang/bigints](https://github.com/nim-lang/bigints), please redirect your ⭐s, **Issues**, and **PRs** over there.
+This is not anymore the library that you install with `nimble install bigints` (provided you have a recent `packages.json`).
+
+Note that the forked library has some slightly different API (e.g. `BigInt` is an object), see [documentation](https://nimdocs.com/nim-lang/bigints/bigints.html).
+
+For context about the move, see [https://github.com/nim-lang/Nim/issues/14696](https://github.com/nim-lang/Nim/issues/14696) (where it is also discussed the fact that bigints might - or might not - end up in standard library).
+
 # Pure BigInts for Nim
 
 ![test](https://github.com/def-/nim-bigints/workflows/test/badge.svg)
