@@ -1,5 +1,9 @@
 import bigints, unittest
 
+const
+  zero = initBigInt(0)
+  one = initBigInt(1)
+
 test "initBigInt":
   let a = 1234567.initBigInt
   check $a == "1234567"
@@ -42,6 +46,13 @@ test "initBigInt":
           chk v.uint64
           chk (v and int32.high.uint64).int32
           chk (v and uint32.high).uint32
+
+
+when (NimMajor, NimMinor) >= (1, 5):
+  test "literals":
+    # workaround
+    include "tliterals"
+
 
 test "range of bigint (https://github.com/def-/nim-bigints/issues/1)":
   let two = 2.initBigInt
@@ -119,24 +130,8 @@ test "empty limbs when uninitialized (https://github.com/def-/nim-bigints/issues
   var
     zeroEmpty: BigInt # should be treated as zero, same with -zeroEmpty
   let
-    zeroInt32: int32 = 0
-    oneInt32: int32 = 1
     bigOne: BigInt = initBigInt(@[0.uint32, 1])
-  
-  # unsignedCmp(a: BigInt, b: int32) has [0]; used by public cmp and <
-  # never reached in the following cases (no fatal), since it cannot be reached (see comment in code)
-  # still, errors can be found in comparing zero to zero 
-  check zeroEmpty < oneInt32 # ok
-  check zeroEmpty > -oneInt32 # ok
-  check -zeroEmpty < oneInt32 # ok
-  check -zeroEmpty > -oneInt32 # ok
-  check not(zeroEmpty < zeroInt32) # error: fixed
-  check not(zeroEmpty > zeroInt32) # ok
-  check not(-zeroEmpty < zeroInt32) # error: fixed
-  check not(-zeroEmpty > zeroInt32) # ok
-  check zeroEmpty == zeroInt32 # error: fixed
-  check -zeroEmpty == zeroInt32 # error: fixed
-  
+
   # this came up in the above testing and can be though as secondary effect of unitialization (fix in negate?)
   check $zero == "0" # ok
   check $zeroEmpty == "0" # ok
@@ -147,18 +142,10 @@ test "empty limbs when uninitialized (https://github.com/def-/nim-bigints/issues
   check zeroEmpty > -one # ok
   check -zeroEmpty < one # ok
   check -zeroEmpty > -one # ok
-  check not (zeroEmpty < zeroInt32) # error: fixed
-  check not (zeroEmpty > zeroInt32) # ok
   check not (zeroEmpty < zero) # error: fixed
   check not (zeroEmpty > zero) # ok
   check zeroEmpty == zero # error: fixed
   check -zeroEmpty == zero # error: fixed
-
-  # proc unsignedAdditionInt(a: var BigInt, b: BigInt, c: int32)
-  check zeroEmpty + 1.int32 == one # fixed: fatal[IndexError] in bigints.nim(181) unsignedAdditionInt
-  check -zeroEmpty + 1.int32 == one # fixed: fatal[IndexError] in bigints.nim(245) unsignedSubtractionInt
-  check zeroEmpty + (-1).int32 == -one # fixed: fatal[IndexError] in bigints.nim(245) unsignedSubtractionInt
-  check -zeroEmpty + (-1).int32 == -one # fixed: fatal[IndexError] in bigints.nim(181) unsignedAdditionInt
 
   # proc unsignedAddition(a: var BigInt, b, c: BigInt)
   check zeroEmpty + one == one # ok
@@ -177,12 +164,6 @@ test "empty limbs when uninitialized (https://github.com/def-/nim-bigints/issues
   check -bigOne + -zeroEmpty == -bigOne # ok
   check zeroEmpty + -bigOne == -bigOne # ok
   check -zeroEmpty + -bigOne == -bigOne # ok
-
-  # proc unsignedSubtractionInt(a: var BigInt, b: BigInt, c: int32)
-  check zeroEmpty - 1.int32 == -one # fixed: fatal[IndexError] in bigints.nim(245) unsignedSubtractionInt
-  check -zeroEmpty - 1.int32 == -one # fixed: fatal[IndexError] in bigints.nim(181) unsignedAdditionInt
-  check zeroEmpty - (-1).int32 == one # fixed: fatal[IndexError] in bigints.nim(181) unsignedAdditionInt
-  check -zeroEmpty - (-1).int32 == one # fixed: fatal[IndexError] in bigints.nim(245) unsignedSubtractionInt
 
   # proc unsignedSubtraction(a: var BigInt, b, c: BigInt)
   check zeroEmpty - one == -one # ok
@@ -203,8 +184,6 @@ test "empty limbs when uninitialized (https://github.com/def-/nim-bigints/issues
   check -zeroEmpty - -bigOne == bigOne # ok
 
   # multiplication
-  check zeroEmpty * 1.int32 == zero
-  check -zeroEmpty * 1.int32 == zero
   check zeroEmpty * one == zero
   check -zeroEmpty * one == zero
   check one * zeroEmpty == zero
@@ -216,40 +195,76 @@ test "empty limbs when uninitialized (https://github.com/def-/nim-bigints/issues
       a: BigInt
       b: BigInt = 12.initBigInt
 
-    check a*b == 0
-  
+    check a*b == 0.initBigInt
+
   # division does not have issues, but let's add some checks
   check zeroEmpty div one == zero
   check -zeroEmpty div one == zero
   check zeroEmpty mod one == zero
   check -zeroEmpty mod one == zero
 
-  check zeroEmpty div 1.int32 == zero
-  check -zeroEmpty div 1.int32 == zero
-  check zeroEmpty mod 1.int32 == zero
-  check -zeroEmpty mod 1.int32 == zero
+test "shift left":
+  let a63 = "9223372036854775808".initBigInt
+  let a64 = "18446744073709551616".initBigInt
+  let a65 = "36893488147419103232".initBigInt
+  let a128 = "340282366920938463463374607431768211456".initBigInt
+  let one = 1.initBigInt
 
-test "operations with self (e.g. https://github.com/def-/nim-bigints/issues/27)":
-  var
-    a = 0.initBigInt
-    b = "359097073186387306".initBigInt
-    x = one
-  
-  a = a + b; check a == b  # this does not fail here, but it failed if tested separately: nim c -r tests/tissue_27
-  x *= x; check x == one
-  b = b * 2.int32
+  check one shl 63 == a63
+  check one shl 64 == a64
+  check one shl 65 == a65
+  check one shl 128 == a128
 
-test "simple comparisons":
-  var
-    hundred = 100.initBigInt
-    fifty = 50.initBigInt
+test "bitwise operations":
+  let
+    a = "123456789123456789123456789".initBigInt
+    b = 567.initBigInt
+    c = 1234.initBigInt
+    d = "340282366920938463463374607431768211456".initBigInt
+    e = 1.initBigInt
+    f = 0.initBigInt
 
-  check hundred > fifty
-  check fifty < hundred
-  check hundred != fifty
+  check (a and b) == 533.initBigInt
+  check (a and c) == 1040.initBigInt
+  check (b and c) == 18.initBigInt
+  check (a and d) == 0.initBigInt
+  check (b and d) == 0.initBigInt
+  check (a and e) == 1.initBigInt
+  check (d and e) == 0.initBigInt
 
-  check 100 > fifty
-  check hundred > 50
-  check fifty < 100
-  check 50 < hundred
+  check (a or b) == "123456789123456789123456823".initBigInt
+  check (a or c) == "123456789123456789123456983".initBigInt
+  check (b or c) == 1783.initBigInt
+  check (a or d) == "340282366921061920252498064220891668245".initBigInt
+  check (b or d) == "340282366920938463463374607431768212023".initBigInt
+  check (a or e) == a
+  check (d or e) == (d + e)
 
+  check (a xor b) == "123456789123456789123456290".initBigInt
+  check (a xor c) == "123456789123456789123455943".initBigInt
+  check (b xor c) == 1765.initBigInt
+  check (a xor d) == "340282366921061920252498064220891668245".initBigInt
+  check (b xor d) == "340282366920938463463374607431768212023".initBigInt
+  check (a xor e) == (a - e)
+  check (d xor e) == (d + e)
+  check (d xor d) == f
+  check (d xor f) == d
+
+test "self-multiplication":
+  var a = 12.initBigInt
+  a *= a
+  check a == 144.initBigInt
+  a *= a
+  check a == 20736.initBigInt
+  a *= a
+  check a == 429981696.initBigInt
+  a *= a
+  check a == "184884258895036416".initBigInt
+  var b = zero
+  b *= b
+  check b == zero
+  var c = one
+  c *= c
+  check c == one
+  a *= b
+  check a == zero
