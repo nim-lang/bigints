@@ -9,6 +9,7 @@ type
     limbs: seq[uint32]
     isNegative: bool
 
+
 proc normalize(a: var BigInt) =
   for i in countdown(a.limbs.high, 0):
     if a.limbs[i] > 0'u32:

@@ -13,3 +13,4 @@ requires "nim >= 1.4.0"
 
 task tests, "Test bigints":
   exec "nim c -r tests/tester"
+  exec "nim c -r tests/tissue_27"
