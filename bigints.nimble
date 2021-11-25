@@ -11,6 +11,6 @@ srcDir      = "src"
 
 requires "nim >= 1.4.0"
 
-task tests, "Test bigints":
-  exec "nim c -r tests/tester"
-  exec "nim c -r tests/tissue_27"
+task test, "Test bigints":
+  exec "nim r tests/tester"
+  exec "nim r tests/tissue_27"
