@@ -12,7 +12,7 @@ type
 proc normalize(a: var BigInt) =
   for i in countdown(a.limbs.high, 0):
     if a.limbs[i] > 0'u32:
-      a.limbs.setLen(i + 1)
+      a.limbs.setLen(i+1)
       return
   a.limbs.setLen(1)
 
@@ -611,7 +611,7 @@ proc unsignedDivRem(q, r: var BigInt, n, d: BigInt) =
     var a = zero
     a.limbs.setLen(k)
     let wm1 = r.limbs[r.limbs.high]
-    let wm2 = r.limbs[r.limbs.high - 1]
+    let wm2 = r.limbs[r.limbs.high-1]
     var ak = k
 
     var zhi = 0.initBigInt
@@ -623,11 +623,11 @@ proc unsignedDivRem(q, r: var BigInt, n, d: BigInt) =
       # estimate quotient digit, may rarely overestimate by 1
       let vtop = q.limbs[v + dn]
       assert vtop <= wm1
-      let vv = (uint64(vtop) shl 32) or q.limbs[v + dn - 1]
+      let vv = (uint64(vtop) shl 32) or q.limbs[v+dn-1]
       var q1 = uint64(vv) div wm1
       var r1 = uint64(vv) mod wm1
 
-      while (uint64(wm2) * q1) > ((r1 shl 32) or q.limbs[v + dn - 2]):
+      while (uint64(wm2) * q1) > ((r1 shl 32) or q.limbs[v+dn-2]):
         dec(q1)
         r1 += wm1
         if r1 > uint64(uint32.high):
@@ -650,9 +650,9 @@ proc unsignedDivRem(q, r: var BigInt, n, d: BigInt) =
         z += qib
 
         if z < 0:
-          q.limbs[v + i] = not z.limbs[0] + 1
+          q.limbs[v+i] = not z.limbs[0] + 1
         else:
-          q.limbs[v + i] = z.limbs[0]
+          q.limbs[v+i] = z.limbs[0]
 
         if z.limbs.len > 1:
           zhi.limbs[0] = z1.limbs[1]
@@ -669,7 +669,7 @@ proc unsignedDivRem(q, r: var BigInt, n, d: BigInt) =
       if vtop.initBigInt + zhi < 0:
         carry = 0
         for i in 0 ..< dn:
-          carry += q.limbs[v + i]
+          carry += q.limbs[v+i]
           carry += r.limbs[i]
           q.limbs[v+i] = uint32(carry and uint32.high)
           carry = carry shr 32
