@@ -17,7 +17,7 @@ proc normalize(a: var BigInt) =
   a.limbs.setLen(1)
 
 proc initBigInt*(vals: sink seq[uint32], isNegative = false): BigInt =
-  ## Initialize a `BigInt` from a sequence of `uint32` values.
+  ## Initializes a `BigInt` from a sequence of `uint32` values.
   runnableExamples:
     let a = @[10'u32, 2'u32].initBigInt
     let b = 10 + 2 shl 32
@@ -479,7 +479,7 @@ proc shiftRight(a: var BigInt, b: BigInt, c: int) =
     a.limbs.setLen(a.limbs.high)
 
 proc `shr`*(x: BigInt, y: int): BigInt =
-  ## Shift a `BigInt` to the right (arithmetically).
+  ## Shifts a `BigInt` to the right (arithmetically).
   runnableExamples:
     let a = 24.initBigInt
     assert a shr 1 == 12.initBigInt
@@ -501,7 +501,7 @@ proc pow*(x: BigInt, y: int): BigInt =
     base *= tmp
 
 proc `shl`*(x: BigInt, y: int): BigInt =
-  ## Shift a `BigInt` to the left.
+  ## Shifts a `BigInt` to the left.
   runnableExamples:
     let a = 24.initBigInt
     assert a shl 1 == 48.initBigInt
