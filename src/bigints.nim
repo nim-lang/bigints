@@ -890,7 +890,7 @@ proc initBigInt*(str: string, base: range[2..36] = 10): BigInt =
   result.isNegative = neg
 
 when (NimMajor, NimMinor) >= (1, 5):
-  include "literals"
+  include bigints/private/literals
 
 proc inc*(a: var BigInt, b: int32 = 1) =
   ## Increase a value of a `BigInt` by the specified amount (default: 1).

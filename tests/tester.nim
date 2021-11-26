@@ -51,7 +51,7 @@ test "initBigInt":
 when (NimMajor, NimMinor) >= (1, 5):
   test "literals":
     # workaround
-    include "tliterals"
+    include tliterals
 
 
 test "range of bigint (https://github.com/def-/nim-bigints/issues/1)":
