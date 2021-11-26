@@ -1,5 +1,5 @@
 # This is an include file, do not import it directly.
-# It is needed as a workaround for Nim's parser for versions <= 1.4.
+# This is needed as a workaround for Nim's parser for versions <= 1.4.
 
 let aa = 1234567'bi
 check $aa == "1234567"
