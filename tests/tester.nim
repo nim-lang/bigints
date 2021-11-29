@@ -1,4 +1,4 @@
-import bigints, unittest
+import bigints, std/unittest
 
 const
   zero = initBigInt(0)
@@ -47,14 +47,12 @@ test "initBigInt":
           chk (v and int32.high.uint64).int32
           chk (v and uint32.high).uint32
 
-
 when (NimMajor, NimMinor) >= (1, 5):
   test "literals":
     # workaround
     include tliterals
 
-
-test "range of bigint (https://github.com/def-/nim-bigints/issues/1)":
+test "range of bigint (https://github.com/nim-lang/bigints/issues/1)":
   let two = 2.initBigInt
   let n = "123".initBigInt
   var result = 1.initBigInt
@@ -62,7 +60,7 @@ test "range of bigint (https://github.com/def-/nim-bigints/issues/1)":
     result *= i
   check result == initBigInt("12146304367025329675766243241881295855454217088483382315328918161829235892362167668831156960612640202170735835221294047782591091570411651472186029519906261646730733907419814952960000000000000000000000000000")
 
-test "multiple multiplications (https://github.com/def-/nim-bigints/issues/3)":
+test "multiple multiplications (https://github.com/nim-lang/bigints/issues/3)":
   let nums = [ "68855123440532288245010625",
                "201850901852714536181760000",
                "435980903974422631450250625",
@@ -78,11 +76,11 @@ test "multiple multiplications (https://github.com/def-/nim-bigints/issues/3)":
 
   check total == initBigInt("1091531901753858845417645933677882391421406095571139520376889755608568225321090455009925801178698945969179844505331560015898829746339840000000000000000000000")
 
-test "negative bigint (https://github.com/def-/nim-bigints/issues/4)":
+test "negative bigint (https://github.com/nim-lang/bigints/issues/4)":
   let x = -initBigInt(1)
   check x == initBigInt(-1)
 
-test "off by one in division (https://github.com/def-/nim-bigints/issues/5)":
+test "off by one in division (https://github.com/nim-lang/bigints/issues/5)":
   block:
     var x = initBigInt("815915283247897734345611269596115894272000000000")
     var y = initBigInt("5919012181389927685417441689600000000")
@@ -93,7 +91,7 @@ test "off by one in division (https://github.com/def-/nim-bigints/issues/5)":
     var y = initBigInt("20000000000")
     check x div y == initBigInt("40795764162394886717280563479805794713")
 
-test "negative zero flags (https://github.com/def-/nim-bigints/issues/16)":
+test "negative zero flags (https://github.com/nim-lang/bigints/issues/16)":
   let
     a = initBigInt("828478292990482")
     b = initBigInt(9283)
@@ -113,7 +111,7 @@ test "negative zero flags (https://github.com/def-/nim-bigints/issues/16)":
   check b * e == e
   check e div d == e
 
-test "validate digits in string parsing (https://github.com/def-/nim-bigints/issues/22)":
+test "validate digits in string parsing (https://github.com/nim-lang/bigints/issues/22)":
   check initBigInt("1", 2) == initBigInt(1)
   check initBigInt("z", 36) == initBigInt(35)
   expect ValueError:
@@ -121,7 +119,7 @@ test "validate digits in string parsing (https://github.com/def-/nim-bigints/iss
   expect ValueError:
     discard initBigInt("z", 35)
 
-test "empty limbs when uninitialized (https://github.com/def-/nim-bigints/issues/26)":
+test "empty limbs when uninitialized (https://github.com/nim-lang/bigints/issues/26)":
   # reported issue has an example about multiplication and it is due to a call to a.limbs[0] for an uninitialized a: BigInt
   # besides multiplication, one could look at appearances of [0] in source to find possible failures
   # failures bound to reaching a line with [0] are fatal
@@ -189,13 +187,13 @@ test "empty limbs when uninitialized (https://github.com/def-/nim-bigints/issues
   check one * zeroEmpty == zero
   check one * -zeroEmpty == zero
 
-  # https://github.com/def-/nim-bigints/issues/26
+  # https://github.com/nim-lang/bigints/issues/26
   block:
     var
       a: BigInt
       b: BigInt = 12.initBigInt
 
-    check a*b == 0.initBigInt
+    check a * b == 0.initBigInt
 
   # division does not have issues, but let's add some checks
   check zeroEmpty div one == zero
