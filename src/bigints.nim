@@ -27,10 +27,10 @@ proc initBigInt*(vals: sink seq[uint32], isNegative = false): BigInt =
 
 proc initBigInt*[T: int8|int16|int32](val: T): BigInt =
   if val < 0:
-    result.limbs = @[(not val.int32).uint32 + 1]
+    result.limbs = @[(not val).uint32 + 1] # manual 2's complement (to avoid overflow)
     result.isNegative = true
   else:
-    result.limbs = @[val.int32.uint32]
+    result.limbs = @[val.uint32]
     result.isNegative = false
 
 proc initBigInt*[T: uint8|uint16|uint32](val: T): BigInt =
@@ -39,15 +39,15 @@ proc initBigInt*[T: uint8|uint16|uint32](val: T): BigInt =
 proc initBigInt*(val: int64): BigInt =
   var a = val.uint64
   if val < 0:
-    a = not a + 1
+    a = not a + 1 # 2's complement
     result.isNegative = true
-  if a > uint32.high.uint64:
+  if a > uint32.high:
     result.limbs = @[(a and uint32.high).uint32, (a shr 32).uint32]
   else:
     result.limbs = @[a.uint32]
 
 proc initBigInt*(val: uint64): BigInt =
-  if val > uint32.high.uint64:
+  if val > uint32.high:
     result.limbs = @[(val and uint32.high).uint32, (val shr 32).uint32]
   else:
     result.limbs = @[val.uint32]
@@ -118,12 +118,7 @@ proc cmp(a: BigInt, b: int32): int64 =
   ## * a value greater than zero, if `a > b`
   ## * zero, if `a == b`
   if a.isZero:
-    if b < 0:
-      return 1
-    elif b == 0:
-      return 0
-    else:
-      return -1
+    return -b.int64
   elif a.isNegative:
     if b < 0:
       return unsignedCmp(b, a)
@@ -869,13 +864,11 @@ proc initBigInt*(str: string, base: range[2..36] = 10): BigInt =
   var mul = one
   let size = sizes[base]
   var first = 0
-  var str = str
   var neg = false
 
   if str[0] == '-':
     first = 1
     neg = true
-    str[0] = '0'
 
   for i in countdown((str.high div size) * size, 0, size):
     var smul = 1'u32
@@ -923,28 +916,28 @@ proc dec*(a: var BigInt, b: int32 = 1) =
   subtractionInt(a, c, b)
 
 
-iterator countup*(a, b: BigInt, step: int32 = 1): BigInt {.inline.} =
+iterator countup*(a, b: BigInt, step: int32 = 1): BigInt =
   ## Counts from `a` up to `b` (inclusive) with the given step count.
   var res = a
   while res <= b:
     yield res
     inc(res, step)
 
-iterator countdown*(a, b: BigInt, step: int32 = 1): BigInt {.inline.} =
+iterator countdown*(a, b: BigInt, step: int32 = 1): BigInt =
   ## Counts from `a` down to `b` (inclusive) with the given step count.
   var res = a
   while res >= b:
     yield res
     dec(res, step)
 
-iterator `..`*(a, b: BigInt): BigInt {.inline.} =
+iterator `..`*(a, b: BigInt): BigInt =
   ## Counts from `a` up to `b` (inclusive).
   var res = a
   while res <= b:
     yield res
     inc res
 
-iterator `..<`*(a, b: BigInt): BigInt {.inline.} =
+iterator `..<`*(a, b: BigInt): BigInt =
   ## Counts from `a` up to `b` (exclusive).
   var res = a
   while res < b:
