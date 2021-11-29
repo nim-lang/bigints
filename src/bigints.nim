@@ -1,8 +1,7 @@
-## The official library for arbitrary precision integers, implemented in pure
-## Nim, without any external dependencies.
+## Arbitrary precision integers.
 
 
-import strutils
+import std/strutils
 
 type
   BigInt* = object
@@ -18,7 +17,7 @@ proc normalize(a: var BigInt) =
   a.limbs.setLen(1)
 
 proc initBigInt*(vals: sink seq[uint32], isNegative = false): BigInt =
-  ## Initialize BigInt from a sequence of `uint32` values.
+  ## Initializes a `BigInt` from a sequence of `uint32` values.
   runnableExamples:
     let a = @[10'u32, 2'u32].initBigInt
     let b = 10 + 2 shl 32
@@ -74,7 +73,7 @@ proc isZero(a: BigInt): bool {.inline.} =
   return true
 
 proc unsignedCmp(a: BigInt, b: int32): int64 =
-  # here a and b have same sign a none of them is zero.
+  # here a and b have same sign and none of them is zero.
   # in particular we have that a.limbs.len >= 1
   result = int64(a.limbs.len) - 1
   if result != 0: return
@@ -327,7 +326,8 @@ proc addition(a: var BigInt, b, c: BigInt) =
     else:
       unsignedAddition(a, b, c)
 
-proc `+`*(a, b: BigInt): BigInt=
+proc `+`*(a, b: BigInt): BigInt =
+  ## Addition for `BigInt`s.
   runnableExamples:
     let
       a = 5.initBigInt
@@ -375,7 +375,8 @@ proc subtraction(a: var BigInt, b, c: BigInt) =
     else:
       unsignedSubtraction(a, b, c)
 
-proc `-`*(a, b: BigInt): BigInt=
+proc `-`*(a, b: BigInt): BigInt =
+  ## Subtraction for `BigInt`s.
   runnableExamples:
     let
       a = 15.initBigInt
@@ -443,6 +444,7 @@ proc multiplication(a: var BigInt, b, c: BigInt) =
   a.isNegative = b.isNegative xor c.isNegative
 
 proc `*`*(a, b: BigInt): BigInt =
+  ## Multiplication for `BigInt`s.
   runnableExamples:
     let
       a = 421.initBigInt
@@ -477,7 +479,7 @@ proc shiftRight(a: var BigInt, b: BigInt, c: int) =
     a.limbs.setLen(a.limbs.high)
 
 proc `shr`*(x: BigInt, y: int): BigInt =
-  ## Computes a right shift of a `BigInt`.
+  ## Shifts a `BigInt` to the right (arithmetically).
   runnableExamples:
     let a = 24.initBigInt
     assert a shr 1 == 12.initBigInt
@@ -486,6 +488,7 @@ proc `shr`*(x: BigInt, y: int): BigInt =
   shiftRight(result, x, y)
 
 proc pow*(x: BigInt, y: int): BigInt =
+  ## Computes `x` to the power of `y`.
   var base = x
   var exp = y
   result = one
@@ -498,7 +501,7 @@ proc pow*(x: BigInt, y: int): BigInt =
     base *= tmp
 
 proc `shl`*(x: BigInt, y: int): BigInt =
-  ## Computes a left shift of a `BigInt`.
+  ## Shifts a `BigInt` to the left.
   runnableExamples:
     let a = 24.initBigInt
     assert a shl 1 == 48.initBigInt
@@ -512,6 +515,7 @@ proc bitwiseAnd(a: var BigInt, b, c: BigInt) =
     a.limbs[i] = b.limbs[i] and c.limbs[i]
 
 proc `and`*(a, b: BigInt): BigInt =
+  ## Bitwise `and` for `BigInt`s.
   assert (not a.isNegative) and (not b.isNegative)
   bitwiseAnd(result, a, b)
 
@@ -524,6 +528,7 @@ proc bitwiseOr(a: var BigInt, b, c: BigInt) =
     a.limbs[i] = c.limbs[i]
 
 proc `or`*(a, b: BigInt): BigInt =
+  ## Bitwise `or` for `BigInt`s.
   assert (not a.isNegative) and (not b.isNegative)
   if a.limbs.len <= b.limbs.len:
     bitwiseOr(result, a, b)
@@ -539,6 +544,7 @@ proc bitwiseXor(a: var BigInt, b, c: BigInt) =
     a.limbs[i] = c.limbs[i]
 
 proc `xor`*(a, b: BigInt): BigInt =
+  ## Bitwise `xor` for `BigInt`s.
   assert (not a.isNegative) and (not b.isNegative)
   if a.limbs.len <= b.limbs.len:
     bitwiseXor(result, a, b)
@@ -621,7 +627,7 @@ proc unsignedDivRem(q, r: var BigInt, n, d: BigInt) =
       var q1 = uint64(vv) div wm1
       var r1 = uint64(vv) mod wm1
 
-      while (uint64(wm2)*q1) > ((r1 shl 32) or q.limbs[v+dn-2]):
+      while (uint64(wm2) * q1) > ((r1 shl 32) or q.limbs[v+dn-2]):
         dec(q1)
         r1 += wm1
         if r1 > uint64(uint32.high):
@@ -703,7 +709,7 @@ proc division(q, r: var BigInt, n, d: BigInt) =
 proc `div`*(a, b: BigInt): BigInt =
   ## Computes the integer division of two `BigInt` numbers.
   ##
-  ## If you also need a modulo (remainder), use the `divmod` proc.
+  ## If you also need the modulo (remainder), use the `divmod proc <#divmod,BigInt,BigInt>`_.
   runnableExamples:
     let
       a = 17.initBigInt
@@ -719,7 +725,7 @@ proc `div`*(a, b: BigInt): BigInt =
 proc `mod`*(a, b: BigInt): BigInt =
   ## Computes the integer modulo (remainder) of two `BigInt` numbers.
   ##
-  ## If you also need an integer division, use the `divmod` proc.
+  ## If you also need an integer division, use the `divmod proc <#divmod,BigInt,BigInt>`_.
   runnableExamples:
     let
       a = 17.initBigInt
@@ -754,7 +760,7 @@ proc calcSizes(): array[2..36, int] =
 
 const
   digits = "0123456789abcdefghijklmnopqrstuvwxyz"
-  multiples = [2,4,8,16,32]
+  multiples = [2, 4, 8, 16, 32]
   sizes = calcSizes()
 
 proc toStringMultipleTwo(a: BigInt, base: range[2..36] = 16): string =
@@ -813,6 +819,7 @@ proc toString*(a: BigInt, base: range[2..36] = 10): string =
     assert toString(a) == "55"
     assert toString(a, 2) == "110111"
     assert toString(a, 16) == "37"
+
   if a.isZero:
     return "0"
   if base in multiples:
@@ -855,6 +862,7 @@ proc initBigInt*(str: string, base: range[2..36] = 10): BigInt =
       b = initBigInt("1234", base = 8)
     assert a == 1234.initBigInt
     assert b == 668.initBigInt
+
   result.limbs = @[0'u32]
   result.isNegative = false
 
@@ -871,7 +879,7 @@ proc initBigInt*(str: string, base: range[2..36] = 10): BigInt =
 
   for i in countdown((str.high div size) * size, 0, size):
     var smul = 1'u32
-    var num: uint32
+    var num = 0'u32
     for j in countdown(min(i + size - 1, str.high), max(i, first)):
       let c = toLowerAscii(str[j])
 
@@ -893,7 +901,7 @@ when (NimMajor, NimMinor) >= (1, 5):
   include bigints/private/literals
 
 proc inc*(a: var BigInt, b: int32 = 1) =
-  ## Increase a value of a `BigInt` by the specified amount (default: 1).
+  ## Increase the value of a `BigInt` by the specified amount (default: 1).
   runnableExamples:
     var a = 15.initBigInt
     inc a
@@ -904,7 +912,7 @@ proc inc*(a: var BigInt, b: int32 = 1) =
   additionInt(a, c, b)
 
 proc dec*(a: var BigInt, b: int32 = 1) =
-  ## Decrease a value of a `BigInt` by the specified amount (default: 1).
+  ## Decrease the value of a `BigInt` by the specified amount (default: 1).
   runnableExamples:
     var a = 15.initBigInt
     dec a
@@ -916,24 +924,28 @@ proc dec*(a: var BigInt, b: int32 = 1) =
 
 
 iterator countup*(a, b: BigInt, step: int32 = 1): BigInt {.inline.} =
+  ## Counts from `a` up to `b` (inclusive) with the given step count.
   var res = a
   while res <= b:
     yield res
     inc(res, step)
 
 iterator countdown*(a, b: BigInt, step: int32 = 1): BigInt {.inline.} =
+  ## Counts from `a` down to `b` (inclusive) with the given step count.
   var res = a
   while res >= b:
     yield res
     dec(res, step)
 
 iterator `..`*(a, b: BigInt): BigInt {.inline.} =
+  ## Counts from `a` up to `b` (inclusive).
   var res = a
   while res <= b:
     yield res
     inc res
 
 iterator `..<`*(a, b: BigInt): BigInt {.inline.} =
+  ## Counts from `a` up to `b` (exclusive).
   var res = a
   while res < b:
     yield res
