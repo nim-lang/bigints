@@ -72,16 +72,18 @@ proc isZero(a: BigInt): bool {.inline.} =
       return false
   return true
 
-proc unsignedCmp(a: BigInt, b: int32): int64 =
-  # here a and b have same sign and none of them is zero.
-  # in particular we have that a.limbs.len >= 1
+proc unsignedCmp(a: BigInt, b: uint32): int64 =
+  # ignores the sign of `a`
+  # `a` and `b` are assumed to not be zero
   result = int64(a.limbs.len) - 1
   if result != 0: return
   result = int64(a.limbs[0]) - int64(b)
 
-proc unsignedCmp(a: int32, b: BigInt): int64 = -unsignedCmp(b, a)
+proc unsignedCmp(a: uint32, b: BigInt): int64 = -unsignedCmp(b, a)
 
 proc unsignedCmp(a, b: BigInt): int64 =
+  # ignores the signs of `a` and `b`
+  # `a` and `b` are assumed to not be zero
   result = int64(a.limbs.len) - int64(b.limbs.len)
   if result != 0: return
   for i in countdown(a.limbs.high, 0):
@@ -121,14 +123,14 @@ proc cmp(a: BigInt, b: int32): int64 =
     return -b.int64
   elif a.isNegative:
     if b < 0:
-      return unsignedCmp(b, a)
+      return unsignedCmp((not b).uint32 + 1, a)
     else:
       return -1
   else: # a > 0
     if b <= 0:
       return 1
     else:
-      return unsignedCmp(a, b)
+      return unsignedCmp(a, b.uint32)
 
 proc cmp(a: int32, b: BigInt): int64 = -cmp(b, a)
 
@@ -172,31 +174,25 @@ template addParts(toAdd) =
   a.limbs[i] = uint32(tmp and uint32.high)
   tmp = tmp shr 32
 
-proc unsignedAdditionInt(a: var BigInt, b: BigInt, c: int32) =
-  var tmp: uint64
-
+proc unsignedAdditionInt(a: var BigInt, b: BigInt, c: uint32) =
   let bl = b.limbs.len
-  const m = 1
   a.limbs.setLen(bl)
 
-  tmp = uint64(b.limbs[0]) + uint64(c)
-  a.limbs[0] = uint32(tmp and uint32.high)
-  tmp = tmp shr 32
-
-  for i in m ..< bl:
+  var tmp: uint64 = uint64(c)
+  for i in 0 ..< bl:
     addParts(uint64(b.limbs[i]))
   if tmp > 0'u64:
     a.limbs.add(uint32(tmp))
   a.isNegative = false
 
 proc unsignedAddition(a: var BigInt, b, c: BigInt) =
-  var tmp: uint64
   let
     bl = b.limbs.len
     cl = c.limbs.len
-  var m = if bl < cl: bl else: cl
-  a.limbs.setLen(if bl < cl: cl else: bl)
+  var m = min(bl, cl)
+  a.limbs.setLen(max(bl, cl))
 
+  var tmp = 0'u64
   for i in 0 ..< m:
     addParts(uint64(b.limbs[i]) + uint64(c.limbs[i]))
   if bl < cl:
@@ -223,38 +219,30 @@ proc `-`*(a: BigInt): BigInt =
   result = a
   negate(result)
 
-template realUnsignedSubtractionInt(a: var BigInt, b: BigInt, c: int32) =
-  var tmp: int64
-
+template realUnsignedSubtractionInt(a: var BigInt, b: BigInt, c: uint32) =
+  # b > c
   let bl = b.limbs.len
-  const cl = 1
-  const m = cl
   a.limbs.setLen(bl)
 
-  block:
-    const i = 0
-    tmp = int64(uint32.high) + 1 + int64(b.limbs[i]) - int64(c)
-    a.limbs[i] = uint32(tmp and int64(uint32.high))
-    tmp = 1 - (tmp shr 32)
-
-  for i in m ..< bl:
+  var tmp = int64(c)
+  for i in 0 ..< bl:
     tmp = int64(uint32.high) + 1 + int64(b.limbs[i]) - tmp
     a.limbs[i] = uint32(tmp and int64(uint32.high))
     tmp = 1 - (tmp shr 32)
   a.isNegative = false
 
   normalize(a)
-  if tmp > 0:
-    a.limbs.add(uint32(tmp))
+  assert tmp == 0
 
 template realUnsignedSubtraction(a: var BigInt, b, c: BigInt) =
-  var tmp: int64
+  # b > c
   let
     bl = b.limbs.len
     cl = c.limbs.len
-  var m = if bl < cl: bl else: cl
-  a.limbs.setLen(if bl < cl: cl else: bl)
+  var m = min(bl, cl)
+  a.limbs.setLen(max(bl, cl))
 
+  var tmp = 0'i64
   for i in 0 ..< m:
     tmp = int64(uint32.high) + 1 + int64(b.limbs[i]) - int64(c.limbs[i]) - tmp
     a.limbs[i] = uint32(tmp and int64(uint32.high))
@@ -273,42 +261,48 @@ template realUnsignedSubtraction(a: var BigInt, b, c: BigInt) =
     a.isNegative = false
 
   normalize(a)
-  if tmp > 0:
-    a.limbs.add(uint32(tmp))
+  assert tmp == 0
 
-proc unsignedSubtractionInt(a: var BigInt, b: BigInt, c: int32) =
-  if unsignedCmp(b, c) >= 0:
+proc unsignedSubtractionInt(a: var BigInt, b: BigInt, c: uint32) =
+  # `b` is not zero
+  let cmpRes = unsignedCmp(b, c)
+  if cmpRes > 0:
     realUnsignedSubtractionInt(a, b, c)
-  else:
-    realUnsignedSubtractionInt(a, b, c)
-    if a.limbs != @[0'u32]:
-      negate(a)
+  elif cmpRes < 0:
+    # `b` is only a single limb
+    a.limbs = @[c - b.limbs[0]]
+    a.isNegative = true
+  else: # b == c
+    a = zero
 
 proc unsignedSubtraction(a: var BigInt, b, c: BigInt) =
-  if unsignedCmp(b, c) > 0:
+  let cmpRes = unsignedCmp(b, c)
+  if cmpRes > 0:
     realUnsignedSubtraction(a, b, c)
-  else:
+  elif cmpRes < 0:
     realUnsignedSubtraction(a, c, b)
-    if a.limbs != @[0'u32]:
-      negate(a)
+    a.negate()
+  else: # b == c
+    a = zero
 
 proc additionInt(a: var BigInt, b: BigInt, c: int32) =
+  # a = b + c
   if b.isZero:
     a = c.initBigInt
   elif b.isNegative:
     if c < 0:
-      unsignedAdditionInt(a, b, c)
-      a.isNegative = true
+      unsignedAdditionInt(a, b, (not c).uint32 + 1)
     else:
-      unsignedSubtractionInt(a, b, c)
+      unsignedSubtractionInt(a, b, c.uint32)
+    a.negate()
   else:
     if c < 0:
-      var c = -c
-      unsignedSubtractionInt(a, b, c)
+      unsignedSubtractionInt(a, b, (not c).uint32 + 1)
     else:
-      unsignedAdditionInt(a, b, c)
+      unsignedAdditionInt(a, b, c.uint32)
 
 proc addition(a: var BigInt, b, c: BigInt) =
+  # a = b + c
   if b.isNegative:
     if c.isNegative:
       unsignedAddition(a, b, c)
@@ -342,22 +336,23 @@ template `+=`*(a: var BigInt, b: BigInt) =
   addition(a, c, b)
 
 proc subtractionInt(a: var BigInt, b: BigInt, c: int32) =
+  # a = b - c
   if b.isZero:
-    a = (-c).initBigInt
+    a = -c.initBigInt
   elif b.isNegative:
     if c < 0:
-      unsignedSubtractionInt(a, b, c)
-      a.isNegative = true
+      unsignedSubtractionInt(a, b, (not c).uint32 + 1)
     else:
-      unsignedAdditionInt(a, b, c)
-      a.isNegative = true
+      unsignedAdditionInt(a, b, c.uint32)
+    a.negate()
   else:
     if c < 0:
-      unsignedAdditionInt(a, b, c)
+      unsignedAdditionInt(a, b, (not c).uint32 + 1)
     else:
-      unsignedSubtractionInt(a, b, c)
+      unsignedSubtractionInt(a, b, c.uint32)
 
 proc subtraction(a: var BigInt, b, c: BigInt) =
+  # a = b - c
   if b.isNegative:
     if c.isNegative:
       unsignedSubtraction(a, c, b)
@@ -748,6 +743,7 @@ proc `divmod`*(a, b: BigInt): tuple[q, r: BigInt] =
 
 proc calcSizes(): array[2..36, int] =
   for i in 2..36:
+    # result[i] = log(uint32.high, base = i)
     var x = int64(uint32.high) div i # 1 less so we actually fit
     while x > 0:
       x = x div i
@@ -755,11 +751,12 @@ proc calcSizes(): array[2..36, int] =
 
 const
   digits = "0123456789abcdefghijklmnopqrstuvwxyz"
-  multiples = [2, 4, 8, 16, 32]
+  powers = {2, 4, 8, 16, 32}
   sizes = calcSizes()
 
-proc toStringMultipleTwo(a: BigInt, base: range[2..36] = 16): string =
-  assert(base in multiples)
+proc toStringPowerTwo(a: BigInt, base: range[2..36] = 16): string =
+  # used when `base` is a power of 2
+  assert base in powers
   var
     size = sizes[base] + 1
     cs = newStringOfCap(size)
@@ -817,8 +814,8 @@ proc toString*(a: BigInt, base: range[2..36] = 10): string =
 
   if a.isZero:
     return "0"
-  if base in multiples:
-    return toStringMultipleTwo(a, base)
+  if base in powers:
+    return toStringPowerTwo(a, base)
   var
     tmp = a
     c = 0'u32

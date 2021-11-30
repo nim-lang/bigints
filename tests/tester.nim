@@ -266,3 +266,51 @@ test "self-multiplication":
   check c == one
   a *= b
   check a == zero
+
+test "inc/dec":
+  var x: BigInt
+
+  x = 42.initBigInt
+  x.inc
+  check x == 43.initBigInt
+  x.inc(int32.high)
+  check x == "2147483690".initBigInt
+  x.inc(int32.low)
+  check x == 42.initBigInt
+  x.inc(-42)
+  check x == 0.initBigInt
+
+  x = 42.initBigInt
+  x.dec
+  check x == 41.initBigInt
+  x.dec(int32.high)
+  check x == "-2147483606".initBigInt
+  x.dec(int32.low)
+  check x == 42.initBigInt
+  x.dec(-42)
+  check x == 84.initBigInt
+
+  # edge cases
+
+  x = 1.initBigInt
+  x.inc(int32.low)
+  check x == "-2147483647".initBigInt
+  x = -1.initBigInt
+  x.inc(2)
+  check x == 1.initBigInt
+  x = -1.initBigInt
+  x.inc(-2)
+  check x == -3.initBigInt
+
+  x = 0.initBigInt
+  x.dec(int32.low)
+  check x == "2147483648".initBigInt
+  x = 1.initBigInt
+  x.dec(-2)
+  check x == 3.initBigInt
+  x = -1.initBigInt
+  x.dec(-2)
+  check x == 1.initBigInt
+  x = 12.initBigInt
+  x.dec(42)
+  check x == -30.initBigInt
