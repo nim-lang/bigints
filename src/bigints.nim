@@ -1,7 +1,7 @@
 ## Arbitrary precision integers.
 
 
-import std/strutils
+import std/[algorithm, bitops, math]
 
 type
   BigInt* = object
@@ -743,63 +743,15 @@ proc `divmod`*(a, b: BigInt): tuple[q, r: BigInt] =
 
 proc calcSizes(): array[2..36, int] =
   for i in 2..36:
-    # result[i] = log(uint32.high, base = i)
-    var x = int64(uint32.high) div i # 1 less so we actually fit
-    while x > 0:
-      x = x div i
-      result[i].inc()
+    var x = i
+    while x <= int64(uint32.high) + 1:
+      x *= i
+      result[i].inc
 
 const
   digits = "0123456789abcdefghijklmnopqrstuvwxyz"
   powers = {2, 4, 8, 16, 32}
-  sizes = calcSizes()
-
-proc toStringPowerTwo(a: BigInt, base: range[2..36] = 16): string =
-  # used when `base` is a power of 2
-  assert base in powers
-  var
-    size = sizes[base] + 1
-    cs = newStringOfCap(size)
-
-  result = newStringOfCap(size * a.limbs.len + 1)
-  if a.isNegative:
-    result.add('-')
-
-  # Special case for the highest
-  var x = a.limbs[a.limbs.high]
-  while x > 0'u32:
-    cs.add(digits[int(x mod base.uint32)])
-    x = x div base.uint32
-  for j in countdown(cs.high, 0):
-    result.add(cs[j])
-
-  cs.setLen(size)
-
-  for i in countdown(a.limbs.high - 1, 0):
-    var x = a.limbs[i]
-    for i in 0 ..< size:
-      cs[size - i - 1] = digits[int(x mod base.uint32)]
-      x = x div base.uint32
-    result.add(cs)
-
-  if result.len == 0:
-    result.add('0')
-
-proc reverse(a: string): string =
-  result = newString(a.len)
-  for i, c in a:
-    result[a.high - i] = c
-
-proc `^`(base, exp: uint32): uint32 =
-  var
-    base = base
-    exp = exp
-  result = 1
-  while exp != 0:
-    if (exp and 1) != 0:
-      result *= base
-    exp = exp shr 1
-    base *= base
+  sizes = calcSizes() # `sizes[base]` is the maximum number of digits that fully fit in a `uint32`
 
 proc toString*(a: BigInt, base: range[2..36] = 10): string =
   ## Produces a string representation of a `BigInt` in a specified
@@ -814,40 +766,74 @@ proc toString*(a: BigInt, base: range[2..36] = 10): string =
 
   if a.isZero:
     return "0"
+
+  let size = sizes[base]
   if base in powers:
-    return toStringPowerTwo(a, base)
-  var
-    tmp = a
-    c = 0'u32
-    d = uint32(base) ^ uint32(sizes[base])
-    s = ""
+    let
+      bits = countTrailingZeroBits(base) # bits per digit
+      mask = (1'u32 shl bits) - 1
+      totalBits = 32 * a.limbs.len - countLeadingZeroBits(a.limbs[a.limbs.high])
+    result = newStringOfCap((totalBits + bits - 1) div bits + 1)
+
+    var
+      acc = 0'u32
+      accBits = 0 # the number of bits needed for acc
+    for x in a.limbs:
+      acc = acc or (x shl accBits)
+      accBits += 32
+      while accBits >= bits:
+        result.add(digits[acc and mask])
+        acc = acc shr bits
+        if accBits > 32:
+          acc = x shr (32 - (accBits - bits))
+        accBits -= bits
+    if acc > 0:
+      result.add(digits[acc])
+  else:
+    let
+      base = uint32(base)
+      d = base ^ size
+    var tmp = a
+
+    tmp.isNegative = false
+    result = newStringOfCap(size * a.limbs.len + 1) # estimate the length of the result
+
+    while tmp > 0:
+      var
+        c: uint32
+        tmpCopy = tmp
+      unsignedDivRem(tmp, c, tmpCopy, d)
+      for i in 1..size:
+        result.add(digits[c mod base])
+        c = c div base
+
+  # normalize
+  var i = result.high
+  while i > 0 and result[i] == '0':
+    dec i
+  result.setLen(i+1)
 
   if a.isNegative:
-    tmp.isNegative = false
     result.add('-')
 
-  while tmp > 0:
-    unsignedDivRem(tmp, c, tmp, d)
-    for i in 1 .. sizes[base]:
-      s.add(digits[int(c mod base.uint32)])
-      c = c div base.uint32
-
-  var lastDigit = s.high
-  while lastDigit > 0:
-    if s[lastDigit] != '0':
-      break
-    dec lastDigit
-
-  s.setLen(lastDigit+1)
-  if s.len == 0: s = "0"
-  result.add(reverse(s))
+  result.reverse()
 
 proc `$`*(a: BigInt): string =
   ## String representation of a `BigInt` in base 10.
   toString(a, 10)
 
+proc parseDigit(c: char, base: uint32): uint32 {.inline.} =
+  result = case c
+    of '0'..'9': uint32(ord(c) - ord('0'))
+    of 'a'..'z': uint32(ord(c) - ord('a') + 10)
+    of 'A'..'Z': uint32(ord(c) - ord('A') + 10)
+    else: raise newException(ValueError, "Invalid input: " & c)
+
+  if result >= base:
+    raise newException(ValueError, "Invalid input: " & c)
+
 proc initBigInt*(str: string, base: range[2..36] = 10): BigInt =
-  ## Create a `BigInt` from a string.
+  ## Create a `BigInt` from a string. For invalid inputs, a `ValueError` exception is raised.
   runnableExamples:
     let
       a = initBigInt("1234")
@@ -855,11 +841,11 @@ proc initBigInt*(str: string, base: range[2..36] = 10): BigInt =
     assert a == 1234.initBigInt
     assert b == 668.initBigInt
 
-  result.limbs = @[0'u32]
-  result.isNegative = false
+  if str.len == 0:
+    raise newException(ValueError, "Empty input")
 
-  var mul = one
   let size = sizes[base]
+  let base = base.uint32
   var first = 0
   var neg = false
 
@@ -867,24 +853,42 @@ proc initBigInt*(str: string, base: range[2..36] = 10): BigInt =
     first = 1
     neg = true
 
-  for i in countdown((str.high div size) * size, 0, size):
-    var smul = 1'u32
-    var num = 0'u32
-    for j in countdown(min(i + size - 1, str.high), max(i, first)):
-      let c = toLowerAscii(str[j])
+  if base in powers:
+    # base is a power of two, so each digit corresponds to a block of bits
+    let bits = countTrailingZeroBits(base) # bits per digit
+    var
+      acc = 0'u32
+      accBits = 0 # the number of bits needed for acc
+    for i in countdown(str.high, first):
+      let digit = parseDigit(str[i], base)
+      acc = acc or (digit shl accBits)
+      accBits += bits
+      if accBits >= 32:
+        result.limbs.add(acc)
+        accBits -= 32
+        acc = digit shr (bits - accBits)
+    if acc > 0:
+      result.limbs.add(acc)
+    result.normalize()
+  else:
+    let d = initBigInt(base ^ size)
+    for i in countup(first, str.high, size):
+      var num = 0'u32 # the accumulator in this block
+      if i + size <= str.len:
+        # iterator over a block of length `size`, so we can use `d`
+        for j in countup(i, min(i + size - 1, str.high)):
+          let digit = parseDigit(str[j], base)
+          num = (num * base) + digit
+        unsignedAdditionInt(result, result * d, num)
+      else:
+        # iterator over a block smaller than `size`, so we have to compute `mul`
+        var mul = 1'u32 # the multiplication factor for num
+        for j in countup(i, min(i + size - 1, str.high)):
+          let digit = parseDigit(str[j], base)
+          num = (num * base) + digit
+          mul *= base
+        unsignedAdditionInt(result, result * initBigInt(mul), num)
 
-      # This is pretty expensive
-      if c notin digits[0 .. base-1]:
-        raise newException(ValueError, "Invalid input: " & str[j])
-
-      case c
-      of '0'..'9': num += smul * uint32(ord(c) - ord('0'))
-      of 'a'..'z': num += smul * uint32(ord(c) - ord('a') + 10)
-      else: raise newException(ValueError, "Invalid input: " & str[j])
-
-      smul *= base.uint32
-    result += mul * initBigInt(num)
-    mul *= initBigInt(smul)
   result.isNegative = neg
 
 when (NimMajor, NimMinor) >= (1, 5):
