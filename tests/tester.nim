@@ -314,3 +314,45 @@ test "inc/dec":
   x = 12.initBigInt
   x.dec(42)
   check x == -30.initBigInt
+
+test "string conversion":
+  for base in 2..36:
+    # zero
+    check zero.toString(base) == "0"
+    check (-zero).toString(base) == "0" # no sign is produced for 0
+    check "0".initBigInt(base) == zero
+    check "-0".initBigInt(base) == zero
+    check "00000".initBigInt(base) == zero
+    check "-00000".initBigInt(base) == zero
+    check "00000000000000000000000000000000000".initBigInt(base) == zero
+    check "-00000000000000000000000000000000000".initBigInt(base) == zero
+
+    # one
+    check one.toString(base) == "1"
+    check (-one).toString(base) == "-1"
+    check "1".initBigInt(base) == one
+    check "-1".initBigInt(base) == -one
+    check "00001".initBigInt(base) == one
+    check "-00001".initBigInt(base) == -one
+    check "00000000000000000000000000000000001".initBigInt(base) == one
+    check "-00000000000000000000000000000000001".initBigInt(base) == -one
+
+  let a = initBigInt(uint64(uint32.high) + 1)
+  check a.toString(base = 2) == "100000000000000000000000000000000"
+  check a.toString(base = 3) == "102002022201221111211"
+  check a.toString(base = 4) == "10000000000000000"
+  check a.toString(base = 8) == "40000000000"
+  check a.toString(base = 10) == "4294967296"
+  check a.toString(base = 12) == "9ba461594"
+  check a.toString(base = 16) == "100000000"
+  check a.toString(base = 32) == "4000000"
+
+  let b = initBigInt(0xfedcba9876543210'u64)
+  check "1111111011011100101110101001100001110110010101000011001000010000".initBigInt(base = 2) == b
+  check "11112100120110012201202221111221022102200".initBigInt(base = 3) == b
+  check "33323130232221201312111003020100".initBigInt(base = 4) == b
+  check "1773345651416625031020".initBigInt(base = 8) == b
+  check "18364758544493064720".initBigInt(base = 10) == b
+  check "833b81a74046633500".initBigInt(base = 12) == b
+  check "fedcba9876543210".initBigInt(base = 16) == b
+  check "ftn5qj1r58cgg".initBigInt(base = 32) == b
