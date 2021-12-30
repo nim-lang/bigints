@@ -248,6 +248,35 @@ test "bitwise operations":
   check (d xor d) == f
   check (d xor f) == d
 
+test "self-addition/self-subtraction":
+  # self-addition
+  var a = zero
+  a += a
+  check a == zero
+  a = 12.initBigInt
+  a += a
+  check a == 24.initBigInt
+  a = 20736.initBigInt
+  a += a
+  check a == 41472.initBigInt
+  a = "184884258895036416".initBigInt
+  a += a
+  check a == "369768517790072832".initBigInt
+
+  # self-subtraction
+  var b = zero
+  b -= b
+  check b == zero
+  b = 12.initBigInt
+  b -= b
+  check b == zero
+  b = 20736.initBigInt
+  b -= b
+  check b == zero
+  b = "184884258895036416".initBigInt
+  b -= b
+  check b == zero
+
 test "self-multiplication":
   var a = 12.initBigInt
   a *= a

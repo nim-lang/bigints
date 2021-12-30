@@ -324,7 +324,6 @@ proc `+`*(a, b: BigInt): BigInt =
     assert a + b == 15.initBigInt
     assert (-a) + b == 5.initBigInt
     assert a + (-b) == -5.initBigInt
-  result = zero
   addition(result, a, b)
 
 template `+=`*(a: var BigInt, b: BigInt) =
@@ -332,8 +331,7 @@ template `+=`*(a: var BigInt, b: BigInt) =
     var a = 5.initBigInt
     a += 2.initBigInt
     assert a == 7.initBigInt
-  var c = a
-  addition(a, c, b)
+  a = a + b
 
 proc subtractionInt(a: var BigInt, b: BigInt, c: int32) =
   # a = b - c
@@ -374,7 +372,6 @@ proc `-`*(a, b: BigInt): BigInt =
     assert a - b == 5.initBigInt
     assert (-a) - b == -25.initBigInt
     assert a - (-b) == 25.initBigInt
-  result = zero
   subtraction(result, a, b)
 
 template `-=`*(a: var BigInt, b: BigInt) =
@@ -382,8 +379,7 @@ template `-=`*(a: var BigInt, b: BigInt) =
     var a = 5.initBigInt
     a -= 2.initBigInt
     assert a == 3.initBigInt
-  var c = a
-  subtraction(a, c, b)
+  a = a - b
 
 
 template unsignedMultiplication(a: BigInt, b, c: BigInt, bl, cl) =
@@ -474,7 +470,6 @@ proc `shr`*(x: BigInt, y: int): BigInt =
     let a = 24.initBigInt
     assert a shr 1 == 12.initBigInt
     assert a shr 2 == 6.initBigInt
-  result = zero
   shiftRight(result, x, y)
 
 proc pow*(x: BigInt, y: int): BigInt =
@@ -708,8 +703,7 @@ proc `div`*(a, b: BigInt): BigInt =
     assert (-a) div b == -4.initBigInt
     assert a div (-b) == -4.initBigInt
     assert (-a) div (-b) == 3.initBigInt
-  result = zero
-  var tmp = zero
+  var tmp: BigInt
   division(result, tmp, a, b)
 
 proc `mod`*(a, b: BigInt): BigInt =
@@ -724,8 +718,7 @@ proc `mod`*(a, b: BigInt): BigInt =
     assert (-a) mod b == 3.initBigInt
     assert a mod (-b) == -3.initBigInt
     assert (-a) mod (-b) == -2.initBigInt
-  result = zero
-  var tmp = zero
+  var tmp: BigInt
   division(tmp, result, a, b)
 
 proc `divmod`*(a, b: BigInt): tuple[q, r: BigInt] =
