@@ -386,51 +386,50 @@ template `-=`*(a: var BigInt, b: BigInt) =
   subtraction(a, c, b)
 
 
-template unsignedMultiplication(a: BigInt, b, c: BigInt, bl, cl) =
+proc unsignedMultiplication(a: var BigInt, b, c: BigInt) {.inline.} =
   # always called with bl >= cl
+  let
+    bl = b.limbs.len
+    cl = c.limbs.len
+  a.limbs.setLen(bl + cl)
+  var tmp = 0'u64
 
   for i in 0 ..< bl:
     tmp += uint64(b.limbs[i]) * uint64(c.limbs[0])
     a.limbs[i] = uint32(tmp and uint32.high)
     tmp = tmp shr 32
 
-  for i in bl ..< bl + cl:
+  a.limbs[bl] = uint32(tmp)
+  for i in bl + 1 ..< bl + cl:
     a.limbs[i] = 0
-  var pos = bl
-
-  while tmp > 0'u64:
-    a.limbs[pos] = uint32(tmp and uint32.high)
-    tmp = tmp shr 32
-    pos.inc()
 
   for j in 1 ..< cl:
+    tmp = 0'u64
     for i in 0 ..< bl:
       tmp += uint64(a.limbs[j + i]) + uint64(b.limbs[i]) * uint64(c.limbs[j])
       a.limbs[j + i] = uint32(tmp and uint32.high)
       tmp = tmp shr 32
-    pos = j + bl
+    var pos = j + bl
     while tmp > 0'u64:
       tmp += uint64(a.limbs[pos])
       a.limbs[pos] = uint32(tmp and uint32.high)
       tmp = tmp shr 32
-      pos.inc()
+      inc pos
   normalize(a)
 
 proc multiplication(a: var BigInt, b, c: BigInt) =
+  # a = b * c
   if b.isZero or c.isZero:
     a = zero
     return
   let
     bl = b.limbs.len
     cl = c.limbs.len
-  var tmp: uint64
-  var c = c
 
-  a.limbs.setLen(bl + cl)
   if cl > bl:
-    unsignedMultiplication(a, c, b, cl, bl)
+    unsignedMultiplication(a, c, b)
   else:
-    unsignedMultiplication(a, b, c, bl, cl)
+    unsignedMultiplication(a, b, c)
   a.isNegative = b.isNegative xor c.isNegative
 
 proc `*`*(a, b: BigInt): BigInt =
@@ -440,7 +439,6 @@ proc `*`*(a, b: BigInt): BigInt =
       a = 421.initBigInt
       b = 200.initBigInt
     assert a * b == 84200.initBigInt
-  result = zero
   multiplication(result, a, b)
 
 template `*=`*(a: var BigInt, b: BigInt) =
@@ -448,8 +446,7 @@ template `*=`*(a: var BigInt, b: BigInt) =
     var a = 15.initBigInt
     a *= 10.initBigInt
     assert a == 150.initBigInt
-  var c = a
-  multiplication(a, c, b)
+  a = a * b
 
 proc shiftRight(a: var BigInt, b: BigInt, c: int) =
   a.limbs.setLen(b.limbs.len)
