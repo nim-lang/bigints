@@ -204,6 +204,7 @@ test "empty limbs when uninitialized (https://github.com/nim-lang/bigints/issues
 test "shift":
   let
     x = "190485713846014693847".initBigInt
+    y = "-190485713846014693847".initBigInt
     a63 = "9223372036854775808".initBigInt
     a64 = "18446744073709551616".initBigInt
     a65 = "36893488147419103232".initBigInt
@@ -224,12 +225,24 @@ test "shift":
   check x shl 63 == "1756920606507652517238705060004942053376".initBigInt
   check x shl 64 == "3513841213015305034477410120009884106752".initBigInt
   check x shl 65 == "7027682426030610068954820240019768213504".initBigInt
+  check y shl 0 == y
+  check y shl 1 == "-380971427692029387694".initBigInt
+  check y shl 7 == "-24382171372289880812416".initBigInt
+  check y shl 31 == "-409064955661923745004158713856".initBigInt
+  check y shl 32 == "-818129911323847490008317427712".initBigInt
+  check y shl 33 == "-1636259822647694980016634855424".initBigInt
+  check y shl 53 == "-1715742779792629411365922910161076224".initBigInt
+  check y shl 63 == "-1756920606507652517238705060004942053376".initBigInt
+  check y shl 64 == "-3513841213015305034477410120009884106752".initBigInt
+  check y shl 65 == "-7027682426030610068954820240019768213504".initBigInt
 
   # shr
   check a63 shr 63 == one
   check a64 shr 64 == one
   check a65 shr 65 == one
   check a128 shr 128 == one
+  check -one shr 1 == -one
+  check -2.initBigInt shr 1 == -one
   check x shr 0 == x
   check x shr 1 == "95242856923007346923".initBigInt
   check x shr 7 == "1488169639421989795".initBigInt
@@ -240,6 +253,16 @@ test "shift":
   check x shr 63 == "20".initBigInt
   check x shr 64 == "10".initBigInt
   check x shr 65 == "5".initBigInt
+  check y shr 0 == y
+  check y shr 1 == "-95242856923007346924".initBigInt
+  check y shr 7 == "-1488169639421989796".initBigInt
+  check y shr 31 == "-88701822724".initBigInt
+  check y shr 32 == "-44350911362".initBigInt
+  check y shr 33 == "-22175455681".initBigInt
+  check y shr 53 == "-21149".initBigInt
+  check y shr 63 == "-21".initBigInt
+  check y shr 64 == "-11".initBigInt
+  check y shr 65 == "-6".initBigInt
 
 test "bitwise operations":
   let

@@ -467,6 +467,7 @@ proc `shl`*(x: BigInt, y: Natural): BigInt =
   let b = uint32(y mod 32)
   let mask = ((1'u64 shl b) - 1) shl (64 - b)
   result.limbs.setLen(x.limbs.len + a)
+  result.isNegative = x.isNegative
 
   for i in countup(0, x.limbs.high):
     let acc = (uint64(x.limbs[i]) shl 32) or carry
@@ -475,6 +476,9 @@ proc `shl`*(x: BigInt, y: Natural): BigInt =
 
   if carry > 0:
     result.limbs.add(uint32(carry shr (32 - b)))
+
+# forward declaration for use in `shr`
+proc dec*(a: var BigInt, b: int32 = 1)
 
 proc `shr`*(x: BigInt, y: Natural): BigInt =
   ## Shifts a `BigInt` to the right (arithmetically).
@@ -488,11 +492,25 @@ proc `shr`*(x: BigInt, y: Natural): BigInt =
   let b = uint32(y mod 32)
   let mask = (1'u32 shl b) - 1
   result.limbs.setLen(x.limbs.len - a)
+  result.isNegative = x.isNegative
 
   for i in countdown(x.limbs.high, a):
     let acc = (carry shl 32) or x.limbs[i]
     carry = acc and mask
     result.limbs[i - a] = uint32(acc shr b)
+
+  if result.isNegative:
+    var underflow = false
+    if carry > 0:
+      underflow = true
+    else:
+      for i in 0 .. a - 1:
+        if x.limbs[i] > 0:
+          underflow = true
+          break
+
+    if underflow:
+      dec result
 
   if result.limbs.len > 1 and result.limbs[result.limbs.high] == 0:
     # normalize
