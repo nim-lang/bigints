@@ -51,7 +51,7 @@ template main() =
   when (NimMajor, NimMinor) >= (1, 5):
     block: # literals
       # workaround
-      include literals_include
+      include tliterals
 
   block: # zero
     # see https://github.com/nim-lang/bigints/issues/26
