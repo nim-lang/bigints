@@ -201,17 +201,45 @@ test "empty limbs when uninitialized (https://github.com/nim-lang/bigints/issues
   check zeroEmpty mod one == zero
   check -zeroEmpty mod one == zero
 
-test "shift left":
-  let a63 = "9223372036854775808".initBigInt
-  let a64 = "18446744073709551616".initBigInt
-  let a65 = "36893488147419103232".initBigInt
-  let a128 = "340282366920938463463374607431768211456".initBigInt
-  let one = 1.initBigInt
+test "shift":
+  let
+    x = "190485713846014693847".initBigInt
+    a63 = "9223372036854775808".initBigInt
+    a64 = "18446744073709551616".initBigInt
+    a65 = "36893488147419103232".initBigInt
+    a128 = "340282366920938463463374607431768211456".initBigInt
 
+  # shl
   check one shl 63 == a63
   check one shl 64 == a64
   check one shl 65 == a65
   check one shl 128 == a128
+  check x shl 0 == x
+  check x shl 1 == "380971427692029387694".initBigInt
+  check x shl 7 == "24382171372289880812416".initBigInt
+  check x shl 31 == "409064955661923745004158713856".initBigInt
+  check x shl 32 == "818129911323847490008317427712".initBigInt
+  check x shl 33 == "1636259822647694980016634855424".initBigInt
+  check x shl 53 == "1715742779792629411365922910161076224".initBigInt
+  check x shl 63 == "1756920606507652517238705060004942053376".initBigInt
+  check x shl 64 == "3513841213015305034477410120009884106752".initBigInt
+  check x shl 65 == "7027682426030610068954820240019768213504".initBigInt
+
+  # shr
+  check a63 shr 63 == one
+  check a64 shr 64 == one
+  check a65 shr 65 == one
+  check a128 shr 128 == one
+  check x shr 0 == x
+  check x shr 1 == "95242856923007346923".initBigInt
+  check x shr 7 == "1488169639421989795".initBigInt
+  check x shr 31 == "88701822723".initBigInt
+  check x shr 32 == "44350911361".initBigInt
+  check x shr 33 == "22175455680".initBigInt
+  check x shr 53 == "21148".initBigInt
+  check x shr 63 == "20".initBigInt
+  check x shr 64 == "10".initBigInt
+  check x shr 65 == "5".initBigInt
 
 test "bitwise operations":
   let
@@ -385,3 +413,18 @@ test "string conversion":
   check "833b81a74046633500".initBigInt(base = 12) == b
   check "fedcba9876543210".initBigInt(base = 16) == b
   check "ftn5qj1r58cgg".initBigInt(base = 32) == b
+
+test "pow":
+  let a = "14075287".initBigInt
+  check pow(a, 0) == one
+  check pow(a, 1) == a
+  check pow(a, 2) == a * a
+  check pow(a, 3) == a * a * a
+  check pow(a, 4) == a * a * a * a
+  check pow(a, 5) == a * a * a * a * a
+  check pow(a, 6) == a * a * a * a * a * a
+  check pow(a, 7) == a * a * a * a * a * a * a
+
+  # special cases
+  check pow(zero, 0) == one
+  check pow(zero, 1) == zero
