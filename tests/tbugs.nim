@@ -1,7 +1,3 @@
-discard """
-  targets: c
-"""
-
 import bigints
 
 template main() =

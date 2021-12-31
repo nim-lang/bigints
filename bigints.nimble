@@ -12,4 +12,5 @@ srcDir      = "src"
 requires "nim >= 1.4.0"
 
 task test, "Test bigints":
-  exec "testament pattern 'tests/t*.nim'"
+  exec "nim r --backend:c tests/t*.nim"
+  exec "nim r --backend:cpp tests/t*.nim"
