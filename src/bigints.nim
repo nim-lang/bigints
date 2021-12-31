@@ -396,8 +396,6 @@ proc unsignedMultiplication(a: var BigInt, b, c: BigInt) {.inline.} =
     tmp = tmp shr 32
 
   a.limbs[bl] = uint32(tmp)
-  for i in bl + 1 ..< bl + cl:
-    a.limbs[i] = 0
 
   for j in 1 ..< cl:
     tmp = 0'u64
@@ -444,52 +442,61 @@ template `*=`*(a: var BigInt, b: BigInt) =
     assert a == 150.initBigInt
   a = a * b
 
-proc shiftRight(a: var BigInt, b: BigInt, c: int) =
-  a.limbs.setLen(b.limbs.len)
-  var carry: uint64
-  let d = c div 32
-  let e = c mod 32
-  let mask: uint32 = 1'u32 shl uint32(e) - 1
-
-  for i in countdown(b.limbs.high, d):
-    let acc: uint64 = (carry shl 32) or b.limbs[i]
-    carry = uint32(acc and mask)
-    a.limbs[i - d] = uint32(acc shr uint32(e))
-
-  a.limbs.setLen(a.limbs.len - d)
-
-  if a.limbs.len > 1 and a.limbs[a.limbs.high] == 0:
-    a.limbs.setLen(a.limbs.high)
-
-proc `shr`*(x: BigInt, y: int): BigInt =
-  ## Shifts a `BigInt` to the right (arithmetically).
-  runnableExamples:
-    let a = 24.initBigInt
-    assert a shr 1 == 12.initBigInt
-    assert a shr 2 == 6.initBigInt
-  shiftRight(result, x, y)
-
-proc pow*(x: BigInt, y: int): BigInt =
+proc pow*(x: BigInt, y: Natural): BigInt =
   ## Computes `x` to the power of `y`.
   var base = x
   var exp = y
   result = one
 
+  # binary exponentiation
   while exp > 0:
-    if exp mod 2 > 0:
+    if (exp and 1) > 0:
       result *= base
-    exp = exp div 2
-    var tmp = base
-    base *= tmp
+    exp = exp shr 1
+    base *= base
 
-proc `shl`*(x: BigInt, y: int): BigInt =
+proc `shl`*(x: BigInt, y: Natural): BigInt =
   ## Shifts a `BigInt` to the left.
   runnableExamples:
     let a = 24.initBigInt
     assert a shl 1 == 48.initBigInt
     assert a shl 2 == 96.initBigInt
-  var powerOfTwo = pow(2.initBigInt, y)
-  result = x * powerOfTwo
+
+  var carry = 0'u64
+  let a = y div 32
+  let b = uint32(y mod 32)
+  let mask = ((1'u64 shl b) - 1) shl (64 - b)
+  result.limbs.setLen(x.limbs.len + a)
+
+  for i in countup(0, x.limbs.high):
+    let acc = (uint64(x.limbs[i]) shl 32) or carry
+    carry = (acc and mask) shr 32
+    result.limbs[i + a] = uint32((acc shl b) shr 32)
+
+  if carry > 0:
+    result.limbs.add(uint32(carry shr (32 - b)))
+
+proc `shr`*(x: BigInt, y: Natural): BigInt =
+  ## Shifts a `BigInt` to the right (arithmetically).
+  runnableExamples:
+    let a = 24.initBigInt
+    assert a shr 1 == 12.initBigInt
+    assert a shr 2 == 6.initBigInt
+
+  var carry = 0'u64
+  let a = y div 32
+  let b = uint32(y mod 32)
+  let mask = (1'u32 shl b) - 1
+  result.limbs.setLen(x.limbs.len - a)
+
+  for i in countdown(x.limbs.high, a):
+    let acc = (carry shl 32) or x.limbs[i]
+    carry = acc and mask
+    result.limbs[i - a] = uint32(acc shr b)
+
+  if result.limbs.len > 1 and result.limbs[result.limbs.high] == 0:
+    # normalize
+    result.limbs.setLen(result.limbs.high)
 
 proc bitwiseAnd(a: var BigInt, b, c: BigInt) =
   a.limbs.setLen(min(b.limbs.len, c.limbs.len))
