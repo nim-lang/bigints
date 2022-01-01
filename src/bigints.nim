@@ -758,7 +758,7 @@ proc `divmod`*(a, b: BigInt): tuple[q, r: BigInt] =
 
 proc calcSizes(): array[2..36, int] =
   for i in 2..36:
-    var x = i
+    var x = int64(i)
     while x <= int64(uint32.high) + 1:
       x *= i
       result[i].inc
