@@ -12,5 +12,7 @@ srcDir      = "src"
 requires "nim >= 1.4.0"
 
 task test, "Test bigints":
-  exec "nim r tests/tester"
-  exec "nim r tests/tissue_27"
+  exec "nim r --backend:c tests/tbigints.nim"
+  exec "nim r --backend:c tests/tbugs.nim"
+  exec "nim r --backend:cpp tests/tbigints.nim"
+  exec "nim r --backend:cpp tests/tbugs.nim"

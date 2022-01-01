@@ -4,3 +4,4 @@
 nimcache/
 *.swp
 *.exe
+testresults/
