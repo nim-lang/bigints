@@ -15,7 +15,7 @@ for i in 2 .. nMax:
 proc choose(m: BigInt, k: int32): BigInt =
   result = m
   if k == 1: return
-  for i in 1 .. < k:
+  for i in 1 ..< k:
     result = result * (m + i) div (i + 1)
 
 proc tree(br, n, l, sum: int32, cnt: BigInt) =
