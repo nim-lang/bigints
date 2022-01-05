@@ -959,3 +959,28 @@ iterator `..<`*(a, b: BigInt): BigInt =
   while res < b:
     yield res
     inc res
+
+func powmod*(base, exponent, modulus: BigInt): BigInt =
+  ## Compute modular exponentation of `base` with power `exponent` modulo `modulus`.
+  ## The return value is always in the range `[0, modulus-1]`.
+  if modulus < 0:
+    raise newException(ValueError, "modulus must be strictly positive")
+  if modulus == 0:
+    raise newException(DivByZeroDefect, "modulus must be nonzero")
+  if modulus == 1:
+    return zero
+  if exponent < 0:
+    # let baseInv = inverse_mod(base, modulus)
+    # return powmod(baseInv, -exponent, modulus)
+    raise newException(ValueError, "Not yet Implemented!")
+
+  var
+    exp = exponent
+    basePow = ((base mod modulus) + modulus) mod modulus # Base stays in [0, m-1]
+  result = one
+  while exp != zero:
+    if (exp and one) != zero:
+      result = (result * basePow) mod modulus
+    basePow = (basePow * basePow) mod modulus
+    exp = exp shr 1
+
