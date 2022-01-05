@@ -448,6 +448,41 @@ proc main() =
     doAssert toSignedInt[int32](n) == none(int32)
     doAssert toSignedInt[int](n) == none(int)
 
+  block: # powmod
+    let a = "30292868".initBigInt
+    let p = "60449131".initBigInt # p is prime
+    let two = 2.initBigInt
+    doAssert powmod(a, two, p) == "25760702".initBigInt
+    # Fermat's little theorem: a^p ≡ a mod p
+    doAssert powmod(a, p, p) == a
+    # Euler's identity a^(p-1) \equiv 1 \bmod p
+    doAssert powmod(a, p - one, p) == one
+    # We can invert a using Euler's identity / Fermat's little theorem
+    doAssert powmod(a, p - two, p) == "51713091".initBigInt
+    # We can reduce the exponent modulo phi(p) = p - 1, since p is prime
+    doAssert powmod(a, 2.initBigInt*p, p) == (a * a mod p)
+
+    let p2 = 761.initBigInt
+    var a2 = 1.initBigInt
+    # Fermat's little theorem: a^p ≡ a mod p
+    while a2 < p2:
+      doAssert powmod(a2, p2, p2) == a2
+      a2.inc
+
+  block: # Composite modulus
+    let a = "2472018".initBigInt
+    let n = "3917515".initBigInt # 5 * 7 * 19 * 43 * 137
+    let euler_phi = "2467584".initBigInt
+    doAssert powmod(a, 52.initBigInt, n) == "2305846".initBigInt
+    doAssert powmod(a, euler_phi, n) == one
+    # Edge cases
+    doAssert powmod(a, one, n) == a
+    doAssert powmod(a, zero, n) == one
+
+  block: # powmod with negative base
+    let a = "1986599".initBigInt
+    let p = "10230581".initBigInt
+    doAssert powmod(-a, 2.initBigInt, p) == "6199079".initBigInt
 
 static: main()
 main()
