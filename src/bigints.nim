@@ -960,6 +960,27 @@ iterator `..<`*(a, b: BigInt): BigInt =
     yield res
     inc res
 
+func invmod*(a, modulus: BigInt): BigInt =
+    ## Compute the modular inverse of `a` by Euclide's method. 
+    ## The return value is always in the range `[1, modulus-1]`
+    if a == 0:
+      raise newException(DivByZeroDefect, "0 has no modular inverse")
+    var
+      r0 = a
+      r1 = modulus
+      u = one
+      u1 = zero
+      q, rt, ut : BigInt
+    while r1 > 0:
+      q = r0 div r1
+      rt = r0
+      ut = u
+      r0 = r1
+      u = u1
+      r1 = rt - q * r1
+      u1 = ut - q * u1
+    result = ((u mod modulus) + modulus) mod modulus
+
 func powmod*(base, exponent, modulus: BigInt): BigInt =
   ## Compute modular exponentation of `base` with power `exponent` modulo `modulus`.
   ## The return value is always in the range `[0, modulus-1]`.
@@ -970,9 +991,11 @@ func powmod*(base, exponent, modulus: BigInt): BigInt =
   if modulus == 1:
     return zero
   if exponent < 0:
-    # let baseInv = inverse_mod(base, modulus)
-    # return powmod(baseInv, -exponent, modulus)
-    raise newException(ValueError, "Not yet Implemented!")
+    if base == zero:
+      return zero
+    else:
+      let baseInv = invmod(base, modulus)
+      return powmod(baseInv, -exponent, modulus)
 
   var
     exp = exponent
