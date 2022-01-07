@@ -959,3 +959,37 @@ iterator `..<`*(a, b: BigInt): BigInt =
   while res < b:
     yield res
     inc res
+
+func abs*(a: BigInt): BigInt = max(a, -a)
+
+func gcd*(a, b: BigInt): BigInt =
+  ## Returns the greatest common divisor of `a` and `b`.
+  if a.isZero:
+    return b
+  elif b.isZero:
+    return a
+  elif a < 0:
+    if b < 0:
+      return gcd(-a, -b)
+    else:
+      return gcd(-a, b)
+  elif b < 0:
+    return gcd(a, -b)
+  else:
+    var
+      u: BigInt = a
+      v: BigInt = b
+      t: BigInt = b
+      r: BigInt = a mod b
+    while v != 0:
+      t = v
+      r = u mod v
+      # v = min(r, r-v)
+      if r > (v shr 1):
+        v = v - r
+      else:
+        v = r
+      u = t
+    # We return abs(u)
+    result = abs(u)
+    
