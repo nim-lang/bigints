@@ -1026,6 +1026,8 @@ func invmod*(a, modulus: BigInt): BigInt =
     u = u1
     r1 = rt - q * r1
     u1 = ut - q * u1
+  if r0 != one:
+    raise newException(ValueError, $a & " has no modular inverse")
   result = ((u mod modulus) + modulus) mod modulus
 
 func powmod*(base, exponent, modulus: BigInt): BigInt =
