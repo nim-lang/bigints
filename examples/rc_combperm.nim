@@ -1,19 +1,22 @@
 # Solution for http://rosettacode.org/wiki/Combinations_and_permutations
 import bigints
 
+const
+  zero = 0.initBigInt
+
 proc perm(n, k: int32): BigInt =
   result = initBigInt 1
   var
-    k = n - k
-    n = n
+    k = initBigInt(n - k)
+    n = initBigInt(n)
   while n > k:
     result *= n
     dec n
 
 proc comb(n, k: int32): BigInt =
   result = perm(n, k)
-  var k = k
-  while k > 0:
+  var k = initBigInt(k)
+  while k > zero:
     result = result div k
     dec k
 

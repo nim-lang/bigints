@@ -1,19 +1,25 @@
 # By Cyther606: http://forum.nimrod-lang.org/t/522
 # Adapted from: https://github.com/wobine/blackboard101/blob/master/EllipticCurvesPart4-PrivateKeyToPublicKey.py
-import bigints, math, strutils
+import bigints
+import std/[math, strutils]
+
+const
+  one = 1.initBigInt
+  two = 2.initBigInt
+  zero = 0.initBigInt
 
 proc `^`(base: int; exp: int): BigInt =
   let base = base.initBigInt
   var exp = exp
-  result = 1.initBigInt
+  result = one
   while exp > 0:
     result *= base
     dec(exp)
 
 let
-  Pcurve: BigInt = 2^256 - 2^32 - 2^9 - 2^8 - 2^7 - 2^6 - 2^4 - 1
+  Pcurve: BigInt = 2^256 - 2^32 - 2^9 - 2^8 - 2^7 - 2^6 - 2^4 - one
   N = initBigInt("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141", 16)
-  Acurve = 0.initBigInt
+  Acurve = zero
   Bcurve = 7.initBigInt
   Gx = initBigInt("55066263022277343669578718895168534326250603453777594175500187360389116729240")
   Gy = initBigInt("32670510020758816978083085130507043184471273380659243275938904335757337482424")
@@ -22,11 +28,11 @@ let
 
 proc modinv(a: BigInt): BigInt =
   var
-    lm = 1.initBigInt
-    hm = 0.initBigInt
+    lm = one
+    hm = zero
     lowm = a mod Pcurve
     highm = Pcurve
-  while lowm > 1:
+  while lowm > one:
     let
       ratio = highm div lowm
       nm = hm - (lm * ratio)
@@ -53,7 +59,7 @@ proc ecDouble(a: tuple): (BigInt, BigInt) =
   result = (x, y)
 
 proc ecMultiply(genPoint: tuple, scalarHex: BigInt): (BigInt, BigInt) =
-  if scalarHex == 0 or scalarHex >= N:
+  if scalarHex == zero or scalarHex >= N:
     raise newException(Exception, "Invalid Scalar/Private Key")
   var
     scalarBin = scalarHex.toString(base = 2)
@@ -80,7 +86,7 @@ proc main() =
   echo "04", publicKey[0].toString(base = 16).align(64, '0'), publicKey[1].toString(base = 16).align(64, '0')
   echo ""
   echo "the official Public Key - compressed:"
-  echo if publicKey[1] mod 2 == 1: "03" & publicKey[0].toString(base = 16).align(64, '0')
+  echo if publicKey[1] mod two == one: "03" & publicKey[0].toString(base = 16).align(64, '0')
        else: "02" & publicKey[0].toString(base = 16).align(64, '0')
 
 main()

@@ -1,4 +1,5 @@
 # Solution for http://rosettacode.org/wiki/9_billion_names_of_God_the_integer#Python
+# The program does not end in reasonable time
 import bigints
 
 var cache = @[@[1.initBigInt]]
@@ -14,7 +15,7 @@ proc cumu(n: int): seq[BigInt] =
 proc row(n: int): seq[BigInt] =
   let r = cumu n
   result = @[]
-  for i in 0 .. <n:
+  for i in 0 ..< n:
     result.add r[i+1] - r[i]
 
 echo "rows:"

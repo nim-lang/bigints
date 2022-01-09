@@ -1,16 +1,21 @@
-import iterutils, bigints
+import iterutils
+import bigints
+
+const
+  one = 1.initBigInt
+  zero = 0.initBigInt
 
 proc lfact: iterator: BigInt =
   result = iterator: BigInt =
-    yield 0.initBigInt
+    yield zero
     var
-      fact = 1.initBigInt
-      sum = 0.initBigInt
-      n = 1.initBigInt
+      fact = one
+      sum = zero
+      n = one
     while true:
       sum += fact
       fact *= n
-      n += 1
+      n += one
       yield sum
 
 echo "first 11:"
