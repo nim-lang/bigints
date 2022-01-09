@@ -379,5 +379,16 @@ template main() =
     doAssert pow(zero, 0) == one
     doAssert pow(zero, 1) == zero
 
+  block: # fastLog2
+    let a = one shl 31
+    let b = a shl 1
+    # one limb
+    doAssert fastLog2(a) == 31
+    # two limbs
+    doAssert fastLog2(b) == 32
+    # negative BigInt
+    doAssert fastLog2(-a) == 31
+    doAssert fastLog2(-b) == 32
+
 static: main()
 main()

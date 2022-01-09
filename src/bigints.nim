@@ -959,3 +959,5 @@ iterator `..<`*(a, b: BigInt): BigInt =
   while res < b:
     yield res
     inc res
+
+func fastLog2*(a: BigInt): int = bitops.fastLog2(a.limbs[a.limbs.high]) + 32*(a.limbs.len-1)
