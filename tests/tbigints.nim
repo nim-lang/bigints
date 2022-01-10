@@ -364,6 +364,20 @@ template main() =
     doAssert "fedcba9876543210".initBigInt(base = 16) == b
     doAssert "ftn5qj1r58cgg".initBigInt(base = 32) == b
 
+  block: # fastLog2
+    let a = one shl 31
+    let b = a shl 1
+    # one limb
+    doAssert fastLog2(a) == 31
+    # two limbs
+    doAssert fastLog2(b) == 32
+    # negative BigInt
+    doAssert fastLog2(-a) == 31
+    doAssert fastLog2(-b) == 32
+    # edge cases
+    doAssert fastLog2(one) == 0
+    doAssert fastLog2(zero) == -1
+
   block: # pow
     let a = "14075287".initBigInt
     doAssert pow(a, 0) == one
@@ -379,19 +393,11 @@ template main() =
     doAssert pow(zero, 0) == one
     doAssert pow(zero, 1) == zero
 
-  block: # fastLog2
-    let a = one shl 31
-    let b = a shl 1
-    # one limb
-    doAssert fastLog2(a) == 31
-    # two limbs
-    doAssert fastLog2(b) == 32
-    # negative BigInt
-    doAssert fastLog2(-a) == 31
-    doAssert fastLog2(-b) == 32
-    # edge cases
-    doAssert fastLog2(one) == 0
-    doAssert fastLog2(zero) == -1
+  block: # div/mod
+    doAssertRaises(DivByZeroDefect): discard one div zero
+    doAssertRaises(DivByZeroDefect): discard one mod zero
+    doAssertRaises(DivByZeroDefect): discard divmod(one, zero)
+
 
 static: main()
 main()
