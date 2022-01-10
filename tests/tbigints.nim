@@ -488,6 +488,8 @@ proc main() =
     # Edge cases
     doAssert powmod(a, one, n) == a
     doAssert powmod(a, zero, n) == one
+    doAssert powmod(zero, zero, n) == one
+    doAssert powmod(zero, one, n) == zero
 
   block: # powmod with negative base
     let a = "1986599".initBigInt
