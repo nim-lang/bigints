@@ -389,6 +389,9 @@ template main() =
     # negative BigInt
     doAssert fastLog2(-a) == 31
     doAssert fastLog2(-b) == 32
+    # edge cases
+    doAssert fastLog2(one) == 0
+    doAssert fastLog2(zero) == -1
 
 static: main()
 main()

@@ -960,4 +960,8 @@ iterator `..<`*(a, b: BigInt): BigInt =
     yield res
     inc res
 
-func fastLog2*(a: BigInt): int = bitops.fastLog2(a.limbs[a.limbs.high]) + 32*(a.limbs.len-1)
+func fastLog2*(a: BigInt): int =
+  ## Computes the logarithm in base 2 of `a`.
+  if a.isZero:
+    return -1
+  bitops.fastLog2(a.limbs[a.limbs.high]) + 32*(a.limbs.len-1)
