@@ -1009,7 +1009,7 @@ iterator `..<`*(a, b: BigInt): BigInt =
 func invmod*(a, modulus: BigInt): BigInt =
   ## Compute the modular inverse of `a` modulo `modulus`. 
   ## The return value is always in the range `[1, modulus-1]`
-  # Euclide's method
+  # extended Euclidean algorithm
   if a == 0:
     raise newException(DivByZeroDefect, "0 has no modular inverse")
   var
