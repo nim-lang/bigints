@@ -379,5 +379,10 @@ template main() =
     doAssert pow(zero, 0) == one
     doAssert pow(zero, 1) == zero
 
+  block: # div/mod
+    doAssertRaises(DivByZeroDefect): discard one div zero
+    doAssertRaises(DivByZeroDefect): discard one mod zero
+    doAssertRaises(DivByZeroDefect): discard divmod(one, zero)
+
 static: main()
 main()
