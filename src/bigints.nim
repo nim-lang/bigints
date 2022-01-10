@@ -989,24 +989,24 @@ func powmod*(base, exponent, modulus: BigInt): BigInt =
   ## The return value is always in the range `[0, modulus-1]`.
   if modulus < 0:
     raise newException(ValueError, "modulus must be strictly positive")
-  if modulus == 0:
+  elif modulus.isZero:
     raise newException(DivByZeroDefect, "modulus must be nonzero")
-  if modulus == 1:
+  elif modulus == 1:
     return zero
-  if exponent < 0:
-    if base == zero:
+  elif exponent < 0:
+    if base.isZero:
       return zero
     else:
       let baseInv = invmod(base, modulus)
       return powmod(baseInv, -exponent, modulus)
-
-  var
-    exp = exponent
-    basePow = ((base mod modulus) + modulus) mod modulus # Base stays in [0, m-1]
-  result = one
-  while exp != zero:
-    if (exp and one) != zero:
-      result = (result * basePow) mod modulus
-    basePow = (basePow * basePow) mod modulus
-    exp = exp shr 1
+  else:
+    var
+      exp = exponent
+      basePow = ((base mod modulus) + modulus) mod modulus # Base stays in [0, m-1]
+    result = one
+    while exp != zero:
+      if (exp and one) != zero:
+        result = (result * basePow) mod modulus
+      basePow = (basePow * basePow) mod modulus
+      exp = exp shr 1
 
