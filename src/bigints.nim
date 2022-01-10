@@ -960,7 +960,9 @@ iterator `..<`*(a, b: BigInt): BigInt =
     yield res
     inc res
 
-func abs*(a: BigInt): BigInt = max(a, -a)
+func abs*(a: BigInt): BigInt =
+  result = a
+  result.isNegative = false
 
 func gcd*(a, b: BigInt): BigInt =
   ## Returns the greatest common divisor of `a` and `b`.
