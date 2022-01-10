@@ -1001,8 +1001,8 @@ func powmod*(base, exponent, modulus: BigInt): BigInt =
       exp = exponent
       basePow = ((base mod modulus) + modulus) mod modulus # Base stays in [0, m-1]
     result = one
-    while exp != zero:
-      if (exp and one) != zero:
+    while not exp.isZero:
+      if (exp.limbs[0] and 1) != 0:
         result = (result * basePow) mod modulus
       basePow = (basePow * basePow) mod modulus
       exp = exp shr 1
