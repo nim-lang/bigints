@@ -434,6 +434,11 @@ template main() =
     doAssert powmod(a, -1.initBigInt, p) == "1460".initBigInt
     doAssert powmod(a, one-p, p) == one
 
+  block: # div/mod
+    doAssertRaises(DivByZeroDefect): discard one div zero
+    doAssertRaises(DivByZeroDefect): discard one mod zero
+    doAssertRaises(DivByZeroDefect): discard divmod(one, zero)
+
 
 static: main()
 main()
