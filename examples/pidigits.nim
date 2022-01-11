@@ -4,10 +4,10 @@ import std/[os, strutils]
 import bigints
 
 const
-  one = 1.initBigInt
   zero = 0.initBigInt
-  ten = 10.initBigInt
+  one = 1.initBigInt
   two = 2.initBigInt
+  ten = 10.initBigInt
 let
   mask = (one shl 32) - one
 
