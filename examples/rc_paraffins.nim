@@ -37,8 +37,8 @@ proc tree(br, n, l, sum: int32, cnt: BigInt) =
       tree b, m, l, s, c
 
 proc bicenter(s: int32) =
-  var s = s.initBigInt
-  if (s and one) == zero:
+  var s = s
+  if (s and 1) == 0:
     unrooted[s] += rooted[s div 2] * (rooted[s div 2] + 1.initBigInt) div 2.initBigInt
 
 for n in 1 .. nMax:
