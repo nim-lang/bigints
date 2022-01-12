@@ -2,11 +2,9 @@
 import bigints
 
 var p = @[1.initBigInt]
-const
-  zero = 0.initBigInt
 
 proc partitions(n: int): BigInt =
-  p.add zero
+  p.add 0.initBigInt
 
   for k in 1..n:
     var d = n - k * (3 * k - 1) div 2

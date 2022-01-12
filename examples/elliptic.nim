@@ -1,4 +1,4 @@
-# By Cyther606: http://forum.nimrod-lang.org/t/522
+# By Cyther606: http://forum.nim-lang.org/t/522
 # Adapted from: https://github.com/wobine/blackboard101/blob/master/EllipticCurvesPart4-PrivateKeyToPublicKey.py
 import bigints
 import std/[math, strutils]
@@ -8,19 +8,13 @@ const
   two = 2.initBigInt
   zero = 0.initBigInt
 
-proc `^`(base: int; exp: int): BigInt =
-  let base = base.initBigInt
-  var exp = exp
-  result = one
-  while exp > 0:
-    result *= base
-    dec(exp)
+proc `^`(base: int; exp: int): BigInt = pow(base.initBigInt, exp)
 
+# Specs of the Bitcoin's curve - secp256k1
 let
-  Pcurve: BigInt = 2^256 - 2^32 - 2^9 - 2^8 - 2^7 - 2^6 - 2^4 - one
-  N = initBigInt("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141", 16)
-  Acurve = zero
-  Bcurve = 7.initBigInt
+  primeCurve: BigInt = 2^256 - 2^32 - 2^9 - 2^8 - 2^7 - 2^6 - 2^4 - one
+  numberPoints = initBigInt("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141", 16)
+  Acurve = zero # with Bcurve = 7, coefficients in the elliptic curve equation y^2 = x^3 + Acurve * x + Bcurve
   Gx = initBigInt("55066263022277343669578718895168534326250603453777594175500187360389116729240")
   Gy = initBigInt("32670510020758816978083085130507043184471273380659243275938904335757337482424")
   Gpoint = (Gx, Gy)
@@ -30,8 +24,8 @@ proc modinv(a: BigInt): BigInt =
   var
     lm = one
     hm = zero
-    lowm = a mod Pcurve
-    highm = Pcurve
+    lowm = a mod primeCurve
+    highm = primeCurve
   while lowm > one:
     let
       ratio = highm div lowm
@@ -41,25 +35,25 @@ proc modinv(a: BigInt): BigInt =
     highm = temp
     swap hm, lm
     swap highm, lowm
-  result = lm mod Pcurve
+  result = lm mod primeCurve
 
 proc ecAdd(a: tuple, b: tuple): (BigInt, BigInt) =
   let
-    lamAdd = ((b[1] - a[1]) * modinv(b[0] - a[0])) mod Pcurve
-    x = (lamAdd * lamAdd - a[0] - b[0]) mod Pcurve
-    y = (lamAdd * (a[0] - x) - a[1]) mod Pcurve
+    lamAdd = ((b[1] - a[1]) * modinv(b[0] - a[0])) mod primeCurve
+    x = (lamAdd * lamAdd - a[0] - b[0]) mod primeCurve
+    y = (lamAdd * (a[0] - x) - a[1]) mod primeCurve
   result = (x, y)
 
 proc ecDouble(a: tuple): (BigInt, BigInt) =
   var
     lam = ((3.initBigInt * a[0] * a[0] + Acurve) * modinv(2.initBigInt * a[1]))
-    x = ((lam * lam) - (2.initBigInt * a[0])) mod Pcurve
-    y = (lam * (a[0] - x) - a[1]) mod Pcurve
-  lam = lam mod Pcurve
+    x = ((lam * lam) - (2.initBigInt * a[0])) mod primeCurve
+    y = (lam * (a[0] - x) - a[1]) mod primeCurve
+  lam = lam mod primeCurve
   result = (x, y)
 
 proc ecMultiply(genPoint: tuple, scalarHex: BigInt): (BigInt, BigInt) =
-  if scalarHex == zero or scalarHex >= N:
+  if scalarHex == zero or scalarHex >= numberPoints:
     raise newException(Exception, "Invalid Scalar/Private Key")
   var
     scalarBin = scalarHex.toString(base = 2)
