@@ -1,10 +1,10 @@
-import bigints
+import bigints, options
 
 const
   zero = initBigInt(0)
   one = initBigInt(1)
 
-template main() =
+proc main() =
   block: # initBigInt
     let a = 1234567.initBigInt
     doAssert $a == "1234567"
@@ -383,6 +383,43 @@ template main() =
     doAssertRaises(DivByZeroDefect): discard one div zero
     doAssertRaises(DivByZeroDefect): discard one mod zero
     doAssertRaises(DivByZeroDefect): discard divmod(one, zero)
+
+  block: # toSignedInt
+    let
+      a = initBigInt(7)
+      b = initBigInt(-7)
+      c = initBigInt(int32.high)
+      d = initBigInt(int32.low)
+      e = "123456789123456789123456789".initBigInt
+      f = "340282366920938463463374607431768211456".initBigInt
+      g = initBigInt(int64.high)
+      h = initBigInt(int64.low)
+      i = initBigInt(int64.low + 1)
+    doAssert toSignedInt[int8](a) == some(7'i8)
+    doAssert toSignedInt[int8](b) == some(-7'i8)
+    doAssert toSignedInt[int8](c) == none(int8)
+    doAssert toSignedInt[int8](d) == none(int8)
+    doAssert toSignedInt[int32](c) == some(int32.high)
+    doAssert toSignedInt[int32](d) == some(int32.low)
+    doAssert toSignedInt[int](a) == some(7)
+    doAssert toSignedInt[int](b) == some(-7)
+    doAssert toSignedInt[int](c) == some(int(int32.high))
+    doAssert toSignedInt[int](d) == some(int(int32.low))
+    doAssert toSignedInt[int64](d) == some(int64(int32.low))
+    doAssert toSignedInt[int16](e) == none(int16)
+    doAssert toSignedInt[int16](f) == none(int16)
+    doAssert toSignedInt[int64](e) == none(int64)
+    doAssert toSignedInt[int64](f) == none(int64)
+    doAssert toSignedInt[int](g) == some(int(int64.high))
+    doAssert toSignedInt[int](h) == some(int(int64.low))
+    doAssert toSignedInt[int](i) == some(int(int64.low + 1))
+    doAssert toSignedInt[int64](g) == some(int64.high)
+    doAssert toSignedInt[int64](h) == some(int64.low)
+    doAssert toSignedInt[int64](i) == some(int64.low + 1)
+    doAssert toSignedInt[int32](g) == none(int32)
+    doAssert toSignedInt[int32](h) == none(int32)
+    doAssert toSignedInt[int32](i) == none(int32)
+
 
 static: main()
 main()

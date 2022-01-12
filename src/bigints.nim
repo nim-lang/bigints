@@ -1,7 +1,7 @@
 ## Arbitrary precision integers.
 
 
-import std/[algorithm, bitops, math]
+import std/[algorithm, bitops, math, options]
 
 type
   BigInt* = object
@@ -751,6 +751,45 @@ func `divmod`*(a, b: BigInt): tuple[q, r: BigInt] =
       b = 5.initBigInt
     assert divmod(a, b) == (3.initBigInt, 2.initBigInt)
   division(result.q, result.r, a, b)
+
+
+func toSignedInt*[T: SomeSignedInt](x: BigInt): Option[T] =
+  ## Converts a `BigInt` number to signed integer, if possible.
+  ## If the `BigInt` is larger than `T`'s max value, returns `none`;
+  ## otherwise returns `some(T)`.
+  runnableExamples:
+    import options
+    let
+      a = 44.initBigInt
+      b = 130.initBigInt
+    assert toSignedInt[int8](a) == some(44'i8)
+    assert toSignedInt[int8](b) == none(int8)
+    assert toSignedInt[int](b) == some(130)
+
+  when T is int64 or T is int:
+    if x.limbs.len > 2:
+      result = none(T)
+    elif x.limbs.len == 2:
+      result = some((T(x.limbs[1]) shl 32) + T(x.limbs[0]))
+    else:
+      result = some(T(x.limbs[0]))
+    if result.isSome and x.isNegative:
+      if result.get == int.low: return # a hack to prevent underflow
+      result = some(not(result.get - 1))
+  else:
+    if x.limbs.len > 1:
+      result = none(T)
+    else:
+      if x.isNegative:
+        if x.limbs[0] - 1 > uint32(T.high):
+          result = none(T)
+        else:
+          result = some(not T(x.limbs[0] - 1))
+      else:
+        if x.limbs[0] > uint32(T.high):
+          result = none(T)
+        else:
+          result = some(T(x.limbs[0]))
 
 
 func calcSizes(): array[2..36, int] =
