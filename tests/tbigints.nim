@@ -382,13 +382,22 @@ template main() =
   block: # invmod
     # with prime modulus
     let a = "30292868".initBigInt
+    let b = "48810860".initBigInt
     let p = "60449131".initBigInt # p is prime
     doAssert invmod(a, p) == "51713091".initBigInt
+    doAssert invmod(-b, p) == "31975542".initBigInt
     # with composite modulus
-    let b = "2472018".initBigInt
+    let c = "2472018".initBigInt
     let n = "3917515".initBigInt # 5 * 7 * 19 * 43 * 137
-    doAssert invmod(b, n) == "2622632".initBigInt
-
+    let d = "1831482".initBigInt
+    doAssert invmod(c, n) == "2622632".initBigInt
+    doAssert invmod(one, n) == one
+    doAssert invmod(n-one, n) == n-one
+    doAssert invmod(-d, n) == "2502552".initBigInt
+    doAssertRaises(DivByZeroDefect): discard invmod(zero, n)
+    doAssertRaises(DivByZeroDefect): discard invmod(one, zero)
+    doAssertRaises(ValueError): discard invmod(one, -7.initBigInt)
+    doAssertRaises(ValueError): discard invmod(3.initBigInt, 18.initBigInt) # 3 is not invertible since gcd(3, 18) = 3 != 1
 
   block: # powmod
     let a = "30292868".initBigInt

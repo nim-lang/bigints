@@ -972,22 +972,22 @@ func invmod*(a, modulus: BigInt): BigInt =
     raise newException(DivByZeroDefect, "0 has no modular inverse")
   else:
     var
-      r0 = a
+      r0 = ((a mod modulus) + modulus) mod modulus
       r1 = modulus
-      u = one
-      u1 = zero
-      q, rt, ut : BigInt
+      s0 = one
+      s1 = zero
     while r1 > 0:
-      q = r0 div r1
-      rt = r0
-      ut = u
+      let
+        q = r0 div r1
+        rk = r0 - q * r1
+        sk = s0 - q * s1
       r0 = r1
-      u = u1
-      r1 = rt - q * r1
-      u1 = ut - q * u1
+      r1 = rk
+      s0 = s1
+      s1 = sk
     if r0 != one:
-      raise newException(ValueError, $a & " has no modular inverse")
-    result = ((u mod modulus) + modulus) mod modulus
+      raise newException(ValueError, $a & " has no modular inverse modulo " & $modulus)
+    result = ((s0 mod modulus) + modulus) mod modulus
 
 func powmod*(base, exponent, modulus: BigInt): BigInt =
   ## Compute modular exponentation of `base` with power `exponent` modulo `modulus`.
