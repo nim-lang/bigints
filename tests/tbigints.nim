@@ -384,5 +384,34 @@ template main() =
     doAssertRaises(DivByZeroDefect): discard one mod zero
     doAssertRaises(DivByZeroDefect): discard divmod(one, zero)
 
+  block: # gcd
+    let a = "866506".initBigInt
+    let b = "140640".initBigInt
+    let two = 2.initBigInt
+    doAssert gcd(a, b) == two
+    # gcd(a, b) = gcd(b, a)
+    doAssert gcd(b, a) == two
+    # gcd(a, -b) = gcd(a, |b|)
+    doAssert gcd(-a, b) == two
+    doAssert gcd(a, -b) == two
+    doAssert gcd(-a, -b) == two
+
+    block: # properties of gcd
+      let a = "668403".initBigInt
+      let b = "753160".initBigInt
+      let c = "249115".initBigInt
+      doAssert gcd(a, b) == gcd(b, a)
+      doAssert gcd(a, zero) == a
+      doAssert gcd(a, a) == a
+      doAssert gcd(c * a, c * b) == c * gcd(a,b)
+      doAssert gcd(a, gcd(b, c)) == gcd(gcd(a, b), c)
+      doAssert gcd(a, b) == gcd(b, a mod b)
+
+  block: # abs
+    doAssert abs(zero) == zero
+    doAssert abs(-zero) == zero
+    doAssert abs(one) == one
+    doAssert abs(-one) == one
+
 static: main()
 main()

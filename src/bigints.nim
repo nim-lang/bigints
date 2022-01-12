@@ -72,6 +72,14 @@ func isZero(a: BigInt): bool {.inline.} =
       return false
   return true
 
+func abs*(a: BigInt): BigInt =
+  # Returns the absolute value of `a`.
+  runnableExamples:
+    assert abs(42.initBigInt) == 42.initBigInt
+    assert abs(-12.initBigInt) == 12.initBigInt
+  result = a
+  result.isNegative = false
+
 func unsignedCmp(a: BigInt, b: uint32): int64 =
   # ignores the sign of `a`
   # `a` and `b` are assumed to not be zero
@@ -751,6 +759,43 @@ func `divmod`*(a, b: BigInt): tuple[q, r: BigInt] =
       b = 5.initBigInt
     assert divmod(a, b) == (3.initBigInt, 2.initBigInt)
   division(result.q, result.r, a, b)
+
+func countTrailingZeroBits(a: BigInt): int =
+  var count = 0
+  for x in a.limbs:
+    if x == 0:
+      count += 32
+    else:
+      return count + countTrailingZeroBits(x)
+  return count
+
+func gcd*(a, b: BigInt): BigInt =
+  ## Returns the greatest common divisor (GCD) of `a` and `b`.
+  runnableExamples:
+    assert gcd(54.initBigInt, 24.initBigInt) == 6.initBigInt
+
+  # binary GCD algorithm
+  var
+    u = abs(a)
+    v = abs(b)
+  if u.isZero:
+    return v
+  elif v.isZero:
+    return u
+  let
+    i = countTrailingZeroBits(u)
+    j = countTrailingZeroBits(v)
+    k = min(i, j)
+  u = u shr i
+  v = v shr j
+  while true:
+    # u and v are odd
+    if u > v:
+      swap(u, v)
+    v -= u
+    if v.isZero:
+      return u shl k
+    v = v shr countTrailingZeroBits(v)
 
 
 func calcSizes(): array[2..36, int] =
