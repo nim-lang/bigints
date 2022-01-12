@@ -1009,30 +1009,43 @@ iterator `..<`*(a, b: BigInt): BigInt =
 func invmod*(a, modulus: BigInt): BigInt =
   ## Compute the modular inverse of `a` modulo `modulus`. 
   ## The return value is always in the range `[1, modulus-1]`
+  runnableExamples:
+    invmod(3.initBigInt, 7.initBigInt) = 5.initBigInt
+
   # extended Euclidean algorithm
-  if a == 0:
+  if modulus < 0:
+    raise newException(ValueError, "modulus must be strictly positive")
+  elif modulus.isZero:
+    raise newException(DivByZeroDefect, "modulus must be nonzero")
+  elif a == 0:
     raise newException(DivByZeroDefect, "0 has no modular inverse")
-  var
-    r0 = a
-    r1 = modulus
-    u = one
-    u1 = zero
-    q, rt, ut : BigInt
-  while r1 > 0:
-    q = r0 div r1
-    rt = r0
-    ut = u
-    r0 = r1
-    u = u1
-    r1 = rt - q * r1
-    u1 = ut - q * u1
-  if r0 != one:
-    raise newException(ValueError, $a & " has no modular inverse")
-  result = ((u mod modulus) + modulus) mod modulus
+  else:
+    var
+      r0 = a
+      r1 = modulus
+      u = one
+      u1 = zero
+      q, rt, ut : BigInt
+    while r1 > 0:
+      q = r0 div r1
+      rt = r0
+      ut = u
+      r0 = r1
+      u = u1
+      r1 = rt - q * r1
+      u1 = ut - q * u1
+    if r0 != one:
+      raise newException(ValueError, $a & " has no modular inverse")
+    result = ((u mod modulus) + modulus) mod modulus
 
 func powmod*(base, exponent, modulus: BigInt): BigInt =
   ## Compute modular exponentation of `base` with power `exponent` modulo `modulus`.
   ## The return value is always in the range `[0, modulus-1]`.
+  runnableExamples:
+    let two = 2.initBigInt
+    let three = 3.initBigInt
+    let seven = 7.initBigInt
+    assert powmod(two, three, seven) == one
   if modulus < 0:
     raise newException(ValueError, "modulus must be strictly positive")
   elif modulus.isZero:
@@ -1040,11 +1053,8 @@ func powmod*(base, exponent, modulus: BigInt): BigInt =
   elif modulus == 1:
     return zero
   elif exponent < 0:
-    if base.isZero:
-      return zero
-    else:
-      let baseInv = invmod(base, modulus)
-      return powmod(baseInv, -exponent, modulus)
+    let baseInv = invmod(base, modulus)
+    return powmod(baseInv, -exponent, modulus)
   else:
     var
       exp = exponent
