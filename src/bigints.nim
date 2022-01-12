@@ -455,8 +455,6 @@ func pow*(x: BigInt, y: Natural): BigInt =
     exp = exp shr 1
     base *= base
 
-func `^`*(x: BigInt, y: Natural): BigInt = pow(x,y)
-
 func `shl`*(x: BigInt, y: Natural): BigInt =
   ## Shifts a `BigInt` to the left.
   runnableExamples:
