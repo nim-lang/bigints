@@ -755,7 +755,7 @@ func `divmod`*(a, b: BigInt): tuple[q, r: BigInt] =
 
 func toSignedInt*[T: SomeSignedInt](x: BigInt): Option[T] =
   ## Converts a `BigInt` number to signed integer, if possible.
-  ## If the `BigInt` is larger than `T`'s max value, returns `none`;
+  ## If the `BigInt` doesn't fit in a `T`', returns `none`;
   ## otherwise returns `some(T)`.
   runnableExamples:
     import std/options
