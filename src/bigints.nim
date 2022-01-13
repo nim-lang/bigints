@@ -1002,13 +1002,17 @@ func powmod*(base, exponent, modulus: BigInt): BigInt =
     return zero
   else:
     var
-      base = (if exponent.isNegative == false: base else: invmod(base, modulus))
+      base = base
+      exponent = exponent
+    if exponent.isNegative == true:
+      base = invmod(base, modulus)
+      exponent = -exponent
+    var
       basePow = ((base mod modulus) + modulus) mod modulus # Base stays in [0, m-1]
-      exp = (if exponent.isNegative == false: exponent else: -exponent)
     result = one
-    while not exp.isZero:
-      if (exp.limbs[0] and 1) != 0:
+    while not exponent.isZero:
+      if (exponent.limbs[0] and 1) != 0:
         result = (result * basePow) mod modulus
       basePow = (basePow * basePow) mod modulus
-      exp = exp shr 1
+      exponent = exponent shr 1
 
