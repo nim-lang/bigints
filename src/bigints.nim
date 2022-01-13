@@ -1053,7 +1053,7 @@ func powmod*(base, exponent, modulus: BigInt): BigInt =
     var
       base = base
       exponent = exponent
-    if exponent.isNegative == true:
+    if exponent < 0:
       base = invmod(base, modulus)
       exponent = -exponent
     var
