@@ -758,7 +758,7 @@ func toSignedInt*[T: SomeSignedInt](x: BigInt): Option[T] =
   ## If the `BigInt` is larger than `T`'s max value, returns `none`;
   ## otherwise returns `some(T)`.
   runnableExamples:
-    import options
+    import std/options
     let
       a = 44.initBigInt
       b = 130.initBigInt
@@ -766,7 +766,7 @@ func toSignedInt*[T: SomeSignedInt](x: BigInt): Option[T] =
     assert toSignedInt[int8](b) == none(int8)
     assert toSignedInt[int](b) == some(130)
 
-  when T is int64 or T is int:
+  when sizeof(T) == 8:
     if x.limbs.len > 2:
       result = none(T)
     elif x.limbs.len == 2:

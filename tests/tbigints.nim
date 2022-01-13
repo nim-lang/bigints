@@ -1,4 +1,5 @@
-import bigints, options
+import bigints
+import std/options
 
 const
   zero = initBigInt(0)
