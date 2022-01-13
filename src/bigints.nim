@@ -1015,7 +1015,7 @@ func invmod*(a, modulus: BigInt): BigInt =
   # extended Euclidean algorithm
   if modulus.isZero:
     raise newException(DivByZeroDefect, "modulus must be nonzero")
-  elif modulus < 0:
+  elif modulus.isNegative:
     raise newException(ValueError, "modulus must be strictly positive")
   elif a.isZero:
     raise newException(DivByZeroDefect, "0 has no modular inverse")
@@ -1049,13 +1049,11 @@ func powmod*(base, exponent, modulus: BigInt): BigInt =
     raise newException(ValueError, "modulus must be strictly positive")
   elif modulus == 1:
     return zero
-  elif exponent < 0:
-    let baseInv = invmod(base, modulus)
-    return powmod(baseInv, -exponent, modulus)
   else:
     var
-      exp = exponent
+      base = (if exponent.isNegative == false: base else: invmod(base, modulus))
       basePow = ((base mod modulus) + modulus) mod modulus # Base stays in [0, m-1]
+      exp = (if exponent.isNegative == false: exponent else: -exponent)
     result = one
     while not exp.isZero:
       if (exp.limbs[0] and 1) != 0:
