@@ -770,12 +770,20 @@ func toSignedInt*[T: SomeSignedInt](x: BigInt): Option[T] =
     if x.limbs.len > 2:
       result = none(T)
     elif x.limbs.len == 2:
-      result = some((T(x.limbs[1]) shl 32) + T(x.limbs[0]))
+      if x.limbs[1] > uint32.high shr 1:
+        if x.isNegative and x.limbs[0] == 0:
+          result = some(T(int64.low))
+        else:
+          result = none(T)
+      else:
+        result = some(T(x.limbs[1]) shl 32 + T(x.limbs[0]))
+        if x.isNegative:
+          result = some(not(result.get - 1))
     else:
-      result = some(T(x.limbs[0]))
-    if result.isSome and x.isNegative:
-      if result.get == int.low: return # a hack to prevent underflow
-      result = some(not(result.get - 1))
+      if x.isNegative:
+        result = some(not T(x.limbs[0] - 1))
+      else:
+        result = some(T(x.limbs[0]))
   else:
     if x.limbs.len > 1:
       result = none(T)
