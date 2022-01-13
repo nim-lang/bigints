@@ -776,9 +776,11 @@ func toSignedInt*[T: SomeSignedInt](x: BigInt): Option[T] =
         else:
           result = none(T)
       else:
-        result = some(T(x.limbs[1]) shl 32 + T(x.limbs[0]))
+        let value = T(x.limbs[1]) shl 32 + T(x.limbs[0])
         if x.isNegative:
-          result = some(not(result.get - 1))
+          result = some(not(value - 1))
+        else:
+          result = some(value)
     else:
       if x.isNegative:
         result = some(not T(x.limbs[0] - 1))
