@@ -1013,11 +1013,11 @@ func invmod*(a, modulus: BigInt): BigInt =
     invmod(3.initBigInt, 7.initBigInt) = 5.initBigInt
 
   # extended Euclidean algorithm
-  if modulus < 0:
-    raise newException(ValueError, "modulus must be strictly positive")
-  elif modulus.isZero:
+  if modulus.isZero:
     raise newException(DivByZeroDefect, "modulus must be nonzero")
-  elif a == 0:
+  elif modulus < 0:
+    raise newException(ValueError, "modulus must be strictly positive")
+  elif a.isZero:
     raise newException(DivByZeroDefect, "0 has no modular inverse")
   else:
     var
@@ -1042,14 +1042,11 @@ func powmod*(base, exponent, modulus: BigInt): BigInt =
   ## Compute modular exponentation of `base` with power `exponent` modulo `modulus`.
   ## The return value is always in the range `[0, modulus-1]`.
   runnableExamples:
-    let two = 2.initBigInt
-    let three = 3.initBigInt
-    let seven = 7.initBigInt
-    assert powmod(two, three, seven) == one
-  if modulus < 0:
-    raise newException(ValueError, "modulus must be strictly positive")
-  elif modulus.isZero:
+    assert powmod(2.initBigInt, 3.initBigInt, 7.initBigInt) == 1.initBigInt
+  if modulus.isZero:
     raise newException(DivByZeroDefect, "modulus must be nonzero")
+  elif modulus.isNegative:
+    raise newException(ValueError, "modulus must be strictly positive")
   elif modulus == 1:
     return zero
   elif exponent < 0:
