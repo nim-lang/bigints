@@ -441,7 +441,7 @@ func scalarMultiplication(a: var BigInt, b: uint32, c: BigInt) {.inline.} =
   normalize(a)
 
 # forward declaration for use in `multiplication`
-# func unsignedKaratsubaMultiplication(a: var BigInt, b, c: BigInt) {.inline.}
+func unsignedKaratsubaMultiplication(a: var BigInt, b, c: BigInt) {.inline.}
 
 func multiplication(a: var BigInt, b, c: BigInt) =
   # a = b * c
@@ -451,11 +451,18 @@ func multiplication(a: var BigInt, b, c: BigInt) =
   let
     bl = b.limbs.len
     cl = c.limbs.len
+    karatsubaTreshold = 5
 
   if cl > bl:
-    unsignedMultiplication(a, c, b)
+    if bl <= karatsubaTreshold:
+      unsignedKaratsubaMultiplication(a, c, b)
+    else:
+      unsignedMultiplication(a, c, b)
   else:
-    unsignedMultiplication(a, b, c)
+    if cl <= karatsubaTreshold:
+      unsignedKaratsubaMultiplication(a, b, c)
+    else:
+      unsignedMultiplication(a, b, c)
   a.isNegative = b.isNegative xor c.isNegative
 
 func unsignedKaratsubaMultiplication(a: var BigInt, b, c: BigInt) {.inline.} =
