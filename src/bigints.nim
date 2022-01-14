@@ -381,6 +381,9 @@ template `-=`*(a: var BigInt, b: BigInt) =
     assert a == 3.initBigInt
   a = a - b
 
+func abs*(a: BigInt): BigInt =
+  result = a
+  result.isNegative = false
 
 func unsignedMultiplication(a: var BigInt, b, c: BigInt) {.inline.} =
   # always called with bl >= cl
@@ -411,6 +414,35 @@ func unsignedMultiplication(a: var BigInt, b, c: BigInt) {.inline.} =
       inc pos
   normalize(a)
 
+func scalarMultiplication(a: var BigInt, b: uint32, c: BigInt) {.inline.} =
+  # Based on unsignedMultiplication
+  let
+    cl = c.limbs.len
+  a.limbs.setLen(1 + cl)
+  var tmp = 0'u64
+
+  tmp += uint64(b) * uint64(c.limbs[0])
+  a.limbs[1] = uint32(tmp and uint32.high)
+  tmp = tmp shr 32 # carry
+
+  a.limbs[1] = uint32(tmp)
+
+  for j in 1 ..< cl:
+    tmp = 0'u64
+    tmp += uint64(a.limbs[j]) + uint64(b) * uint64(c.limbs[j])
+    a.limbs[j] = uint32(tmp and uint32.high)
+    tmp = tmp shr 32
+    var pos = j + 1
+    while tmp > 0'u64:
+      tmp += uint64(a.limbs[pos])
+      a.limbs[pos] = uint32(tmp and uint32.high)
+      tmp = tmp shr 32
+      inc pos
+  normalize(a)
+
+# forward declaration for use in `multiplication`
+# func unsignedKaratsubaMultiplication(a: var BigInt, b, c: BigInt) {.inline.}
+
 func multiplication(a: var BigInt, b, c: BigInt) =
   # a = b * c
   if b.isZero or c.isZero:
@@ -425,6 +457,52 @@ func multiplication(a: var BigInt, b, c: BigInt) =
   else:
     unsignedMultiplication(a, b, c)
   a.isNegative = b.isNegative xor c.isNegative
+
+func unsignedKaratsubaMultiplication(a: var BigInt, b, c: BigInt) {.inline.} =
+  let
+    bl = b.limbs.len
+    cl = c.limbs.len
+  let n = max(bl, cl)
+  if bl == 1:
+    # base case : multiply the only limb with each limb of second term
+    var a: BigInt
+    unsignedMultiplication(a, c, b)
+    return 
+  if cl == 1:
+    var a: BigInt
+    unsignedMultiplication(a, b, c)
+    return 
+  let k = n shr 1 # should it be ceil(n/2) ?
+  var
+    low_b, high_b, low_c, high_c: BigInt
+  # Decompose `b` and `c` in two parts of (almost) equal length
+  low_b.limbs = b.limbs[0 .. k-1]
+  high_b.limbs = b.limbs[k .. ^1]
+  low_c.limbs = c.limbs[0 .. k-1]
+  high_c.limbs = c.limbs[k .. ^1]
+  
+  # subtractive version of Karatsuba's algorithm :
+  # limit carry handling in opposition to the additive version
+  var
+    lowProduct, highProduct, A3, A4, A5, middleTerm: BigInt = zero
+  unsignedKaratsubaMultiplication(lowProduct, low_b, low_c)
+  unsignedKaratsubaMultiplication(highProduct, high_b, high_c)
+  A3 = low_b - high_b # Additive variant of Karatsuba
+  A4 = low_c - high_c # would add them
+  let sign = A3.isNegative xor A4.isNegative
+  if A4.limbs.len >= A3.limbs.len:
+    multiplication(A5, abs(A4), abs(A3))
+  else:
+    multiplication(A5, abs(A3), abs(A4))
+  if sign:
+    middleTerm = lowProduct + highProduct - A5
+  else:
+    middleTerm = lowProduct + highProduct + A5
+  # result = lowProduct + middleTerm shr k + highProduct shr 2k
+  a.limbs[0 .. k - 1] = lowProduct.limbs
+  a.limbs[k .. 2*k-1] = middleTerm.limbs
+  a.limbs[2*k .. 3*k-1] = highProduct.limbs
+
 
 func `*`*(a, b: BigInt): BigInt =
   ## Multiplication for `BigInt`s.
