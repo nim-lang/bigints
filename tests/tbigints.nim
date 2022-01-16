@@ -447,7 +447,7 @@ proc main() =
     doAssert toSignedInt[int8](n) == none(int8)
     doAssert toSignedInt[int32](n) == none(int32)
     doAssert toSignedInt[int](n) == none(int)
-=======
+
   block: # invmod
     # with prime modulus
     let a = "30292868".initBigInt
