@@ -1,6 +1,6 @@
 # Translation of http://benchmarksgame.alioth.debian.org/u32/program.php?test=pidigits&lang=go&id=4
 
-import std/[os, strutils]
+import std/[os, strutils, options]
 import bigints
 
 const
@@ -12,7 +12,7 @@ let
   mask = (one shl 32) - one
 
 var
-  tmp1, tmp2, tmp3, acc, k, dd = zero
+  tmp1, tmp2, tmp3, acc, k = zero
   den, num, k2 = one
 
 proc extractDigit(): int32 =
@@ -29,7 +29,7 @@ proc extractDigit(): int32 =
   if tmp2 >= den:
     return -1
 
-  result = cast[int32](tmp1 and mask)
+  result = get(toSignedInt[int32](tmp1 and mask))
 
 proc eliminateDigit(d: int32) =
   acc -= den * d.initBigInt
@@ -45,7 +45,11 @@ proc nextTerm() =
   den *= k2
   num *= k
 
+if paramCount() == 0:
+  quit("Please specify the number (strictly positive) of Pi Digits you want.")
 let n = parseInt(paramStr(1))
+if n <= 0:
+  quit("The number you entered is negative. Please specify a strictly positive number")
 var i = 0
 
 while i < n:
