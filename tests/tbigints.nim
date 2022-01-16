@@ -1,10 +1,11 @@
 import bigints
+import std/options
 
 const
   zero = initBigInt(0)
   one = initBigInt(1)
 
-template main() =
+proc main() =
   block: # initBigInt
     let a = 1234567.initBigInt
     doAssert $a == "1234567"
@@ -378,6 +379,75 @@ template main() =
     # special cases
     doAssert pow(zero, 0) == one
     doAssert pow(zero, 1) == zero
+
+  block: # div/mod
+    doAssertRaises(DivByZeroDefect): discard one div zero
+    doAssertRaises(DivByZeroDefect): discard one mod zero
+    doAssertRaises(DivByZeroDefect): discard divmod(one, zero)
+
+  block: # toSignedInt
+    let
+      a = initBigInt(7)
+      b = initBigInt(-7)
+    doAssert toSignedInt[int8](a) == some(7'i8)
+    doAssert toSignedInt[int8](b) == some(-7'i8)
+
+    let
+      i32h = int32.high
+      i32l = int32.low
+      c = initBigInt(i32h)
+      d = initBigInt(i32h - 1)
+      e = initBigInt(int64(i32h) + 1)
+      f = initBigInt(i32l)
+      g = initBigInt(i32l + 1)
+      h = initBigInt(int64(i32l) - 1)
+    doAssert toSignedInt[int8](c) == none(int8)
+    doAssert toSignedInt[int32](c) == some(i32h)
+    doAssert toSignedInt[int](c) == some(i32h.int)
+    doAssert toSignedInt[int8](d) == none(int8)
+    doAssert toSignedInt[int32](d) == some(i32h - 1)
+    doAssert toSignedInt[int](d) == some(i32h.int - 1)
+    doAssert toSignedInt[int8](e) == none(int8)
+    doAssert toSignedInt[int32](e) == none(int32)
+    doAssert toSignedInt[int](e) == some(i32h.int + 1)
+    doAssert toSignedInt[int8](f) == none(int8)
+    doAssert toSignedInt[int32](f) == some(i32l)
+    doAssert toSignedInt[int](f) == some(i32l.int)
+    doAssert toSignedInt[int8](g) == none(int8)
+    doAssert toSignedInt[int32](g) == some(i32l + 1)
+    doAssert toSignedInt[int](g) == some(i32l.int + 1)
+    doAssert toSignedInt[int8](h) == none(int8)
+    doAssert toSignedInt[int32](h) == none(int32)
+    doAssert toSignedInt[int](h) == some(i32l.int - 1)
+
+    let
+      i64h = int64.high
+      i64l = int64.low
+      i = initBigInt(i64h)
+      j = initBigInt(i64h - 1)
+      k = initBigInt(uint64(int64.high) + 1'u64)
+      l = initBigInt(i64l)
+      m = initBigInt(i64l + 1)
+      n = initBigInt("-9223372036854775809") # int64.low - 1
+    doAssert toSignedInt[int8](i) == none(int8)
+    doAssert toSignedInt[int32](i) == none(int32)
+    doAssert toSignedInt[int](i) == some(i64h.int)
+    doAssert toSignedInt[int8](j) == none(int8)
+    doAssert toSignedInt[int32](j) == none(int32)
+    doAssert toSignedInt[int](j) == some(i64h.int - 1)
+    doAssert toSignedInt[int8](k) == none(int8)
+    doAssert toSignedInt[int32](k) == none(int32)
+    doAssert toSignedInt[int](k) == none(int)
+    doAssert toSignedInt[int8](l) == none(int8)
+    doAssert toSignedInt[int32](l) == none(int32)
+    doAssert toSignedInt[int](l) == some(i64l.int)
+    doAssert toSignedInt[int8](m) == none(int8)
+    doAssert toSignedInt[int32](m) == none(int32)
+    doAssert toSignedInt[int](m) == some(i64l.int + 1)
+    doAssert toSignedInt[int8](n) == none(int8)
+    doAssert toSignedInt[int32](n) == none(int32)
+    doAssert toSignedInt[int](n) == none(int)
+
 
 static: main()
 main()

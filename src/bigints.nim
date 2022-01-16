@@ -1,7 +1,7 @@
 ## Arbitrary precision integers.
 
 
-import std/[algorithm, bitops, math]
+import std/[algorithm, bitops, math, options]
 
 type
   BigInt* = object
@@ -568,11 +568,10 @@ func unsignedDivRem(q: var BigInt, r: var uint32, n: BigInt, d: uint32) =
   q.limbs.setLen(n.limbs.len)
   r = 0
   for i in countdown(n.limbs.high, 0):
-    let tmp: uint64 = uint64(n.limbs[i]) + uint64(r) shl 32
+    let tmp = uint64(n.limbs[i]) + uint64(r) shl 32
     q.limbs[i] = uint32(tmp div d)
     r = uint32(tmp mod d)
-  while q.limbs.len > 1 and q.limbs[q.limbs.high] == 0:
-    q.limbs.setLen(q.limbs.high)
+  normalize(q)
 
 func bits(d: uint32): int =
   const bitLengths = [0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4,
@@ -589,21 +588,20 @@ func unsignedDivRem(q, r: var BigInt, n, d: BigInt) =
     nn = n.limbs.len
     dn = d.limbs.len
 
-  if nn == 0:
-    q.reset()
-    r.reset()
+  if n.isZero:
+    q = zero
+    r = zero
   elif nn < dn:
+    # n < d
+    q = zero
     r = n
-    q.reset()
   elif dn == 1:
     var x: uint32
     unsignedDivRem(q, x, n, d.limbs[0])
-    r.limbs.setLen(1)
-    r.limbs[0] = x
+    r.limbs = @[x]
     r.isNegative = false
   else:
     assert nn >= dn and dn >= 2
-    var carry: uint64
 
     # normalize
     let ls = 32 - bits(d.limbs[d.limbs.high])
@@ -615,32 +613,32 @@ func unsignedDivRem(q, r: var BigInt, n, d: BigInt) =
 
     let k = nn - dn
     assert k >= 0
-    var a = zero
+    var a: BigInt
     a.limbs.setLen(k)
     let wm1 = r.limbs[r.limbs.high]
     let wm2 = r.limbs[r.limbs.high-1]
     var ak = k
 
-    var zhi = 0.initBigInt
-    var z = 0.initBigInt
-    var qib = 0.initBigInt
-    var q1b = 0.initBigInt
+    var zhi = zero
+    var z = zero
+    var qib = zero
+    var q1b = zero
 
     for v in countdown(k-1, 0):
       # estimate quotient digit, may rarely overestimate by 1
       let vtop = q.limbs[v + dn]
       assert vtop <= wm1
       let vv = (uint64(vtop) shl 32) or q.limbs[v+dn-1]
-      var q1 = uint64(vv) div wm1
-      var r1 = uint64(vv) mod wm1
+      var q1 = vv div wm1
+      var r1 = vv mod wm1
 
-      while (uint64(wm2) * q1) > ((r1 shl 32) or q.limbs[v+dn-2]):
-        dec(q1)
+      while (wm2 * q1) > ((r1 shl 32) or q.limbs[v+dn-2]):
+        dec q1
         r1 += wm1
-        if r1 > uint64(uint32.high):
+        if r1 > uint32.high:
           break
 
-      assert q1 <= uint64(uint32.high)
+      assert q1 <= uint32.high
 
       q1b.limbs[0] = uint32(q1)
 
@@ -674,7 +672,7 @@ func unsignedDivRem(q, r: var BigInt, n, d: BigInt) =
 
       # add back if was too large (rare branch)
       if vtop.initBigInt + zhi < 0:
-        carry = 0
+        var carry = 0'u64
         for i in 0 ..< dn:
           carry += q.limbs[v+i]
           carry += r.limbs[i]
@@ -683,7 +681,7 @@ func unsignedDivRem(q, r: var BigInt, n, d: BigInt) =
         dec(q1)
 
       # store quotient digit
-      assert q1 <= uint64(uint32.high)
+      assert q1 <= uint32.high
       dec(ak)
       a.limbs[ak] = uint32(q1)
 
@@ -696,25 +694,24 @@ func unsignedDivRem(q, r: var BigInt, n, d: BigInt) =
     normalize(q)
 
 func division(q, r: var BigInt, n, d: BigInt) =
+  # q = n div d
+  # r = n mod d
+  if d.isZero:
+    raise newException(DivByZeroDefect, "division by zero")
+
   unsignedDivRem(q, r, n, d)
 
   q.isNegative = n < 0 xor d < 0
   r.isNegative = n < 0 and r != 0
 
   # divrem -> divmod
-  if (r < 0 and d > 0) or
-     (r > 0 and d < 0):
+  if (r < 0 and d > 0) or (r > 0 and d < 0):
     r += d
     q -= one
 
-  if q.limbs == @[0'u32]:
-    q.isNegative = false
-
-  if r.limbs == @[0'u32]:
-    r.isNegative = false
-
 func `div`*(a, b: BigInt): BigInt =
   ## Computes the integer division of two `BigInt` numbers.
+  ## Raises a `DivByZeroDefect` if `b` is zero.
   ##
   ## If you also need the modulo (remainder), use the `divmod func <#divmod,BigInt,BigInt>`_.
   runnableExamples:
@@ -730,6 +727,7 @@ func `div`*(a, b: BigInt): BigInt =
 
 func `mod`*(a, b: BigInt): BigInt =
   ## Computes the integer modulo (remainder) of two `BigInt` numbers.
+  ## Raises a `DivByZeroDefect` if `b` is zero.
   ##
   ## If you also need an integer division, use the `divmod func <#divmod,BigInt,BigInt>`_.
   runnableExamples:
@@ -746,14 +744,62 @@ func `mod`*(a, b: BigInt): BigInt =
 func `divmod`*(a, b: BigInt): tuple[q, r: BigInt] =
   ## Computes both the integer division and modulo (remainder) of two
   ## `BigInt` numbers.
+  ## Raises a `DivByZeroDefect` if `b` is zero.
   runnableExamples:
     let
       a = 17.initBigInt
       b = 5.initBigInt
     assert divmod(a, b) == (3.initBigInt, 2.initBigInt)
-  result.q = zero
-  result.r = zero
   division(result.q, result.r, a, b)
+
+
+func toSignedInt*[T: SomeSignedInt](x: BigInt): Option[T] =
+  ## Converts a `BigInt` number to signed integer, if possible.
+  ## If the `BigInt` doesn't fit in a `T`', returns `none`;
+  ## otherwise returns `some(T)`.
+  runnableExamples:
+    import std/options
+    let
+      a = 44.initBigInt
+      b = 130.initBigInt
+    assert toSignedInt[int8](a) == some(44'i8)
+    assert toSignedInt[int8](b) == none(int8)
+    assert toSignedInt[int](b) == some(130)
+
+  when sizeof(T) == 8:
+    if x.limbs.len > 2:
+      result = none(T)
+    elif x.limbs.len == 2:
+      if x.limbs[1] > uint32.high shr 1:
+        if x.isNegative and x.limbs[0] == 0:
+          result = some(T(int64.low))
+        else:
+          result = none(T)
+      else:
+        let value = T(x.limbs[1]) shl 32 + T(x.limbs[0])
+        if x.isNegative:
+          result = some(not(value - 1))
+        else:
+          result = some(value)
+    else:
+      if x.isNegative:
+        result = some(not T(x.limbs[0] - 1))
+      else:
+        result = some(T(x.limbs[0]))
+  else:
+    if x.limbs.len > 1:
+      result = none(T)
+    else:
+      if x.isNegative:
+        if x.limbs[0] - 1 > uint32(T.high):
+          result = none(T)
+        else:
+          result = some(not T(x.limbs[0] - 1))
+      else:
+        if x.limbs[0] > uint32(T.high):
+          result = none(T)
+        else:
+          result = some(T(x.limbs[0]))
 
 
 func calcSizes(): array[2..36, int] =
