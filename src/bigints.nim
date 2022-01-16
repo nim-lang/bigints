@@ -977,6 +977,14 @@ func dec*(a: var BigInt, b: int32 = 1) =
   var c = a
   subtractionInt(a, c, b)
 
+proc pred*(a: BigInt; def: SomeInteger|string = 1): BigInt =
+  ## Decrements `a` by `def`. By default, subtracts one.
+  a - initBigInt(def)
+
+proc succ*(a: BigInt; def: SomeInteger|string = 1): BigInt =
+  ## Increments `a` by `def`. By default, adds one.
+  a + initBigInt(def)
+
 
 iterator countup*(a, b: BigInt, step: int32 = 1): BigInt =
   ## Counts from `a` up to `b` (inclusive) with the given step count.
