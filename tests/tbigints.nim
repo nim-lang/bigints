@@ -447,6 +447,16 @@ proc main() =
     doAssert toSignedInt[int8](n) == none(int8)
     doAssert toSignedInt[int32](n) == none(int32)
     doAssert toSignedInt[int](n) == none(int)
+=======
+  block: # invmod
+    # with prime modulus
+    let a = "30292868".initBigInt
+    let p = "60449131".initBigInt # p is prime
+    doAssert invmod(a, p) == "51713091".initBigInt
+    # with composite modulus
+    let b = "2472018".initBigInt
+    let n = "3917515".initBigInt # 5 * 7 * 19 * 43 * 137
+    doAssert invmod(b, n) == "2622632".initBigInt
 
   block: # powmod
     let a = "30292868".initBigInt
@@ -483,6 +493,13 @@ proc main() =
     let a = "1986599".initBigInt
     let p = "10230581".initBigInt
     doAssert powmod(-a, 2.initBigInt, p) == "6199079".initBigInt
+
+  block: # powmod with negative exponent
+    let a = "1912".initBigInt
+    let p = "5297".initBigInt
+    doAssert powmod(a, -1.initBigInt, p) == "1460".initBigInt
+    doAssert powmod(a, one-p, p) == one
+
 
 static: main()
 main()
