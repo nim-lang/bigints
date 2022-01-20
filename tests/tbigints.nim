@@ -448,6 +448,13 @@ proc main() =
     doAssert toSignedInt[int32](n) == none(int32)
     doAssert toSignedInt[int](n) == none(int)
 
+  block: # pred/succ
+    let a = initBigInt(7)
+    doAssert pred(a) == initBigInt(6)
+    doAssert succ(a) == initBigInt(8)
+    doAssert pred(a, 3) == initBigInt(4)
+    doAssert succ(a, 3) == initBigInt(10)
+
 
 static: main()
 main()
