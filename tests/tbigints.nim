@@ -391,10 +391,22 @@ proc main() =
     let c = "2472018".initBigInt
     let n = "3917515".initBigInt # 5 * 7 * 19 * 43 * 137
     let d = "1831482".initBigInt
+    let e = "2502552".initBigInt
+    let f = "2086033".initBigInt
+    let h = "1414963".initBigInt
     doAssert invmod(c, n) == "2622632".initBigInt
     doAssert invmod(one, n) == one
     doAssert invmod(n-one, n) == n-one
-    doAssert invmod(-d, n) == "2502552".initBigInt
+
+    doAssert invmod( d, n) == h
+    doAssert invmod(-d, n) == e
+    doAssert invmod( f, n) == e
+    doAssert invmod(-f, n) == h
+    doAssert invmod( e, n) == f
+    doAssert invmod(-e, n) == d
+    doAssert invmod( h, n) == d
+    doAssert invmod(-h, n) == f
+
     doAssertRaises(DivByZeroDefect): discard invmod(zero, n)
     doAssertRaises(DivByZeroDefect): discard invmod(one, zero)
     doAssertRaises(ValueError): discard invmod(one, -7.initBigInt)
