@@ -83,6 +83,7 @@ proc main() =
 
     a = a + b  # Error: unhandled exception: index out of bounds, the container is empty [IndexError]
 
-static: main()
+when (not defined(js)) or (NimMajor, NimMinor) >= (1, 6):
+  static: main()
 when not defined(js): # XXX: pending https://github.com/nim-lang/bigints/issues/59
   main()

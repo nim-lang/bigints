@@ -455,7 +455,7 @@ proc main() =
     doAssert pred(a, 3) == initBigInt(4)
     doAssert succ(a, 3) == initBigInt(10)
 
-
-static: main()
+when (not defined(js)) or (NimMajor, NimMinor) >= (1, 6):
+  static: main()
 when not defined(js): # XXX: pending https://github.com/nim-lang/bigints/issues/59
   main()
