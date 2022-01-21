@@ -12,7 +12,7 @@ srcDir      = "src"
 requires "nim >= 1.4.0"
 
 task test, "Test bigints":
-  for backend in ["c", "cpp"]:
+  for backend in ["c", "cpp", "js"]:
     echo "testing " & backend & " backend"
     for file in ["tbigints.nim", "tbugs.nim"]:
       exec "nim r --hints:off --experimental:strictFuncs --backend:" & backend & " tests/" & file

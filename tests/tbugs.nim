@@ -1,6 +1,6 @@
 import bigints
 
-template main() =
+proc main() =
   block: # range of BigInt (https://github.com/nim-lang/bigints/issues/1)
     let two = 2.initBigInt
     let n = "123".initBigInt
@@ -84,4 +84,5 @@ template main() =
     a = a + b  # Error: unhandled exception: index out of bounds, the container is empty [IndexError]
 
 static: main()
-main()
+when not defined(js): # XXX: pending https://github.com/nim-lang/bigints/issues/59
+  main()
