@@ -976,6 +976,20 @@ func dec*(a: var BigInt, b: int32 = 1) =
   var c = a
   subtractionInt(a, c, b)
 
+func succ*(a: BigInt, b: int = 1): BigInt =
+  if b in int32.low..int32.high:
+    result = a
+    inc(result, b.int32)
+  else:
+    result = a + initBigInt(b)
+
+func pred*(a: BigInt, b: int = 1): BigInt =
+  if b in int32.low..int32.high:
+    result = a
+    dec(result, b.int32)
+  else:
+    result = a - initBigInt(b)
+
 
 iterator countup*(a, b: BigInt, step: int32 = 1): BigInt =
   ## Counts from `a` up to `b` (inclusive) with the given step count.
