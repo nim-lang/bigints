@@ -1,6 +1,5 @@
 ## Arbitrary precision integers.
 
-
 import std/[algorithm, bitops, math, options]
 
 type
@@ -1019,3 +1018,63 @@ iterator `..<`*(a, b: BigInt): BigInt =
   while res < b:
     yield res
     inc res
+
+func invmod*(a, modulus: BigInt): BigInt =
+  ## Compute the modular inverse of `a` modulo `modulus`. 
+  ## The return value is always in the range `[1, modulus-1]`
+  runnableExamples:
+    invmod(3.initBigInt, 7.initBigInt) = 5.initBigInt
+
+  # extended Euclidean algorithm
+  if modulus.isZero:
+    raise newException(DivByZeroDefect, "modulus must be nonzero")
+  elif modulus.isNegative:
+    raise newException(ValueError, "modulus must be strictly positive")
+  elif a.isZero:
+    raise newException(DivByZeroDefect, "0 has no modular inverse")
+  else:
+    var
+      r0 = ((a mod modulus) + modulus) mod modulus
+      r1 = modulus
+      s0 = one
+      s1 = zero
+    while r1 > 0:
+      let
+        q = r0 div r1
+        rk = r0 - q * r1
+        sk = s0 - q * s1
+      r0 = r1
+      r1 = rk
+      s0 = s1
+      s1 = sk
+    if r0 != one:
+      raise newException(ValueError, $a & " has no modular inverse modulo " & $modulus)
+    result = ((s0 mod modulus) + modulus) mod modulus
+
+func powmod*(base, exponent, modulus: BigInt): BigInt =
+  ## Compute modular exponentation of `base` with power `exponent` modulo `modulus`.
+  ## The return value is always in the range `[0, modulus-1]`.
+  runnableExamples:
+    assert powmod(2.initBigInt, 3.initBigInt, 7.initBigInt) == 1.initBigInt
+  if modulus.isZero:
+    raise newException(DivByZeroDefect, "modulus must be nonzero")
+  elif modulus.isNegative:
+    raise newException(ValueError, "modulus must be strictly positive")
+  elif modulus == 1:
+    return zero
+  else:
+    var
+      base = base
+      exponent = exponent
+    if exponent < 0:
+      base = invmod(base, modulus)
+      exponent = -exponent
+    var
+      basePow = ((base mod modulus) + modulus) mod modulus # Base stays in [0, m-1]
+    result = one
+    while not exponent.isZero:
+      if (exponent.limbs[0] and 1) != 0:
+        result = (result * basePow) mod modulus
+      basePow = (basePow * basePow) mod modulus
+      exponent = exponent shr 1
+
