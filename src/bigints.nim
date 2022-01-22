@@ -478,7 +478,7 @@ func `shl`*(x: BigInt, y: Natural): BigInt =
     result.limbs.add(uint32(carry shr (32 - b)))
 
 # forward declaration for use in `shr`
-func dec*(a: var BigInt, b: int32 = 1)
+func dec*(a: var BigInt, b: int = 1)
 
 func `shr`*(x: BigInt, y: Natural): BigInt =
   ## Shifts a `BigInt` to the right (arithmetically).
@@ -955,7 +955,7 @@ func initBigInt*(str: string, base: range[2..36] = 10): BigInt =
 when (NimMajor, NimMinor) >= (1, 5):
   include bigints/private/literals
 
-func inc*(a: var BigInt, b: int32 = 1) =
+func inc*(a: var BigInt, b: int = 1) =
   ## Increase the value of a `BigInt` by the specified amount (default: 1).
   runnableExamples:
     var a = 15.initBigInt
@@ -963,10 +963,14 @@ func inc*(a: var BigInt, b: int32 = 1) =
     assert a == 16.initBigInt
     inc(a, 7)
     assert a == 23.initBigInt
-  var c = a
-  additionInt(a, c, b)
 
-func dec*(a: var BigInt, b: int32 = 1) =
+  if b in int32.low..int32.high:
+    var c = a
+    additionInt(a, c, b.int32)
+  else:
+    a += initBigInt(b)
+
+func dec*(a: var BigInt, b: int = 1) =
   ## Decrease the value of a `BigInt` by the specified amount (default: 1).
   runnableExamples:
     var a = 15.initBigInt
@@ -974,22 +978,22 @@ func dec*(a: var BigInt, b: int32 = 1) =
     assert a == 14.initBigInt
     dec(a, 5)
     assert a == 9.initBigInt
-  var c = a
-  subtractionInt(a, c, b)
+
+  if b in int32.low..int32.high:
+    var c = a
+    subtractionInt(a, c, b.int32)
+  else:
+    a -= initBigInt(b)
 
 func succ*(a: BigInt, b: int = 1): BigInt =
-  if b in int32.low..int32.high:
-    result = a
-    inc(result, b.int32)
-  else:
-    result = a + initBigInt(b)
+  ## Returns the `b`-th successor of a `BigInt`.
+  result = a
+  inc(result, b)
 
 func pred*(a: BigInt, b: int = 1): BigInt =
-  if b in int32.low..int32.high:
-    result = a
-    dec(result, b.int32)
-  else:
-    result = a - initBigInt(b)
+  ## Returns the `b`-th predecessor of a `BigInt`.
+  result = a
+  dec(result, b)
 
 
 iterator countup*(a, b: BigInt, step: int32 = 1): BigInt =
