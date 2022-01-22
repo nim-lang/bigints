@@ -1,7 +1,7 @@
 ## Arbitrary precision integers.
 
 
-import std/[algorithm, bitops, math, options]
+import std/[algorithm, bitops, math, options, sequtils, strutils]
 
 type
   BigInt* = object
@@ -910,9 +910,44 @@ func initBigInt*(str: string, base: range[2..36] = 10): BigInt =
   var first = 0
   var neg = false
 
-  if str[0] == '-':
+  case str[0]
+  of '-':
     first = 1
     neg = true
+  of '+':
+    first = 1
+  of '_':
+    raise newException(ValueError, "A number can not begin with an '_'")
+  of '0'..'9':
+    discard
+  of 'a'..'z':
+    discard
+  of 'A'..'Z':
+    discard
+  else:
+    raise newException(ValueError, "The digit has not been recognized: " & str[0])
+  
+  # We check positions of '_' inside str
+  let posFirstSeparator = str[first..str.high].find('_')
+  let withSeparator = posFirstSeparator >= 0
+
+  case posFirstSeparator
+  of -1:
+    discard
+  of 1..3:
+    discard
+  else:
+    raise newException(ValueError, "The first '_' should be placed after the first, second or third digit. It has been placed after the : " & $posFirstSeparator & " digit")
+
+  if withSeparator:
+    for i in posFirstSeparator + 1 .. str.len - 1:
+      if str[i] == '_' and i mod 4 != (posFirstSeparator + first) mod 4:
+        raise newException(ValueError, "An underscore '_' has not been placed every three digits" & $i & ' ' & $posFirstSeparator & ' ' & $first)
+      if str[i] != '_' and i mod 4 == (posFirstSeparator + first) mod 4:
+        raise newException(ValueError, "There is a missing underscore '_' that should have been placed every three digits " & $i & ' ' & $posFirstSeparator)
+    if str[^1] == '_':
+      raise newException(ValueError, "Underscore should not be placed at the end of the string")
+  let str = str.filterIt(it != '_')
 
   if base in powers:
     # base is a power of two, so each digit corresponds to a block of bits
