@@ -323,6 +323,26 @@ proc main() =
     x.dec(42)
     doAssert x == -30.initBigInt
 
+    when sizeof(int) == 8:
+      # int has 64 bits
+      x = 42.initBigInt
+      x.inc(int32.high.int + 1)
+      doAssert x == "2147483690".initBigInt
+      x.inc(int64.high.int)
+      doAssert x == "9223372039002259497".initBigInt
+      x.inc(int32.low.int - 1)
+      doAssert x == "9223372036854775848".initBigInt
+      x.inc(int64.low.int)
+      doAssert x == 40.initBigInt
+      x.dec(int32.high.int + 1)
+      doAssert x == "-2147483608".initBigInt
+      x.dec(int64.high.int)
+      doAssert x == "-9223372039002259415".initBigInt
+      x.dec(int32.low.int - 1)
+      doAssert x == "-9223372036854775766".initBigInt
+      x.dec(int64.low.int)
+      doAssert x == 42.initBigInt
+
   block: # string conversion
     for base in 2..36:
       # zero
