@@ -748,7 +748,7 @@ func `mod`*(a, b: BigInt): BigInt =
   var tmp: BigInt
   division(tmp, result, a, b)
 
-func `divmod`*(a, b: BigInt): tuple[q, r: BigInt] =
+func divmod*(a, b: BigInt): tuple[q, r: BigInt] =
   ## Computes both the integer division and modulo (remainder) of two
   ## `BigInt` numbers.
   ## Raises a `DivByZeroDefect` if `b` is zero.
@@ -1065,7 +1065,7 @@ iterator `..<`*(a, b: BigInt): BigInt =
     inc res
 
 func invmod*(a, modulus: BigInt): BigInt =
-  ## Compute the modular inverse of `a` modulo `modulus`. 
+  ## Compute the modular inverse of `a` modulo `modulus`.
   ## The return value is always in the range `[1, modulus-1]`
   runnableExamples:
     invmod(3.initBigInt, 7.initBigInt) = 5.initBigInt
@@ -1122,4 +1122,3 @@ func powmod*(base, exponent, modulus: BigInt): BigInt =
         result = (result * basePow) mod modulus
       basePow = (basePow * basePow) mod modulus
       exponent = exponent shr 1
-
