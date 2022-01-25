@@ -1,7 +1,7 @@
 ## Arbitrary precision integers.
 
 
-import std/[algorithm, bitops, math, options, sequtils, strutils]
+import std/[algorithm, bitops, math, options]
 
 type
   BigInt* = object
@@ -912,12 +912,16 @@ func initBigInt*(str: string, base: range[2..36] = 10): BigInt =
 
   case str[0]
   of '-':
+    if str.len == 1:
+      raise newException(ValueError, "Empty input")
     first = 1
     neg = true
   of '+':
+    if str.len == 1:
+      raise newException(ValueError, "Empty input")
     first = 1
   of '_':
-    raise newException(ValueError, "A number can not begin with an '_'")
+    raise newException(ValueError, "A number can not begin with _")
   of '0'..'9':
     discard
   of 'a'..'z':
@@ -927,28 +931,6 @@ func initBigInt*(str: string, base: range[2..36] = 10): BigInt =
   else:
     raise newException(ValueError, "The digit has not been recognized: " & str[0])
   
-  # We check positions of '_' inside str
-  let posFirstSeparator = str[first..str.high].find('_')
-  let withSeparator = posFirstSeparator >= 0
-
-  case posFirstSeparator
-  of -1:
-    discard
-  of 1..3:
-    discard
-  else:
-    raise newException(ValueError, "The first '_' should be placed after the first, second or third digit. It has been placed after the : " & $posFirstSeparator & " digit")
-
-  if withSeparator:
-    for i in posFirstSeparator + 1 .. str.len - 1:
-      if str[i] == '_' and i mod 4 != (posFirstSeparator + first) mod 4:
-        raise newException(ValueError, "An underscore '_' has not been placed every three digits" & $i & ' ' & $posFirstSeparator & ' ' & $first)
-      if str[i] != '_' and i mod 4 == (posFirstSeparator + first) mod 4:
-        raise newException(ValueError, "There is a missing underscore '_' that should have been placed every three digits " & $i & ' ' & $posFirstSeparator)
-    if str[^1] == '_':
-      raise newException(ValueError, "Underscore should not be placed at the end of the string")
-  let str = str.filterIt(it != '_')
-
   if base in powers:
     # base is a power of two, so each digit corresponds to a block of bits
     let bits = countTrailingZeroBits(base) # bits per digit
@@ -956,13 +938,14 @@ func initBigInt*(str: string, base: range[2..36] = 10): BigInt =
       acc = 0'u32
       accBits = 0 # the number of bits needed for acc
     for i in countdown(str.high, first):
-      let digit = parseDigit(str[i], base)
-      acc = acc or (digit shl accBits)
-      accBits += bits
-      if accBits >= 32:
-        result.limbs.add(acc)
-        accBits -= 32
-        acc = digit shr (bits - accBits)
+      if str[i] != '_':
+        let digit = parseDigit(str[i], base)
+        acc = acc or (digit shl accBits)
+        accBits += bits
+        if accBits >= 32:
+          result.limbs.add(acc)
+          accBits -= 32
+          acc = digit shr (bits - accBits)
     if acc > 0:
       result.limbs.add(acc)
     result.normalize()
@@ -973,16 +956,18 @@ func initBigInt*(str: string, base: range[2..36] = 10): BigInt =
       if i + size <= str.len:
         # iterator over a block of length `size`, so we can use `d`
         for j in countup(i, min(i + size - 1, str.high)):
-          let digit = parseDigit(str[j], base)
-          num = (num * base) + digit
+          if str[j] != '_':
+            let digit = parseDigit(str[j], base)
+            num = (num * base) + digit
         unsignedAdditionInt(result, result * d, num)
       else:
         # iterator over a block smaller than `size`, so we have to compute `mul`
         var mul = 1'u32 # the multiplication factor for num
         for j in countup(i, min(i + size - 1, str.high)):
-          let digit = parseDigit(str[j], base)
-          num = (num * base) + digit
-          mul *= base
+          if str[j] != '_':
+            let digit = parseDigit(str[j], base)
+            num = (num * base) + digit
+            mul *= base
         unsignedAdditionInt(result, result * initBigInt(mul), num)
 
   result.isNegative = neg

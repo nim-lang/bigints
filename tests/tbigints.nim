@@ -19,7 +19,6 @@ proc main() =
     let d = -123456789012345678.initBigInt
     doAssert $d == "-123456789012345678"
 
-
     let e = int64.high.initBigInt
     doAssert $e == $int64.high
 
@@ -60,6 +59,7 @@ proc main() =
       let c2 = "+123_456_789".initBigInt
       doAssert $c2 == "123456789"
       let d2 = "+123_456_789_012_345_678".initBigInt
+      echo "+123_456_789_012_345_678: ", d2
       doAssert $d2 == "123456789012345678"
 
       # Trailing underscores and - sign
@@ -76,14 +76,12 @@ proc main() =
 
     block:
       # Wrong formatting of numbers should raise a ValueError
-      doAssertRaises(ValueError): discard "1_2_345_678".initBigInt
+      doAssertRaises(ValueError): discard "+".initBigInt
+      doAssertRaises(ValueError): discard "-".initBigInt
+      doAssertRaises(ValueError): discard "+@1".initBigInt
+      doAssertRaises(ValueError): discard "+_1".initBigInt
       doAssertRaises(ValueError): discard "_123_345_678".initBigInt
       doAssertRaises(ValueError): discard "_12_3_345_678".initBigInt
-      doAssertRaises(ValueError): discard "123_345_678_".initBigInt
-      doAssertRaises(ValueError): discard "123_345_67_8".initBigInt
-      doAssertRaises(ValueError): discard "12_33_45_67".initBigInt
-      doAssertRaises(ValueError): discard "123_345_678912".initBigInt
-
 
     # test various bit patterns at power-of-two boundaries
     block:
