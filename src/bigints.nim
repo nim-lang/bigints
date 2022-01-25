@@ -1086,8 +1086,9 @@ func invmod*(a, modulus: BigInt): BigInt =
     while r1 > 0:
       let
         q = r0 div r1
-        rk = r0 - q * r1
-        sk = s0 - q * s1
+        # the `q.isZero` check is needed because of an ARC/ORC bug (see https://github.com/nim-lang/bigints/issues/88)
+        rk = if q.isZero: r0 else: r0 - q * r1
+        sk = if q.isZero: s0 else: s0 - q * s1
       r0 = r1
       r1 = rk
       s0 = s1
