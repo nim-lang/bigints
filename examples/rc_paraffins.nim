@@ -1,4 +1,4 @@
-# Solution for http://rosettacode.org/wiki/Paraffins
+# Solution for https://rosettacode.org/wiki/Paraffins
 import bigints
 
 const

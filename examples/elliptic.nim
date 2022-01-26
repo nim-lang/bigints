@@ -1,4 +1,4 @@
-# By Cyther606: http://forum.nim-lang.org/t/522
+# By Cyther606: https://forum.nim-lang.org/t/522
 # Adapted from: https://github.com/wobine/blackboard101/blob/master/EllipticCurvesPart4-PrivateKeyToPublicKey.py
 import bigints
 import std/[math, strutils]
@@ -20,33 +20,16 @@ let
   Gpoint = (Gx, Gy)
   privKey = initBigInt("A0DC65FFCA799873CBEA0AC274015B9526505DAAAED385155425F7337704883E", 16)
 
-proc modinv(a: BigInt): BigInt =
-  var
-    lm = one
-    hm = zero
-    lowm = a mod primeCurve
-    highm = primeCurve
-  while lowm > one:
-    let
-      ratio = highm div lowm
-      nm = hm - (lm * ratio)
-      temp = highm - (lowm * ratio)
-    hm = nm
-    highm = temp
-    swap hm, lm
-    swap highm, lowm
-  result = lm mod primeCurve
-
 proc ecAdd(a: tuple, b: tuple): (BigInt, BigInt) =
   let
-    lamAdd = ((b[1] - a[1]) * modinv(b[0] - a[0])) mod primeCurve
+    lamAdd = ((b[1] - a[1]) * invmod((b[0] - a[0]), primeCurve)) mod primeCurve
     x = (lamAdd * lamAdd - a[0] - b[0]) mod primeCurve
     y = (lamAdd * (a[0] - x) - a[1]) mod primeCurve
   result = (x, y)
 
 proc ecDouble(a: tuple): (BigInt, BigInt) =
   var
-    lam = ((3.initBigInt * a[0] * a[0] + Acurve) * modinv(2.initBigInt * a[1]))
+    lam = ((3.initBigInt * a[0] * a[0] + Acurve) * invmod(2.initBigInt * a[1], primeCurve))
     x = ((lam * lam) - (2.initBigInt * a[0])) mod primeCurve
     y = (lam * (a[0] - x) - a[1]) mod primeCurve
   lam = lam mod primeCurve

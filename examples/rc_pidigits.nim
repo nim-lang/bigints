@@ -1,4 +1,4 @@
-# Solution for http://rosettacode.org/wiki/Pi
+# Solution for https://rosettacode.org/wiki/Pi
 
 import bigints, options
 

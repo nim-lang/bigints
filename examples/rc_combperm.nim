@@ -1,4 +1,4 @@
-# Solution for http://rosettacode.org/wiki/Combinations_and_permutations
+# Solution for https://rosettacode.org/wiki/Combinations_and_permutations
 import bigints
 
 const

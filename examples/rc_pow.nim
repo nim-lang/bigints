@@ -1,4 +1,4 @@
-# Solution for http://rosettacode.org/wiki/Arbitrary-precision_integers_(included)
+# Solution for https://rosettacode.org/wiki/Arbitrary-precision_integers_(included)
 import bigints
 import std/math
 

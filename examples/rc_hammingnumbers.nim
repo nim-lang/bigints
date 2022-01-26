@@ -1,4 +1,4 @@
-# Translation of http://rosettacode.org/wiki/Hamming_numbers#Another_implementation_of_same_approach
+# Translation of https://rosettacode.org/wiki/Hamming_numbers#Another_implementation_of_same_approach
 import bigints
 
 const
