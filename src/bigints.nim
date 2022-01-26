@@ -1068,6 +1068,14 @@ iterator `..<`*(a, b: BigInt): BigInt =
     yield res
     inc res
 
+
+func modulo(a, modulus: BigInt): BigInt =
+  ## Like `mod`, but the result is always in the range `[0, modulus-1]`.
+  ## `modulus` should be greater than zero.
+  result = a mod modulus
+  if result < 0:
+    result += modulus
+
 func invmod*(a, modulus: BigInt): BigInt =
   ## Compute the modular inverse of `a` modulo `modulus`.
   ## The return value is always in the range `[1, modulus-1]`
@@ -1083,23 +1091,23 @@ func invmod*(a, modulus: BigInt): BigInt =
     raise newException(DivByZeroDefect, "0 has no modular inverse")
   else:
     var
-      r0 = ((a mod modulus) + modulus) mod modulus
-      r1 = modulus
-      s0 = one
-      s1 = zero
+      r0 = modulus
+      r1 = a.modulo(modulus)
+      t0 = zero
+      t1 = one
     while r1 > 0:
       let
         q = r0 div r1
         # the `q.isZero` check is needed because of an ARC/ORC bug (see https://github.com/nim-lang/bigints/issues/88)
         rk = if q.isZero: r0 else: r0 - q * r1
-        sk = if q.isZero: s0 else: s0 - q * s1
+        tk = if q.isZero: t0 else: t0 - q * t1
       r0 = r1
       r1 = rk
-      s0 = s1
-      s1 = sk
+      t0 = t1
+      t1 = tk
     if r0 != one:
       raise newException(ValueError, $a & " has no modular inverse modulo " & $modulus)
-    result = ((s0 mod modulus) + modulus) mod modulus
+    result = t0.modulo(modulus)
 
 func powmod*(base, exponent, modulus: BigInt): BigInt =
   ## Compute modular exponentation of `base` with power `exponent` modulo `modulus`.
@@ -1119,8 +1127,7 @@ func powmod*(base, exponent, modulus: BigInt): BigInt =
     if exponent < 0:
       base = invmod(base, modulus)
       exponent = -exponent
-    var
-      basePow = ((base mod modulus) + modulus) mod modulus # Base stays in [0, m-1]
+    var basePow = base.modulo(modulus) # base stays in [0, modulus-1]
     result = one
     while not exponent.isZero:
       if (exponent.limbs[0] and 1) != 0:
