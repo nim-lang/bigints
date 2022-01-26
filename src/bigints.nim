@@ -1127,7 +1127,7 @@ func powmod*(base, exponent, modulus: BigInt): BigInt =
     if exponent < 0:
       base = invmod(base, modulus)
       exponent = -exponent
-    var basePow = base.modulo(modulus) # base stays in [0, modulus-1]
+    var basePow = base.modulo(modulus)
     result = one
     while not exponent.isZero:
       if (exponent.limbs[0] and 1) != 0:
