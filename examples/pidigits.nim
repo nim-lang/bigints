@@ -48,23 +48,33 @@ proc nextTerm() =
   den *= k2
   num *= k
 
+proc findPiDigit(): int32 =
+  result = -1
+  while result < 0:
+    nextTerm()
+    result = extractDigit()
+
+var i = 0
 if paramCount() == 0:
-  quit("Please specify the number (strictly positive) of Pi Digits you want.")
+  # prints an infinite amount of pi digits
+  while true:
+    var d: int32 = findPiDigit()
+    stdout.write chr(ord('0') + d)
+    inc i
+    if i == 40:
+      echo ""
+      i = 0
+    eliminateDigit(d)
+
 let n = parseInt(paramStr(1))
+
 if n <= 0:
   quit("The number you entered is negative. Please specify a strictly positive number")
-var i = 0
 
 while i < n:
-  var d: int32 = -1
-  while d < 0:
-    nextTerm()
-    d = extractDigit()
-
+  var d: int32 = findPiDigit()
   stdout.write(chr(ord('0') + d))
   inc(i)
-  if i mod 10 == 0:
+  if i mod 40 == 0:
     echo "\t:", i
-  if i >= n:
-    break
   eliminateDigit(d)
