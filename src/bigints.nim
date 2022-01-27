@@ -1074,7 +1074,7 @@ func fastLog2*(a: BigInt): int =
   ## If `a` is zero, returns -1.
   if a.isZero:
     return -1
-  bitops.fastLog2(a.limbs[a.limbs.high]) + 32*(a.limbs.len-1)
+  bitops.fastLog2(a.limbs[^1]) + 32*(a.limbs.high)
 
 func invmod*(a, modulus: BigInt): BigInt =
   ## Compute the modular inverse of `a` modulo `modulus`.

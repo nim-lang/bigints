@@ -388,10 +388,14 @@ proc main() =
   block: # fastLog2
     let a = one shl 31
     let b = a shl 1
+    let c = initBigInt(0xfedcba9876543210'u64)
+
     # one limb
     doAssert fastLog2(a) == 31
-    # two limbs
+    # two limbs and more
     doAssert fastLog2(b) == 32
+    doAssert fastLog2(b+a) == 32
+    doAssert fastLog2(c+b+a) == 63
     # negative BigInt
     doAssert fastLog2(-a) == 31
     doAssert fastLog2(-b) == 32
