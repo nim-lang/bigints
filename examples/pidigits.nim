@@ -1,4 +1,7 @@
-# Translation of http://benchmarksgame.alioth.debian.org/u32/program.php?test=pidigits&lang=go&id=4
+# This program prints as much pi digits as the user indicates
+# with the first command line argument
+# This program is an extension of the solution for https://rosettacode.org/wiki/Pi
+# translated from former website http://benchmarksgame.alioth.debian.org
 
 import std/[os, strutils, options]
 import bigints
