@@ -1095,12 +1095,11 @@ func invmod*(a, modulus: BigInt): BigInt =
       r1 = a.modulo(modulus)
       t0 = zero
       t1 = one
+    var rk, tk: BigInt # otherwise t1 is incorrectly inferred as cursor (https://github.com/nim-lang/Nim/issues/19457)
     while r1 > 0:
-      let
-        q = r0 div r1
-        # the `q.isZero` check is needed because of an ARC/ORC bug (see https://github.com/nim-lang/bigints/issues/88)
-        rk = if q.isZero: r0 else: r0 - q * r1
-        tk = if q.isZero: t0 else: t0 - q * t1
+      let q = r0 div r1
+      rk = r0 - q * r1
+      tk = t0 - q * t1
       r0 = r1
       r1 = rk
       t0 = t1
