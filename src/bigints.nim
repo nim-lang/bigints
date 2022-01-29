@@ -65,6 +65,7 @@ func initBigInt*(val: BigInt): BigInt =
 const
   zero = initBigInt(0)
   one = initBigInt(1)
+  karatsubaTreshold = 5
 
 func isZero(a: BigInt): bool {.inline.} =
   for i in countdown(a.limbs.high, 0):
@@ -451,7 +452,6 @@ func multiplication(a: var BigInt, b, c: BigInt) =
   let
     bl = b.limbs.len
     cl = c.limbs.len
-    karatsubaTreshold = 5
 
   if cl > bl:
     if bl <= karatsubaTreshold:
