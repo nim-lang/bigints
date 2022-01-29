@@ -1,7 +1,6 @@
 ## Arbitrary precision integers.
 
-
-import std/[algorithm, bitops, math]
+import std/[algorithm, bitops, math, options]
 
 type
   BigInt* = object
@@ -72,6 +71,14 @@ func isZero(a: BigInt): bool {.inline.} =
     if a.limbs[i] != 0'u32:
       return false
   return true
+
+func abs*(a: BigInt): BigInt =
+  # Returns the absolute value of `a`.
+  runnableExamples:
+    assert abs(42.initBigInt) == 42.initBigInt
+    assert abs(-12.initBigInt) == 12.initBigInt
+  result = a
+  result.isNegative = false
 
 func unsignedCmp(a: BigInt, b: uint32): int64 =
   # ignores the sign of `a`
@@ -563,7 +570,7 @@ func `shl`*(x: BigInt, y: Natural): BigInt =
     result.limbs.add(uint32(carry shr (32 - b)))
 
 # forward declaration for use in `shr`
-func dec*(a: var BigInt, b: int32 = 1)
+func dec*(a: var BigInt, b: int = 1)
 
 func `shr`*(x: BigInt, y: Natural): BigInt =
   ## Shifts a `BigInt` to the right (arithmetically).
@@ -826,7 +833,7 @@ func `mod`*(a, b: BigInt): BigInt =
   var tmp: BigInt
   division(tmp, result, a, b)
 
-func `divmod`*(a, b: BigInt): tuple[q, r: BigInt] =
+func divmod*(a, b: BigInt): tuple[q, r: BigInt] =
   ## Computes both the integer division and modulo (remainder) of two
   ## `BigInt` numbers.
   ## Raises a `DivByZeroDefect` if `b` is zero.
@@ -836,6 +843,92 @@ func `divmod`*(a, b: BigInt): tuple[q, r: BigInt] =
       b = 5.initBigInt
     assert divmod(a, b) == (3.initBigInt, 2.initBigInt)
   division(result.q, result.r, a, b)
+
+func countTrailingZeroBits(a: BigInt): int =
+  var count = 0
+  for x in a.limbs:
+    if x == 0:
+      count += 32
+    else:
+      return count + countTrailingZeroBits(x)
+  return count
+
+func gcd*(a, b: BigInt): BigInt =
+  ## Returns the greatest common divisor (GCD) of `a` and `b`.
+  runnableExamples:
+    assert gcd(54.initBigInt, 24.initBigInt) == 6.initBigInt
+
+  # binary GCD algorithm
+  var
+    u = abs(a)
+    v = abs(b)
+  if u.isZero:
+    return v
+  elif v.isZero:
+    return u
+  let
+    i = countTrailingZeroBits(u)
+    j = countTrailingZeroBits(v)
+    k = min(i, j)
+  u = u shr i
+  v = v shr j
+  while true:
+    # u and v are odd
+    if u > v:
+      swap(u, v)
+    v -= u
+    if v.isZero:
+      return u shl k
+    v = v shr countTrailingZeroBits(v)
+
+
+func toSignedInt*[T: SomeSignedInt](x: BigInt): Option[T] =
+  ## Converts a `BigInt` number to signed integer, if possible.
+  ## If the `BigInt` doesn't fit in a `T`', returns `none`;
+  ## otherwise returns `some(T)`.
+  runnableExamples:
+    import std/options
+    let
+      a = 44.initBigInt
+      b = 130.initBigInt
+    assert toSignedInt[int8](a) == some(44'i8)
+    assert toSignedInt[int8](b) == none(int8)
+    assert toSignedInt[int](b) == some(130)
+
+  when sizeof(T) == 8:
+    if x.limbs.len > 2:
+      result = none(T)
+    elif x.limbs.len == 2:
+      if x.limbs[1] > uint32.high shr 1:
+        if x.isNegative and x.limbs[0] == 0:
+          result = some(T(int64.low))
+        else:
+          result = none(T)
+      else:
+        let value = T(x.limbs[1]) shl 32 + T(x.limbs[0])
+        if x.isNegative:
+          result = some(not(value - 1))
+        else:
+          result = some(value)
+    else:
+      if x.isNegative:
+        result = some(not T(x.limbs[0] - 1))
+      else:
+        result = some(T(x.limbs[0]))
+  else:
+    if x.limbs.len > 1:
+      result = none(T)
+    else:
+      if x.isNegative:
+        if x.limbs[0] - 1 > uint32(T.high):
+          result = none(T)
+        else:
+          result = some(not T(x.limbs[0] - 1))
+      else:
+        if x.limbs[0] > uint32(T.high):
+          result = none(T)
+        else:
+          result = some(T(x.limbs[0]))
 
 
 func calcSizes(): array[2..36, int] =
@@ -991,7 +1084,7 @@ func initBigInt*(str: string, base: range[2..36] = 10): BigInt =
 when (NimMajor, NimMinor) >= (1, 5):
   include bigints/private/literals
 
-func inc*(a: var BigInt, b: int32 = 1) =
+func inc*(a: var BigInt, b: int = 1) =
   ## Increase the value of a `BigInt` by the specified amount (default: 1).
   runnableExamples:
     var a = 15.initBigInt
@@ -999,10 +1092,14 @@ func inc*(a: var BigInt, b: int32 = 1) =
     assert a == 16.initBigInt
     inc(a, 7)
     assert a == 23.initBigInt
-  var c = a
-  additionInt(a, c, b)
 
-func dec*(a: var BigInt, b: int32 = 1) =
+  if b in int32.low..int32.high:
+    var c = a
+    additionInt(a, c, b.int32)
+  else:
+    a += initBigInt(b)
+
+func dec*(a: var BigInt, b: int = 1) =
   ## Decrease the value of a `BigInt` by the specified amount (default: 1).
   runnableExamples:
     var a = 15.initBigInt
@@ -1010,8 +1107,22 @@ func dec*(a: var BigInt, b: int32 = 1) =
     assert a == 14.initBigInt
     dec(a, 5)
     assert a == 9.initBigInt
-  var c = a
-  subtractionInt(a, c, b)
+
+  if b in int32.low..int32.high:
+    var c = a
+    subtractionInt(a, c, b.int32)
+  else:
+    a -= initBigInt(b)
+
+func succ*(a: BigInt, b: int = 1): BigInt =
+  ## Returns the `b`-th successor of a `BigInt`.
+  result = a
+  inc(result, b)
+
+func pred*(a: BigInt, b: int = 1): BigInt =
+  ## Returns the `b`-th predecessor of a `BigInt`.
+  result = a
+  dec(result, b)
 
 
 iterator countup*(a, b: BigInt, step: int32 = 1): BigInt =
@@ -1041,3 +1152,63 @@ iterator `..<`*(a, b: BigInt): BigInt =
   while res < b:
     yield res
     inc res
+
+func invmod*(a, modulus: BigInt): BigInt =
+  ## Compute the modular inverse of `a` modulo `modulus`.
+  ## The return value is always in the range `[1, modulus-1]`
+  runnableExamples:
+    invmod(3.initBigInt, 7.initBigInt) = 5.initBigInt
+
+  # extended Euclidean algorithm
+  if modulus.isZero:
+    raise newException(DivByZeroDefect, "modulus must be nonzero")
+  elif modulus.isNegative:
+    raise newException(ValueError, "modulus must be strictly positive")
+  elif a.isZero:
+    raise newException(DivByZeroDefect, "0 has no modular inverse")
+  else:
+    var
+      r0 = ((a mod modulus) + modulus) mod modulus
+      r1 = modulus
+      s0 = one
+      s1 = zero
+    while r1 > 0:
+      let
+        q = r0 div r1
+        # the `q.isZero` check is needed because of an ARC/ORC bug (see https://github.com/nim-lang/bigints/issues/88)
+        rk = if q.isZero: r0 else: r0 - q * r1
+        sk = if q.isZero: s0 else: s0 - q * s1
+      r0 = r1
+      r1 = rk
+      s0 = s1
+      s1 = sk
+    if r0 != one:
+      raise newException(ValueError, $a & " has no modular inverse modulo " & $modulus)
+    result = ((s0 mod modulus) + modulus) mod modulus
+
+func powmod*(base, exponent, modulus: BigInt): BigInt =
+  ## Compute modular exponentation of `base` with power `exponent` modulo `modulus`.
+  ## The return value is always in the range `[0, modulus-1]`.
+  runnableExamples:
+    assert powmod(2.initBigInt, 3.initBigInt, 7.initBigInt) == 1.initBigInt
+  if modulus.isZero:
+    raise newException(DivByZeroDefect, "modulus must be nonzero")
+  elif modulus.isNegative:
+    raise newException(ValueError, "modulus must be strictly positive")
+  elif modulus == 1:
+    return zero
+  else:
+    var
+      base = base
+      exponent = exponent
+    if exponent < 0:
+      base = invmod(base, modulus)
+      exponent = -exponent
+    var
+      basePow = ((base mod modulus) + modulus) mod modulus # Base stays in [0, m-1]
+    result = one
+    while not exponent.isZero:
+      if (exponent.limbs[0] and 1) != 0:
+        result = (result * basePow) mod modulus
+      basePow = (basePow * basePow) mod modulus
+      exponent = exponent shr 1

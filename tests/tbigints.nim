@@ -1,10 +1,11 @@
 import bigints
+import std/options
 
 const
   zero = initBigInt(0)
   one = initBigInt(1)
 
-template main() =
+proc main() =
   block: # initBigInt
     let a = 1234567.initBigInt
     doAssert $a == "1234567"
@@ -322,6 +323,26 @@ template main() =
     x.dec(42)
     doAssert x == -30.initBigInt
 
+    when sizeof(int) == 8:
+      # int has 64 bits
+      x = 42.initBigInt
+      x.inc(int32.high.int + 1)
+      doAssert x == "2147483690".initBigInt
+      x.inc(int64.high.int)
+      doAssert x == "9223372039002259497".initBigInt
+      x.inc(int32.low.int - 1)
+      doAssert x == "9223372036854775848".initBigInt
+      x.inc(int64.low.int)
+      doAssert x == 40.initBigInt
+      x.dec(int32.high.int + 1)
+      doAssert x == "-2147483608".initBigInt
+      x.dec(int64.high.int)
+      doAssert x == "-9223372039002259415".initBigInt
+      x.dec(int32.low.int - 1)
+      doAssert x == "-9223372036854775766".initBigInt
+      x.dec(int64.low.int)
+      doAssert x == 42.initBigInt
+
   block: # string conversion
     for base in 2..36:
       # zero
@@ -379,10 +400,186 @@ template main() =
     doAssert pow(zero, 0) == one
     doAssert pow(zero, 1) == zero
 
+  block: # invmod
+    # with prime modulus
+    let a = "30292868".initBigInt
+    let b = "48810860".initBigInt
+    let p = "60449131".initBigInt # p is prime
+    doAssert invmod(a, p) == "51713091".initBigInt
+    doAssert invmod(-b, p) == "31975542".initBigInt
+    # with composite modulus
+    let c = "2472018".initBigInt
+    let n = "3917515".initBigInt # 5 * 7 * 19 * 43 * 137
+    let d = "1831482".initBigInt
+    let e = "2502552".initBigInt
+    let f = "2086033".initBigInt
+    let h = "1414963".initBigInt
+    doAssert invmod(c, n) == "2622632".initBigInt
+    doAssert invmod(one, n) == one
+    doAssert invmod(n-one, n) == n-one
+
+    doAssert invmod( d, n) == h
+    doAssert invmod(-d, n) == e
+    doAssert invmod( f, n) == e
+    doAssert invmod(-f, n) == h
+    doAssert invmod( e, n) == f
+    doAssert invmod(-e, n) == d
+    doAssert invmod( h, n) == d
+    doAssert invmod(-h, n) == f
+
+    doAssertRaises(DivByZeroDefect): discard invmod(zero, n)
+    doAssertRaises(DivByZeroDefect): discard invmod(one, zero)
+    doAssertRaises(ValueError): discard invmod(one, -7.initBigInt)
+    doAssertRaises(ValueError): discard invmod(3.initBigInt, 18.initBigInt) # 3 is not invertible since gcd(3, 18) = 3 != 1
+
+  block: # powmod
+    let a = "30292868".initBigInt
+    let p = "60449131".initBigInt # p is prime
+    let two = 2.initBigInt
+    doAssert powmod(a, two, p) == "25760702".initBigInt
+    # Fermat's little theorem: a^p ≡ a mod p
+    doAssert powmod(a, p, p) == a
+    # Euler's identity a^(p-1) \equiv 1 \bmod p
+    doAssert powmod(a, p - one, p) == one
+    # We can invert a using Euler's identity / Fermat's little theorem
+    doAssert powmod(a, p - two, p) == "51713091".initBigInt
+    # We can reduce the exponent modulo phi(p) = p - 1, since p is prime
+    doAssert powmod(a, 2.initBigInt*p, p) == (a * a mod p)
+
+    let p2 = 761.initBigInt
+    var a2 = 1.initBigInt
+    # Fermat's little theorem: a^p ≡ a mod p
+    while a2 < p2:
+      doAssert powmod(a2, p2, p2) == a2
+      a2.inc
+
+  block: # Composite modulus
+    let a = "2472018".initBigInt
+    let n = "3917515".initBigInt # 5 * 7 * 19 * 43 * 137
+    let euler_phi = "2467584".initBigInt
+    doAssert powmod(a, 52.initBigInt, n) == "2305846".initBigInt
+    doAssert powmod(a, euler_phi, n) == one
+    # Edge cases
+    doAssert powmod(a, one, n) == a
+    doAssert powmod(a, zero, n) == one
+    doAssert powmod(zero, zero, n) == one
+    doAssert powmod(zero, one, n) == zero
+
+  block: # powmod with negative base
+    let a = "1986599".initBigInt
+    let p = "10230581".initBigInt
+    doAssert powmod(-a, 2.initBigInt, p) == "6199079".initBigInt
+
+  block: # powmod with negative exponent
+    let a = "1912".initBigInt
+    let p = "5297".initBigInt
+    doAssert powmod(a, -1.initBigInt, p) == "1460".initBigInt
+    doAssert powmod(a, one-p, p) == one
+
   block: # div/mod
     doAssertRaises(DivByZeroDefect): discard one div zero
     doAssertRaises(DivByZeroDefect): discard one mod zero
     doAssertRaises(DivByZeroDefect): discard divmod(one, zero)
+
+  block: # gcd
+    let a = "866506".initBigInt
+    let b = "140640".initBigInt
+    let two = 2.initBigInt
+    doAssert gcd(a, b) == two
+    # gcd(a, b) = gcd(b, a)
+    doAssert gcd(b, a) == two
+    # gcd(a, -b) = gcd(a, |b|)
+    doAssert gcd(-a, b) == two
+    doAssert gcd(a, -b) == two
+    doAssert gcd(-a, -b) == two
+
+    block: # properties of gcd
+      let a = "668403".initBigInt
+      let b = "753160".initBigInt
+      let c = "249115".initBigInt
+      doAssert gcd(a, b) == gcd(b, a)
+      doAssert gcd(a, zero) == a
+      doAssert gcd(a, a) == a
+      doAssert gcd(c * a, c * b) == c * gcd(a,b)
+      doAssert gcd(a, gcd(b, c)) == gcd(gcd(a, b), c)
+      doAssert gcd(a, b) == gcd(b, a mod b)
+
+  block: # abs
+    doAssert abs(zero) == zero
+    doAssert abs(-zero) == zero
+    doAssert abs(one) == one
+    doAssert abs(-one) == one
+
+  block: # toSignedInt
+    let
+      a = initBigInt(7)
+      b = initBigInt(-7)
+    doAssert toSignedInt[int8](a) == some(7'i8)
+    doAssert toSignedInt[int8](b) == some(-7'i8)
+
+    let
+      i32h = int32.high
+      i32l = int32.low
+      c = initBigInt(i32h)
+      d = initBigInt(i32h - 1)
+      e = initBigInt(int64(i32h) + 1)
+      f = initBigInt(i32l)
+      g = initBigInt(i32l + 1)
+      h = initBigInt(int64(i32l) - 1)
+    doAssert toSignedInt[int8](c) == none(int8)
+    doAssert toSignedInt[int32](c) == some(i32h)
+    doAssert toSignedInt[int](c) == some(i32h.int)
+    doAssert toSignedInt[int8](d) == none(int8)
+    doAssert toSignedInt[int32](d) == some(i32h - 1)
+    doAssert toSignedInt[int](d) == some(i32h.int - 1)
+    doAssert toSignedInt[int8](e) == none(int8)
+    doAssert toSignedInt[int32](e) == none(int32)
+    doAssert toSignedInt[int64](e) == some(i32h.int64 + 1)
+    doAssert toSignedInt[int8](f) == none(int8)
+    doAssert toSignedInt[int32](f) == some(i32l)
+    doAssert toSignedInt[int](f) == some(i32l.int)
+    doAssert toSignedInt[int8](g) == none(int8)
+    doAssert toSignedInt[int32](g) == some(i32l + 1)
+    doAssert toSignedInt[int](g) == some(i32l.int + 1)
+    doAssert toSignedInt[int8](h) == none(int8)
+    doAssert toSignedInt[int32](h) == none(int32)
+    doAssert toSignedInt[int64](h) == some(i32l.int64 - 1)
+
+    let
+      i64h = int64.high
+      i64l = int64.low
+      i = initBigInt(i64h)
+      j = initBigInt(i64h - 1)
+      k = initBigInt(uint64(int64.high) + 1)
+      l = initBigInt(i64l)
+      m = initBigInt(i64l + 1)
+      n = initBigInt("-9223372036854775809") # int64.low - 1
+    doAssert toSignedInt[int8](i) == none(int8)
+    doAssert toSignedInt[int32](i) == none(int32)
+    doAssert toSignedInt[int64](i) == some(i64h)
+    doAssert toSignedInt[int8](j) == none(int8)
+    doAssert toSignedInt[int32](j) == none(int32)
+    doAssert toSignedInt[int64](j) == some(i64h - 1)
+    doAssert toSignedInt[int8](k) == none(int8)
+    doAssert toSignedInt[int32](k) == none(int32)
+    doAssert toSignedInt[int64](k) == none(int64)
+    doAssert toSignedInt[int8](l) == none(int8)
+    doAssert toSignedInt[int32](l) == none(int32)
+    doAssert toSignedInt[int64](l) == some(i64l)
+    doAssert toSignedInt[int8](m) == none(int8)
+    doAssert toSignedInt[int32](m) == none(int32)
+    doAssert toSignedInt[int64](m) == some(i64l + 1)
+    doAssert toSignedInt[int8](n) == none(int8)
+    doAssert toSignedInt[int32](n) == none(int32)
+    doAssert toSignedInt[int64](n) == none(int64)
+
+  block: # pred/succ
+    let a = initBigInt(7)
+    doAssert pred(a) == initBigInt(6)
+    doAssert succ(a) == initBigInt(8)
+    doAssert pred(a, 3) == initBigInt(4)
+    doAssert succ(a, 3) == initBigInt(10)
+
 
 static: main()
 main()
