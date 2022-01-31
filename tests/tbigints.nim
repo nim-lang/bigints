@@ -385,6 +385,56 @@ proc main() =
     doAssert "fedcba9876543210".initBigInt(base = 16) == b
     doAssert "ftn5qj1r58cgg".initBigInt(base = 32) == b
 
+  block: # fastLog2
+    let a = one shl 31
+    let b = a shl 1
+    let c = initBigInt(0xfedcba9876543210'u64)
+    let d = initBigInt("ffffffffffffffffff", base = 16)
+    
+    # first numbers
+    doAssert fastLog2(2.initBigInt) == 1
+    doAssert fastLog2(3.initBigInt) == 1
+    doAssert fastLog2(4.initBigInt) == 2
+    doAssert fastLog2(5.initBigInt) == 2
+    doAssert fastLog2(7.initBigInt) == 2
+    doAssert fastLog2(8.initBigInt) == 3
+    doAssert fastLog2(24.initBigInt) == 4
+    doAssert fastLog2(32.initBigInt) == 5
+    doAssert fastLog2(48.initBigInt) == 5
+
+    # one limb
+    doAssert fastLog2(a) == 31
+
+    # two limbs and more
+    doAssert fastLog2(b) == 32
+    doAssert fastLog2(b+a) == 32
+    doAssert fastLog2(c+b+a) == 63
+  
+    doAssert fastLog2(d) == 71
+    doAssert fastLog2(d + one) == 72
+    doAssert fastLog2(d - one) == 71
+    doAssert fastLog2(-d) == 71
+    doAssert fastLog2(-d - one) == 72
+    doAssert fastLog2(-d + one) == 71
+
+    # negative BigInts
+    doAssert fastLog2(-2.initBigInt) == 1
+    doAssert fastLog2(-3.initBigInt) == 1
+    doAssert fastLog2(-4.initBigInt) == 2
+    doAssert fastLog2(-5.initBigInt) == 2
+    doAssert fastLog2(-7.initBigInt) == 2
+    doAssert fastLog2(-8.initBigInt) == 3
+    doAssert fastLog2(-24.initBigInt) == 4
+    doAssert fastLog2(-32.initBigInt) == 5
+    doAssert fastLog2(-48.initBigInt) == 5
+    doAssert fastLog2(-a) == 31
+    doAssert fastLog2(-b) == 32
+
+    # edge cases
+    doAssert fastLog2(one) == 0
+    doAssert fastLog2(zero) == -1
+
+
   block: # pow
     let a = "14075287".initBigInt
     doAssert pow(a, 0) == one
@@ -534,7 +584,7 @@ proc main() =
     doAssert toSignedInt[int](d) == some(i32h.int - 1)
     doAssert toSignedInt[int8](e) == none(int8)
     doAssert toSignedInt[int32](e) == none(int32)
-    doAssert toSignedInt[int](e) == some(i32h.int + 1)
+    doAssert toSignedInt[int64](e) == some(i32h.int64 + 1)
     doAssert toSignedInt[int8](f) == none(int8)
     doAssert toSignedInt[int32](f) == some(i32l)
     doAssert toSignedInt[int](f) == some(i32l.int)
@@ -543,35 +593,35 @@ proc main() =
     doAssert toSignedInt[int](g) == some(i32l.int + 1)
     doAssert toSignedInt[int8](h) == none(int8)
     doAssert toSignedInt[int32](h) == none(int32)
-    doAssert toSignedInt[int](h) == some(i32l.int - 1)
+    doAssert toSignedInt[int64](h) == some(i32l.int64 - 1)
 
     let
       i64h = int64.high
       i64l = int64.low
       i = initBigInt(i64h)
       j = initBigInt(i64h - 1)
-      k = initBigInt(uint64(int64.high) + 1'u64)
+      k = initBigInt(uint64(int64.high) + 1)
       l = initBigInt(i64l)
       m = initBigInt(i64l + 1)
       n = initBigInt("-9223372036854775809") # int64.low - 1
     doAssert toSignedInt[int8](i) == none(int8)
     doAssert toSignedInt[int32](i) == none(int32)
-    doAssert toSignedInt[int](i) == some(i64h.int)
+    doAssert toSignedInt[int64](i) == some(i64h)
     doAssert toSignedInt[int8](j) == none(int8)
     doAssert toSignedInt[int32](j) == none(int32)
-    doAssert toSignedInt[int](j) == some(i64h.int - 1)
+    doAssert toSignedInt[int64](j) == some(i64h - 1)
     doAssert toSignedInt[int8](k) == none(int8)
     doAssert toSignedInt[int32](k) == none(int32)
-    doAssert toSignedInt[int](k) == none(int)
+    doAssert toSignedInt[int64](k) == none(int64)
     doAssert toSignedInt[int8](l) == none(int8)
     doAssert toSignedInt[int32](l) == none(int32)
-    doAssert toSignedInt[int](l) == some(i64l.int)
+    doAssert toSignedInt[int64](l) == some(i64l)
     doAssert toSignedInt[int8](m) == none(int8)
     doAssert toSignedInt[int32](m) == none(int32)
-    doAssert toSignedInt[int](m) == some(i64l.int + 1)
+    doAssert toSignedInt[int64](m) == some(i64l + 1)
     doAssert toSignedInt[int8](n) == none(int8)
     doAssert toSignedInt[int32](n) == none(int32)
-    doAssert toSignedInt[int](n) == none(int)
+    doAssert toSignedInt[int64](n) == none(int64)
 
   block: # pred/succ
     let a = initBigInt(7)
