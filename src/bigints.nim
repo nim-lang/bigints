@@ -1068,6 +1068,14 @@ iterator `..<`*(a, b: BigInt): BigInt =
     yield res
     inc res
 
+func fastLog2*(a: BigInt): int =
+  ## Computes the logarithm in base 2 of `a`.
+  ## If `a` is negative, returns the logarithm of `abs(a)`.
+  ## If `a` is zero, returns -1.
+  if a.isZero:
+    return -1
+  bitops.fastLog2(a.limbs[^1]) + 32*(a.limbs.high)
+
 func invmod*(a, modulus: BigInt): BigInt =
   ## Compute the modular inverse of `a` modulo `modulus`.
   ## The return value is always in the range `[1, modulus-1]`
@@ -1127,3 +1135,4 @@ func powmod*(base, exponent, modulus: BigInt): BigInt =
         result = (result * basePow) mod modulus
       basePow = (basePow * basePow) mod modulus
       exponent = exponent shr 1
+

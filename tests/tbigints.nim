@@ -385,6 +385,56 @@ proc main() =
     doAssert "fedcba9876543210".initBigInt(base = 16) == b
     doAssert "ftn5qj1r58cgg".initBigInt(base = 32) == b
 
+  block: # fastLog2
+    let a = one shl 31
+    let b = a shl 1
+    let c = initBigInt(0xfedcba9876543210'u64)
+    let d = initBigInt("ffffffffffffffffff", base = 16)
+    
+    # first numbers
+    doAssert fastLog2(2.initBigInt) == 1
+    doAssert fastLog2(3.initBigInt) == 1
+    doAssert fastLog2(4.initBigInt) == 2
+    doAssert fastLog2(5.initBigInt) == 2
+    doAssert fastLog2(7.initBigInt) == 2
+    doAssert fastLog2(8.initBigInt) == 3
+    doAssert fastLog2(24.initBigInt) == 4
+    doAssert fastLog2(32.initBigInt) == 5
+    doAssert fastLog2(48.initBigInt) == 5
+
+    # one limb
+    doAssert fastLog2(a) == 31
+
+    # two limbs and more
+    doAssert fastLog2(b) == 32
+    doAssert fastLog2(b+a) == 32
+    doAssert fastLog2(c+b+a) == 63
+  
+    doAssert fastLog2(d) == 71
+    doAssert fastLog2(d + one) == 72
+    doAssert fastLog2(d - one) == 71
+    doAssert fastLog2(-d) == 71
+    doAssert fastLog2(-d - one) == 72
+    doAssert fastLog2(-d + one) == 71
+
+    # negative BigInts
+    doAssert fastLog2(-2.initBigInt) == 1
+    doAssert fastLog2(-3.initBigInt) == 1
+    doAssert fastLog2(-4.initBigInt) == 2
+    doAssert fastLog2(-5.initBigInt) == 2
+    doAssert fastLog2(-7.initBigInt) == 2
+    doAssert fastLog2(-8.initBigInt) == 3
+    doAssert fastLog2(-24.initBigInt) == 4
+    doAssert fastLog2(-32.initBigInt) == 5
+    doAssert fastLog2(-48.initBigInt) == 5
+    doAssert fastLog2(-a) == 31
+    doAssert fastLog2(-b) == 32
+
+    # edge cases
+    doAssert fastLog2(one) == 0
+    doAssert fastLog2(zero) == -1
+
+
   block: # pow
     let a = "14075287".initBigInt
     doAssert pow(a, 0) == one
