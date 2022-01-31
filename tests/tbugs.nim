@@ -1,6 +1,6 @@
 import bigints
 
-template main() =
+proc main() =
   block: # range of BigInt (https://github.com/nim-lang/bigints/issues/1)
     let two = 2.initBigInt
     let n = "123".initBigInt

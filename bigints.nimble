@@ -14,5 +14,7 @@ requires "nim >= 1.4.0"
 task test, "Test bigints":
   for backend in ["c", "cpp"]:
     echo "testing " & backend & " backend"
-    for file in ["tbigints.nim", "tbugs.nim"]:
-      exec "nim r --hints:off --experimental:strictFuncs --backend:" & backend & " tests/" & file
+    for gc in ["refc", "arc", "orc"]:
+      echo "  using " & gc & " GC"
+      for file in ["tbigints.nim", "tbugs.nim"]:
+        exec "nim r --hints:off --experimental:strictFuncs --backend:" & backend & " --gc:" & gc & " tests/" & file
