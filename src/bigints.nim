@@ -448,15 +448,15 @@ func multiplication(a: var BigInt, b, c: BigInt) =
     cl = c.limbs.len
 
   if cl > bl:
-    if bl <= karatsubaTreshold:
-      karatsubaMultiplication(a, c, b)
-    else:
-      unsignedMultiplication(a, c, b)
+    # if bl <= karatsubaTreshold:
+    #   karatsubaMultiplication(a, c, b)
+    # else:
+    unsignedMultiplication(a, c, b)
   else:
-    if cl <= karatsubaTreshold:
-      karatsubaMultiplication(a, b, c)
-    else:
-      unsignedMultiplication(a, b, c)
+    # if cl <= karatsubaTreshold:
+    #   karatsubaMultiplication(a, b, c)
+    # else:
+    unsignedMultiplication(a, b, c)
   a.isNegative = b.isNegative xor c.isNegative
 
 func karatsubaMultiplication(a: var BigInt, b, c: BigInt) {.inline.} =
@@ -506,9 +506,9 @@ func karatsubaMultiplication(a: var BigInt, b, c: BigInt) {.inline.} =
     multiplication(A5, abs(A3), abs(A4))
   middleTerm = lowProduct + highProduct + A5
   a.limbs[0 .. k - 1] = lowProduct.limbs
-  # a += (middleTerm shr k) + (highProduct shr (2*k))
-  a.limbs[k .. 2*k-1] = middleTerm.limbs
-  a.limbs[2*k .. 3*k-1] = highProduct.limbs
+  a += (middleTerm shr k) + (highProduct shr (2*k))
+  # a.limbs[k .. 2*k-1] = middleTerm.limbs
+  # a.limbs[2*k .. 3*k-1] = highProduct.limbs
 
 
 func `*`*(a, b: BigInt): BigInt =
@@ -1205,3 +1205,14 @@ func powmod*(base, exponent, modulus: BigInt): BigInt =
         result = (result * basePow) mod modulus
       basePow = (basePow * basePow) mod modulus
       exponent = exponent shr 1
+
+when isMainModule:
+  var a = "1311562737969161616".initBigInt
+  echo a.limbs.len
+  var b = "1357909330350306889".initBigInt
+  echo b.limbs.len
+  a = "1780983279228119273110576463639172624".initBigInt
+  b = "1843917749452418885995463656480858321".initBigInt
+  echo a.limbs.len
+  echo b.limbs.len
+  echo a*b

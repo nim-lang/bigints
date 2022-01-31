@@ -227,6 +227,10 @@ proc main() =
     doAssert (d xor d) == f
     doAssert (d xor f) == d
 
+  block: # multiplication
+    let a = "1780983279228119273110576463639172624".initBigInt
+    let b = "1843917749452418885995463656480858321".initBigInt
+    doAssert a * b == "3171901440890145063107180402349133639481893332927709969425239467271045376".initBigInt
   block: # self-addition/self-subtraction
     # self-addition
     var a = zero
