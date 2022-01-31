@@ -64,7 +64,7 @@ func initBigInt*(val: BigInt): BigInt =
 const
   zero = initBigInt(0)
   one = initBigInt(1)
-  karatsubaTreshold = 10
+  karatsubaTreshold = 2
 
 func isZero(a: BigInt): bool {.inline.} =
   for i in countdown(a.limbs.high, 0):
@@ -448,15 +448,15 @@ func multiplication(a: var BigInt, b, c: BigInt) =
     cl = c.limbs.len
 
   if cl > bl:
-    # if bl <= karatsubaTreshold:
-    #   karatsubaMultiplication(a, c, b)
-    # else:
-    unsignedMultiplication(a, c, b)
+    if bl >= karatsubaTreshold:
+      karatsubaMultiplication(a, c, b)
+    else:
+      unsignedMultiplication(a, c, b)
   else:
-    # if cl <= karatsubaTreshold:
-    #   karatsubaMultiplication(a, b, c)
-    # else:
-    unsignedMultiplication(a, b, c)
+    if cl >= karatsubaTreshold:
+      karatsubaMultiplication(a, b, c)
+    else:
+      unsignedMultiplication(a, b, c)
   a.isNegative = b.isNegative xor c.isNegative
 
 func karatsubaMultiplication(a: var BigInt, b, c: BigInt) {.inline.} =
@@ -483,7 +483,7 @@ func karatsubaMultiplication(a: var BigInt, b, c: BigInt) {.inline.} =
     else:
       unsignedMultiplication(a, b, c)
     return
-  let k = n shr 1 # should it be ceil(n/2) ?
+  let k = n shr 1
   var
     low_b, high_b, low_c, high_c: BigInt
   # Decompose `b` and `c` in two parts of (almost) equal length
@@ -492,24 +492,19 @@ func karatsubaMultiplication(a: var BigInt, b, c: BigInt) {.inline.} =
   low_c.limbs = c.limbs[0 .. k-1]
   high_c.limbs = c.limbs[k .. ^1]
   
-  # subtractive version of Karatsuba's algorithm :
-  # limit carry handling in opposition to the additive version
+  # subtractive version of Karatsuba's algorithm to limit carry handling
   var
     lowProduct, highProduct, A3, A4, A5, middleTerm: BigInt = zero
   karatsubaMultiplication(lowProduct, low_b, low_c)
   karatsubaMultiplication(highProduct, high_b, high_c)
-  A3 = low_b - high_b # Additive variant of Karatsuba
-  A4 = low_c - high_c # would add them
+  A3 = low_b - high_b
+  A4 = high_c - low_c
   if A4.limbs.len >= A3.limbs.len:
     multiplication(A5, abs(A4), abs(A3))
   else:
     multiplication(A5, abs(A3), abs(A4))
   middleTerm = lowProduct + highProduct + A5
-  a.limbs[0 .. k - 1] = lowProduct.limbs
-  a += (middleTerm shr k) + (highProduct shr (2*k))
-  # a.limbs[k .. 2*k-1] = middleTerm.limbs
-  # a.limbs[2*k .. 3*k-1] = highProduct.limbs
-
+  a = lowProduct + (middleTerm shr k) + (highProduct shr (2*k))
 
 func `*`*(a, b: BigInt): BigInt =
   ## Multiplication for `BigInt`s.
@@ -1207,12 +1202,8 @@ func powmod*(base, exponent, modulus: BigInt): BigInt =
       exponent = exponent shr 1
 
 when isMainModule:
-  var a = "1311562737969161616".initBigInt
-  echo a.limbs.len
-  var b = "1357909330350306889".initBigInt
-  echo b.limbs.len
-  a = "1780983279228119273110576463639172624".initBigInt
-  b = "1843917749452418885995463656480858321".initBigInt
-  echo a.limbs.len
-  echo b.limbs.len
+  let a = "1780983279228119273110576463639172624".initBigInt
+  let b = "1843917749452418885995463656480858321".initBigInt
+  echo a.limbs
+  echo b.limbs
   echo a*b
