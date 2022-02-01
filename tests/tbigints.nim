@@ -129,6 +129,66 @@ proc main() =
     doAssert zeroEmpty mod one == zero
     doAssert -zeroEmpty mod one == zero
 
+  block: # addition/subtraction
+    block: # self-addition/self-subtraction
+      # self-addition
+      var a = zero
+      a += a
+      doAssert a == zero
+      a = 12.initBigInt
+      a += a
+      doAssert a == 24.initBigInt
+      a = 20736.initBigInt
+      a += a
+      doAssert a == 41472.initBigInt
+      a = "184884258895036416".initBigInt
+      a += a
+      doAssert a == "369768517790072832".initBigInt
+
+      # self-subtraction
+      var b = zero
+      b -= b
+      doAssert b == zero
+      b = 12.initBigInt
+      b -= b
+      doAssert b == zero
+      b = 20736.initBigInt
+      b -= b
+      doAssert b == zero
+      b = "184884258895036416".initBigInt
+      b -= b
+      doAssert b == zero
+
+  block: # multiplication
+    block:
+      let
+        a = "1780983279228119273110576463639172624".initBigInt
+        b = "1843917749452418885995463656480858321".initBigInt
+        c = "3283986680046702618742503890385314117448805445290098330749803441805804304".initBigInt
+      doAssert a * b == c
+      doAssert -a * b == -c
+      doAssert a * -b == -c
+      doAssert -a * -b == c
+
+    block: # self-multiplication
+      var a = 12.initBigInt
+      a *= a
+      doAssert a == 144.initBigInt
+      a *= a
+      doAssert a == 20736.initBigInt
+      a *= a
+      doAssert a == 429981696.initBigInt
+      a *= a
+      doAssert a == "184884258895036416".initBigInt
+      var b = zero
+      b *= b
+      doAssert b == zero
+      var c = one
+      c *= c
+      doAssert c == one
+      a *= b
+      doAssert a == zero
+
   block: # shift
     let
       x = "190485713846014693847".initBigInt
@@ -226,54 +286,6 @@ proc main() =
     doAssert (d xor e) == (d + e)
     doAssert (d xor d) == f
     doAssert (d xor f) == d
-
-  block: # self-addition/self-subtraction
-    # self-addition
-    var a = zero
-    a += a
-    doAssert a == zero
-    a = 12.initBigInt
-    a += a
-    doAssert a == 24.initBigInt
-    a = 20736.initBigInt
-    a += a
-    doAssert a == 41472.initBigInt
-    a = "184884258895036416".initBigInt
-    a += a
-    doAssert a == "369768517790072832".initBigInt
-
-    # self-subtraction
-    var b = zero
-    b -= b
-    doAssert b == zero
-    b = 12.initBigInt
-    b -= b
-    doAssert b == zero
-    b = 20736.initBigInt
-    b -= b
-    doAssert b == zero
-    b = "184884258895036416".initBigInt
-    b -= b
-    doAssert b == zero
-
-  block: # self-multiplication
-    var a = 12.initBigInt
-    a *= a
-    doAssert a == 144.initBigInt
-    a *= a
-    doAssert a == 20736.initBigInt
-    a *= a
-    doAssert a == 429981696.initBigInt
-    a *= a
-    doAssert a == "184884258895036416".initBigInt
-    var b = zero
-    b *= b
-    doAssert b == zero
-    var c = one
-    c *= c
-    doAssert c == one
-    a *= b
-    doAssert a == zero
 
   block: # inc/dec
     var x: BigInt
@@ -390,7 +402,7 @@ proc main() =
     let b = a shl 1
     let c = initBigInt(0xfedcba9876543210'u64)
     let d = initBigInt("ffffffffffffffffff", base = 16)
-    
+
     # first numbers
     doAssert fastLog2(2.initBigInt) == 1
     doAssert fastLog2(3.initBigInt) == 1
@@ -409,7 +421,7 @@ proc main() =
     doAssert fastLog2(b) == 32
     doAssert fastLog2(b+a) == 32
     doAssert fastLog2(c+b+a) == 63
-  
+
     doAssert fastLog2(d) == 71
     doAssert fastLog2(d + one) == 72
     doAssert fastLog2(d - one) == 71
@@ -477,10 +489,26 @@ proc main() =
     doAssert invmod( h, n) == d
     doAssert invmod(-h, n) == f
 
+    block:
+      let
+        a = "2147483647".initBigInt # M_31 mersenne prime
+        b = "2147483649".initBigInt # a^-1 mod m
+        m = "2305843009213693951".initBigInt # M_61 mersenne prime
+      for x in [a - m - m, a - m, a, a + m, a + m + m]:
+        doAssert invmod(x, m) == b
+      for x in [b - m - m, b - m, b, b + m, b + m + m]:
+        doAssert invmod(x, m) == a
+
+    # exceptions
     doAssertRaises(DivByZeroDefect): discard invmod(zero, n)
     doAssertRaises(DivByZeroDefect): discard invmod(one, zero)
     doAssertRaises(ValueError): discard invmod(one, -7.initBigInt)
     doAssertRaises(ValueError): discard invmod(3.initBigInt, 18.initBigInt) # 3 is not invertible since gcd(3, 18) = 3 != 1
+    for x in [-n - n, -n, n, n + n]:
+      doAssertRaises(ValueError): discard invmod(x, n) # invmod(0, n)
+
+    block: # https://rosettacode.org/wiki/Modular_inverse
+      doAssert invmod(42.initBigInt, 2017.initBigInt) == 1969.initBigInt
 
   block: # powmod
     let a = "30292868".initBigInt
@@ -503,28 +531,35 @@ proc main() =
       doAssert powmod(a2, p2, p2) == a2
       a2.inc
 
-  block: # Composite modulus
-    let a = "2472018".initBigInt
-    let n = "3917515".initBigInt # 5 * 7 * 19 * 43 * 137
-    let euler_phi = "2467584".initBigInt
-    doAssert powmod(a, 52.initBigInt, n) == "2305846".initBigInt
-    doAssert powmod(a, euler_phi, n) == one
-    # Edge cases
-    doAssert powmod(a, one, n) == a
-    doAssert powmod(a, zero, n) == one
-    doAssert powmod(zero, zero, n) == one
-    doAssert powmod(zero, one, n) == zero
+    block: # https://rosettacode.org/wiki/Modular_exponentiation
+      let
+        a = "2988348162058574136915891421498819466320163312926952423791023078876139".initBigInt
+        b = "2351399303373464486466122544523690094744975233415544072992656881240319".initBigInt
+        m = pow(10.initBigInt, 40)
+      doAssert powmod(a, b, m) == "1527229998585248450016808958343740453059".initBigInt
 
-  block: # powmod with negative base
-    let a = "1986599".initBigInt
-    let p = "10230581".initBigInt
-    doAssert powmod(-a, 2.initBigInt, p) == "6199079".initBigInt
+    block: # Composite modulus
+      let a = "2472018".initBigInt
+      let n = "3917515".initBigInt # 5 * 7 * 19 * 43 * 137
+      let euler_phi = "2467584".initBigInt
+      doAssert powmod(a, 52.initBigInt, n) == "2305846".initBigInt
+      doAssert powmod(a, euler_phi, n) == one
+      # Edge cases
+      doAssert powmod(a, one, n) == a
+      doAssert powmod(a, zero, n) == one
+      doAssert powmod(zero, zero, n) == one
+      doAssert powmod(zero, one, n) == zero
 
-  block: # powmod with negative exponent
-    let a = "1912".initBigInt
-    let p = "5297".initBigInt
-    doAssert powmod(a, -1.initBigInt, p) == "1460".initBigInt
-    doAssert powmod(a, one-p, p) == one
+    block: # powmod with negative base
+      let a = "1986599".initBigInt
+      let p = "10230581".initBigInt
+      doAssert powmod(-a, 2.initBigInt, p) == "6199079".initBigInt
+
+    block: # powmod with negative exponent
+      let a = "1912".initBigInt
+      let p = "5297".initBigInt
+      doAssert powmod(a, -1.initBigInt, p) == "1460".initBigInt
+      doAssert powmod(a, one-p, p) == one
 
   block: # div/mod
     doAssertRaises(DivByZeroDefect): discard one div zero
