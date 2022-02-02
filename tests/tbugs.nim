@@ -1,3 +1,4 @@
+import std/options
 import bigints
 
 proc main() =
@@ -82,6 +83,9 @@ proc main() =
       b = "359097073186387306".initBigInt
 
     a = a + b  # Error: unhandled exception: index out of bounds, the container is empty [IndexError]
+
+  block: # toInt[int64] produces wrong results in certain cases (https://github.com/nim-lang/bigints/issues/99)
+    doAssert toInt[int64](-initBigInt(0xFFFFFFFF_00000000'u64)) == none(int64)
 
 static: main()
 main()
