@@ -797,54 +797,78 @@ func gcd*(a, b: BigInt): BigInt =
     v = v shr countTrailingZeroBits(v)
 
 
-func toSignedInt*[T: SomeSignedInt](x: BigInt): Option[T] =
-  ## Converts a `BigInt` number to signed integer, if possible.
-  ## If the `BigInt` doesn't fit in a `T`', returns `none`;
-  ## otherwise returns `some(T)`.
+func toInt*[T: SomeInteger](x: BigInt): Option[T] =
+  ## Converts a `BigInt` number to an integer, if possible.
+  ## If the `BigInt` doesn't fit in a `T`, returns `none(T)`;
+  ## otherwise returns `some(x)`.
   runnableExamples:
     import std/options
     let
       a = 44.initBigInt
       b = 130.initBigInt
-    assert toSignedInt[int8](a) == some(44'i8)
-    assert toSignedInt[int8](b) == none(int8)
-    assert toSignedInt[int](b) == some(130)
+    assert toInt[int8](a) == some(44'i8)
+    assert toInt[int8](b) == none(int8)
+    assert toInt[uint8](b) == some(130'u8)
+    assert toInt[int](b) == some(130)
 
-  when sizeof(T) == 8:
-    if x.limbs.len > 2:
-      result = none(T)
-    elif x.limbs.len == 2:
-      if x.limbs[1] > uint32.high shr 1:
-        if x.isNegative and x.limbs[0] == 0:
-          result = some(T(int64.low))
-        else:
-          result = none(T)
-      else:
-        let value = T(x.limbs[1]) shl 32 + T(x.limbs[0])
+  if x.isZero:
+    return some(default(T)) # default(T) is 0
+  when T is SomeSignedInt:
+    # T is signed
+    when sizeof(T) == 8:
+      if x.limbs.len > 2:
+        result = none(T)
+      elif x.limbs.len == 2:
         if x.isNegative:
-          result = some(not(value - 1))
+          if x.limbs[1] > uint32(int32.high) + 1 or (x.limbs[1] == uint32(int32.high) + 1 and x.limbs[0] > 0):
+            result = none(T)
+          else:
+            let value = not T(x.limbs[1].uint64 shl 32 + x.limbs[0] - 1)
+            result = some(value)
         else:
-          result = some(value)
-    else:
-      if x.isNegative:
-        result = some(not T(x.limbs[0] - 1))
+          if x.limbs[1] > uint32(int32.high):
+            result = none(T)
+          else:
+            let value = T(x.limbs[1].uint64 shl 32 + x.limbs[0])
+            result = some(value)
       else:
-        result = some(T(x.limbs[0]))
-  else:
-    if x.limbs.len > 1:
-      result = none(T)
-    else:
-      if x.isNegative:
-        if x.limbs[0] - 1 > uint32(T.high):
-          result = none(T)
-        else:
+        if x.isNegative:
           result = some(not T(x.limbs[0] - 1))
-      else:
-        if x.limbs[0] > uint32(T.high):
-          result = none(T)
         else:
           result = some(T(x.limbs[0]))
-
+    else:
+      if x.limbs.len > 1:
+        result = none(T)
+      else:
+        if x.isNegative:
+          if x.limbs[0] > uint32(T.high) + 1:
+            result = none(T)
+          else:
+            result = some(not T(x.limbs[0] - 1))
+        else:
+          if x.limbs[0] > uint32(T.high):
+            result = none(T)
+          else:
+            result = some(T(x.limbs[0]))
+  else:
+    # T is unsigned
+    if x.isNegative:
+      return none(T)
+    when sizeof(T) == 8:
+      if x.limbs.len > 2:
+        result = none(T)
+      elif x.limbs.len == 2:
+        let value = T(x.limbs[1]) shl 32 + T(x.limbs[0])
+        result = some(value)
+      else:
+        result = some(T(x.limbs[0]))
+    else:
+      if x.limbs.len > 1:
+        result = none(T)
+      elif x.limbs[0] > uint32(T.high):
+        result = none(T)
+      else:
+        result = some(T(x.limbs[0]))
 
 func calcSizes(): array[2..36, int] =
   for i in 2..36:
@@ -1142,4 +1166,3 @@ func powmod*(base, exponent, modulus: BigInt): BigInt =
         result = (result * basePow) mod modulus
       basePow = (basePow * basePow) mod modulus
       exponent = exponent shr 1
-

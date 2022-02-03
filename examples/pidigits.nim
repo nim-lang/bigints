@@ -32,7 +32,7 @@ proc extractDigit(): int32 =
   if tmp2 >= den:
     return -1
 
-  result = get(toSignedInt[int32](tmp1 and mask))
+  result = get(toInt[int32](tmp1 and mask))
 
 proc eliminateDigit(d: int32) =
   acc -= den * d.initBigInt
