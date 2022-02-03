@@ -684,7 +684,7 @@ proc main() =
         k = initBigInt(uint64(int64.high) + 1)
         l = initBigInt(i64l)
         m = initBigInt(i64l + 1)
-        n = initBigInt("-9223372036854775809") # int64.low - 1
+        n = initBigInt(int64.low) - one
       doAssert toInt[int8](i) == none(int8)
       doAssert toInt[int16](i) == none(int16)
       doAssert toInt[int32](i) == none(int32)
@@ -715,7 +715,7 @@ proc main() =
         u64h = uint64.high
         a = initBigInt(u64h)
         b = initBigInt(u64h - 1)
-        c = initBigInt("18446744073709551616") # uint64.high + 1
+        c = initBigInt(uint64.high) + one
       doAssert toInt[uint8](a) == none(uint8)
       doAssert toInt[uint16](a) == none(uint16)
       doAssert toInt[uint32](a) == none(uint32)
