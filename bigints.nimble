@@ -18,3 +18,9 @@ task test, "Test bigints":
       echo "  using " & gc & " GC"
       for file in ["tbigints.nim", "tbugs.nim"]:
         exec "nim r --hints:off --experimental:strictFuncs --backend:" & backend & " --gc:" & gc & " tests/" & file
+
+task checkExamples, "Check examples":
+  echo "checking examples"
+  for example in listFiles("examples"):
+    if example.endsWith(".nim"):
+      exec "nim check --hints:off " & example
