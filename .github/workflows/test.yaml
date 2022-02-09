@@ -17,8 +17,7 @@ jobs:
       matrix:
         nim-version:
           - '1.4.8'
-          - '1.6.2'
-          - 'stable'
+          - '1.6.4'
           - 'devel'
     needs: before
     steps:
