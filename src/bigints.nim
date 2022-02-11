@@ -877,54 +877,78 @@ proc gcd*(a, b: BigInt): BigInt =
     v = v shr countTrailingZeroBits(v)
 
 
-proc toSignedInt*[T: SomeSignedInt](x: BigInt): Option[T] =
-  ## Converts a `BigInt` number to signed integer, if possible.
-  ## If the `BigInt` doesn't fit in a `T`', returns `none`;
-  ## otherwise returns `some(T)`.
+func toInt*[T: SomeInteger](x: BigInt): Option[T] =
+  ## Converts a `BigInt` number to an integer, if possible.
+  ## If the `BigInt` doesn't fit in a `T`, returns `none(T)`;
+  ## otherwise returns `some(x)`.
   runnableExamples:
     import std/options
     let
       a = 44.initBigInt
       b = 130.initBigInt
-    assert toSignedInt[int8](a) == some(44'i8)
-    assert toSignedInt[int8](b) == none(int8)
-    assert toSignedInt[int](b) == some(130)
+    assert toInt[int8](a) == some(44'i8)
+    assert toInt[int8](b) == none(int8)
+    assert toInt[uint8](b) == some(130'u8)
+    assert toInt[int](b) == some(130)
 
-  when sizeof(T) == 8:
-    if x.limbs.len > 2:
-      result = none(T)
-    elif x.limbs.len == 2:
-      if x.limbs[1] > uint32.high shr 1:
-        if x.isNegative and x.limbs[0] == 0:
-          result = some(T(int64.low))
-        else:
-          result = none(T)
-      else:
-        let value = T(x.limbs[1]) shl 32 + T(x.limbs[0])
+  if x.isZero:
+    return some(default(T)) # default(T) is 0
+  when T is SomeSignedInt:
+    # T is signed
+    when sizeof(T) == 8:
+      if x.limbs.len > 2:
+        result = none(T)
+      elif x.limbs.len == 2:
         if x.isNegative:
-          result = some(not(value - 1))
+          if x.limbs[1] > uint32(int32.high) + 1 or (x.limbs[1] == uint32(int32.high) + 1 and x.limbs[0] > 0):
+            result = none(T)
+          else:
+            let value = not T(x.limbs[1].uint64 shl 32 + x.limbs[0] - 1)
+            result = some(value)
         else:
-          result = some(value)
-    else:
-      if x.isNegative:
-        result = some(not T(x.limbs[0] - 1))
+          if x.limbs[1] > uint32(int32.high):
+            result = none(T)
+          else:
+            let value = T(x.limbs[1].uint64 shl 32 + x.limbs[0])
+            result = some(value)
       else:
-        result = some(T(x.limbs[0]))
-  else:
-    if x.limbs.len > 1:
-      result = none(T)
-    else:
-      if x.isNegative:
-        if x.limbs[0] - 1 > uint32(T.high):
-          result = none(T)
-        else:
+        if x.isNegative:
           result = some(not T(x.limbs[0] - 1))
-      else:
-        if x.limbs[0] > uint32(T.high):
-          result = none(T)
         else:
           result = some(T(x.limbs[0]))
-
+    else:
+      if x.limbs.len > 1:
+        result = none(T)
+      else:
+        if x.isNegative:
+          if x.limbs[0] > uint32(T.high) + 1:
+            result = none(T)
+          else:
+            result = some(not T(x.limbs[0] - 1))
+        else:
+          if x.limbs[0] > uint32(T.high):
+            result = none(T)
+          else:
+            result = some(T(x.limbs[0]))
+  else:
+    # T is unsigned
+    if x.isNegative:
+      return none(T)
+    when sizeof(T) == 8:
+      if x.limbs.len > 2:
+        result = none(T)
+      elif x.limbs.len == 2:
+        let value = T(x.limbs[1]) shl 32 + T(x.limbs[0])
+        result = some(value)
+      else:
+        result = some(T(x.limbs[0]))
+    else:
+      if x.limbs.len > 1:
+        result = none(T)
+      elif x.limbs[0] > uint32(T.high):
+        result = none(T)
+      else:
+        result = some(T(x.limbs[0]))
 
 proc calcSizes(): array[2..36, int] =
   for i in 2..36:
@@ -1148,7 +1172,22 @@ iterator `..<`*(a, b: BigInt): BigInt =
     yield res
     inc res
 
-proc invmod*(a, modulus: BigInt): BigInt =
+func modulo(a, modulus: BigInt): BigInt =
+  ## Like `mod`, but the result is always in the range `[0, modulus-1]`.
+  ## `modulus` should be greater than zero.
+  result = a mod modulus
+  if result < 0:
+    result += modulus
+
+func fastLog2*(a: BigInt): int =
+  ## Computes the logarithm in base 2 of `a`.
+  ## If `a` is negative, returns the logarithm of `abs(a)`.
+  ## If `a` is zero, returns -1.
+  if a.isZero:
+    return -1
+  bitops.fastLog2(a.limbs[^1]) + 32*(a.limbs.high)
+
+func invmod*(a, modulus: BigInt): BigInt =
   ## Compute the modular inverse of `a` modulo `modulus`.
   ## The return value is always in the range `[1, modulus-1]`
   runnableExamples:
@@ -1163,23 +1202,22 @@ proc invmod*(a, modulus: BigInt): BigInt =
     raise newException(DivByZeroDefect, "0 has no modular inverse")
   else:
     var
-      r0 = ((a mod modulus) + modulus) mod modulus
-      r1 = modulus
-      s0 = one
-      s1 = zero
+      r0 = modulus
+      r1 = a.modulo(modulus)
+      t0 = zero
+      t1 = one
+    var rk, tk: BigInt # otherwise t1 is incorrectly inferred as cursor (https://github.com/nim-lang/Nim/issues/19457)
     while r1 > 0:
-      let
-        q = r0 div r1
-        # the `q.isZero` check is needed because of an ARC/ORC bug (see https://github.com/nim-lang/bigints/issues/88)
-        rk = if q.isZero: r0 else: r0 - q * r1
-        sk = if q.isZero: s0 else: s0 - q * s1
+      let q = r0 div r1
+      rk = r0 - q * r1
+      tk = t0 - q * t1
       r0 = r1
       r1 = rk
-      s0 = s1
-      s1 = sk
+      t0 = t1
+      t1 = tk
     if r0 != one:
       raise newException(ValueError, $a & " has no modular inverse modulo " & $modulus)
-    result = ((s0 mod modulus) + modulus) mod modulus
+    result = t0.modulo(modulus)
 
 proc powmod*(base, exponent, modulus: BigInt): BigInt =
   ## Compute modular exponentation of `base` with power `exponent` modulo `modulus`.
@@ -1199,8 +1237,7 @@ proc powmod*(base, exponent, modulus: BigInt): BigInt =
     if exponent < 0:
       base = invmod(base, modulus)
       exponent = -exponent
-    var
-      basePow = ((base mod modulus) + modulus) mod modulus # Base stays in [0, m-1]
+    var basePow = base.modulo(modulus)
     result = one
     while not exponent.isZero:
       if (exponent.limbs[0] and 1) != 0:

@@ -129,6 +129,79 @@ proc main() =
     doAssert zeroEmpty mod one == zero
     doAssert -zeroEmpty mod one == zero
 
+    # toInt
+    for z in [zero, zeroEmpty, -zero, -zeroEmpty]:
+      doAssert toInt[int](z) == some(0)
+      doAssert toInt[int8](z) == some(0'i8)
+      doAssert toInt[int16](z) == some(0'i16)
+      doAssert toInt[int32](z) == some(0'i32)
+      doAssert toInt[int64](z) == some(0'i64)
+      doAssert toInt[uint](z) == some(0'u)
+      doAssert toInt[uint8](z) == some(0'u8)
+      doAssert toInt[uint16](z) == some(0'u16)
+      doAssert toInt[uint32](z) == some(0'u32)
+      doAssert toInt[uint64](z) == some(0'u64)
+
+  block: # addition/subtraction
+    block: # self-addition/self-subtraction
+      # self-addition
+      var a = zero
+      a += a
+      doAssert a == zero
+      a = 12.initBigInt
+      a += a
+      doAssert a == 24.initBigInt
+      a = 20736.initBigInt
+      a += a
+      doAssert a == 41472.initBigInt
+      a = "184884258895036416".initBigInt
+      a += a
+      doAssert a == "369768517790072832".initBigInt
+
+      # self-subtraction
+      var b = zero
+      b -= b
+      doAssert b == zero
+      b = 12.initBigInt
+      b -= b
+      doAssert b == zero
+      b = 20736.initBigInt
+      b -= b
+      doAssert b == zero
+      b = "184884258895036416".initBigInt
+      b -= b
+      doAssert b == zero
+
+  block: # multiplication
+    block:
+      let
+        a = "1780983279228119273110576463639172624".initBigInt
+        b = "1843917749452418885995463656480858321".initBigInt
+        c = "3283986680046702618742503890385314117448805445290098330749803441805804304".initBigInt
+      doAssert a * b == c
+      doAssert -a * b == -c
+      doAssert a * -b == -c
+      doAssert -a * -b == c
+
+    block: # self-multiplication
+      var a = 12.initBigInt
+      a *= a
+      doAssert a == 144.initBigInt
+      a *= a
+      doAssert a == 20736.initBigInt
+      a *= a
+      doAssert a == 429981696.initBigInt
+      a *= a
+      doAssert a == "184884258895036416".initBigInt
+      var b = zero
+      b *= b
+      doAssert b == zero
+      var c = one
+      c *= c
+      doAssert c == one
+      a *= b
+      doAssert a == zero
+
   block: # shift
     let
       x = "190485713846014693847".initBigInt
@@ -413,6 +486,56 @@ proc main() =
     doAssert "fedcba9876543210".initBigInt(base = 16) == b
     doAssert "ftn5qj1r58cgg".initBigInt(base = 32) == b
 
+  block: # fastLog2
+    let a = one shl 31
+    let b = a shl 1
+    let c = initBigInt(0xfedcba9876543210'u64)
+    let d = initBigInt("ffffffffffffffffff", base = 16)
+
+    # first numbers
+    doAssert fastLog2(2.initBigInt) == 1
+    doAssert fastLog2(3.initBigInt) == 1
+    doAssert fastLog2(4.initBigInt) == 2
+    doAssert fastLog2(5.initBigInt) == 2
+    doAssert fastLog2(7.initBigInt) == 2
+    doAssert fastLog2(8.initBigInt) == 3
+    doAssert fastLog2(24.initBigInt) == 4
+    doAssert fastLog2(32.initBigInt) == 5
+    doAssert fastLog2(48.initBigInt) == 5
+
+    # one limb
+    doAssert fastLog2(a) == 31
+
+    # two limbs and more
+    doAssert fastLog2(b) == 32
+    doAssert fastLog2(b+a) == 32
+    doAssert fastLog2(c+b+a) == 63
+
+    doAssert fastLog2(d) == 71
+    doAssert fastLog2(d + one) == 72
+    doAssert fastLog2(d - one) == 71
+    doAssert fastLog2(-d) == 71
+    doAssert fastLog2(-d - one) == 72
+    doAssert fastLog2(-d + one) == 71
+
+    # negative BigInts
+    doAssert fastLog2(-2.initBigInt) == 1
+    doAssert fastLog2(-3.initBigInt) == 1
+    doAssert fastLog2(-4.initBigInt) == 2
+    doAssert fastLog2(-5.initBigInt) == 2
+    doAssert fastLog2(-7.initBigInt) == 2
+    doAssert fastLog2(-8.initBigInt) == 3
+    doAssert fastLog2(-24.initBigInt) == 4
+    doAssert fastLog2(-32.initBigInt) == 5
+    doAssert fastLog2(-48.initBigInt) == 5
+    doAssert fastLog2(-a) == 31
+    doAssert fastLog2(-b) == 32
+
+    # edge cases
+    doAssert fastLog2(one) == 0
+    doAssert fastLog2(zero) == -1
+
+
   block: # pow
     let a = "14075287".initBigInt
     doAssert pow(a, 0) == one
@@ -455,10 +578,26 @@ proc main() =
     doAssert invmod( h, n) == d
     doAssert invmod(-h, n) == f
 
+    block:
+      let
+        a = "2147483647".initBigInt # M_31 mersenne prime
+        b = "2147483649".initBigInt # a^-1 mod m
+        m = "2305843009213693951".initBigInt # M_61 mersenne prime
+      for x in [a - m - m, a - m, a, a + m, a + m + m]:
+        doAssert invmod(x, m) == b
+      for x in [b - m - m, b - m, b, b + m, b + m + m]:
+        doAssert invmod(x, m) == a
+
+    # exceptions
     doAssertRaises(DivByZeroDefect): discard invmod(zero, n)
     doAssertRaises(DivByZeroDefect): discard invmod(one, zero)
     doAssertRaises(ValueError): discard invmod(one, -7.initBigInt)
     doAssertRaises(ValueError): discard invmod(3.initBigInt, 18.initBigInt) # 3 is not invertible since gcd(3, 18) = 3 != 1
+    for x in [-n - n, -n, n, n + n]:
+      doAssertRaises(ValueError): discard invmod(x, n) # invmod(0, n)
+
+    block: # https://rosettacode.org/wiki/Modular_inverse
+      doAssert invmod(42.initBigInt, 2017.initBigInt) == 1969.initBigInt
 
   block: # powmod
     let a = "30292868".initBigInt
@@ -481,28 +620,35 @@ proc main() =
       doAssert powmod(a2, p2, p2) == a2
       a2.inc
 
-  block: # Composite modulus
-    let a = "2472018".initBigInt
-    let n = "3917515".initBigInt # 5 * 7 * 19 * 43 * 137
-    let euler_phi = "2467584".initBigInt
-    doAssert powmod(a, 52.initBigInt, n) == "2305846".initBigInt
-    doAssert powmod(a, euler_phi, n) == one
-    # Edge cases
-    doAssert powmod(a, one, n) == a
-    doAssert powmod(a, zero, n) == one
-    doAssert powmod(zero, zero, n) == one
-    doAssert powmod(zero, one, n) == zero
+    block: # https://rosettacode.org/wiki/Modular_exponentiation
+      let
+        a = "2988348162058574136915891421498819466320163312926952423791023078876139".initBigInt
+        b = "2351399303373464486466122544523690094744975233415544072992656881240319".initBigInt
+        m = pow(10.initBigInt, 40)
+      doAssert powmod(a, b, m) == "1527229998585248450016808958343740453059".initBigInt
 
-  block: # powmod with negative base
-    let a = "1986599".initBigInt
-    let p = "10230581".initBigInt
-    doAssert powmod(-a, 2.initBigInt, p) == "6199079".initBigInt
+    block: # Composite modulus
+      let a = "2472018".initBigInt
+      let n = "3917515".initBigInt # 5 * 7 * 19 * 43 * 137
+      let euler_phi = "2467584".initBigInt
+      doAssert powmod(a, 52.initBigInt, n) == "2305846".initBigInt
+      doAssert powmod(a, euler_phi, n) == one
+      # Edge cases
+      doAssert powmod(a, one, n) == a
+      doAssert powmod(a, zero, n) == one
+      doAssert powmod(zero, zero, n) == one
+      doAssert powmod(zero, one, n) == zero
 
-  block: # powmod with negative exponent
-    let a = "1912".initBigInt
-    let p = "5297".initBigInt
-    doAssert powmod(a, -1.initBigInt, p) == "1460".initBigInt
-    doAssert powmod(a, one-p, p) == one
+    block: # powmod with negative base
+      let a = "1986599".initBigInt
+      let p = "10230581".initBigInt
+      doAssert powmod(-a, 2.initBigInt, p) == "6199079".initBigInt
+
+    block: # powmod with negative exponent
+      let a = "1912".initBigInt
+      let p = "5297".initBigInt
+      doAssert powmod(a, -1.initBigInt, p) == "1460".initBigInt
+      doAssert powmod(a, one-p, p) == one
 
   block: # div/mod
     doAssertRaises(DivByZeroDefect): discard one div zero
@@ -538,68 +684,126 @@ proc main() =
     doAssert abs(one) == one
     doAssert abs(-one) == one
 
-  block: # toSignedInt
+  block: # toInt
     let
       a = initBigInt(7)
       b = initBigInt(-7)
-    doAssert toSignedInt[int8](a) == some(7'i8)
-    doAssert toSignedInt[int8](b) == some(-7'i8)
+    doAssert toInt[int8](a) == some(7'i8)
+    doAssert toInt[int8](b) == some(-7'i8)
+    doAssert toInt[uint8](a) == some(7'u8)
+    doAssert toInt[uint8](b) == none(uint8)
+    doAssert toInt[int16](a) == some(7'i16)
+    doAssert toInt[int16](b) == some(-7'i16)
+    doAssert toInt[uint16](a) == some(7'u16)
+    doAssert toInt[uint16](b) == none(uint16)
 
-    let
-      i32h = int32.high
-      i32l = int32.low
-      c = initBigInt(i32h)
-      d = initBigInt(i32h - 1)
-      e = initBigInt(int64(i32h) + 1)
-      f = initBigInt(i32l)
-      g = initBigInt(i32l + 1)
-      h = initBigInt(int64(i32l) - 1)
-    doAssert toSignedInt[int8](c) == none(int8)
-    doAssert toSignedInt[int32](c) == some(i32h)
-    doAssert toSignedInt[int](c) == some(i32h.int)
-    doAssert toSignedInt[int8](d) == none(int8)
-    doAssert toSignedInt[int32](d) == some(i32h - 1)
-    doAssert toSignedInt[int](d) == some(i32h.int - 1)
-    doAssert toSignedInt[int8](e) == none(int8)
-    doAssert toSignedInt[int32](e) == none(int32)
-    doAssert toSignedInt[int64](e) == some(i32h.int64 + 1)
-    doAssert toSignedInt[int8](f) == none(int8)
-    doAssert toSignedInt[int32](f) == some(i32l)
-    doAssert toSignedInt[int](f) == some(i32l.int)
-    doAssert toSignedInt[int8](g) == none(int8)
-    doAssert toSignedInt[int32](g) == some(i32l + 1)
-    doAssert toSignedInt[int](g) == some(i32l.int + 1)
-    doAssert toSignedInt[int8](h) == none(int8)
-    doAssert toSignedInt[int32](h) == none(int32)
-    doAssert toSignedInt[int64](h) == some(i32l.int64 - 1)
+    block: # int32
+      let
+        i32h = int32.high
+        i32l = int32.low
+        c = initBigInt(i32h)
+        d = initBigInt(i32h - 1)
+        e = initBigInt(int64(i32h) + 1)
+        f = initBigInt(i32l)
+        g = initBigInt(i32l + 1)
+        h = initBigInt(int64(i32l) - 1)
+      doAssert toInt[int8](c) == none(int8)
+      doAssert toInt[int16](c) == none(int16)
+      doAssert toInt[int32](c) == some(i32h)
+      doAssert toInt[int](c) == some(i32h.int)
+      doAssert toInt[int8](d) == none(int8)
+      doAssert toInt[int16](d) == none(int16)
+      doAssert toInt[int32](d) == some(i32h - 1)
+      doAssert toInt[int](d) == some(i32h.int - 1)
+      doAssert toInt[int8](e) == none(int8)
+      doAssert toInt[int16](e) == none(int16)
+      doAssert toInt[int32](e) == none(int32)
+      doAssert toInt[int64](e) == some(i32h.int64 + 1)
+      doAssert toInt[int8](f) == none(int8)
+      doAssert toInt[int16](f) == none(int16)
+      doAssert toInt[int32](f) == some(i32l)
+      doAssert toInt[int](f) == some(i32l.int)
+      doAssert toInt[int8](g) == none(int8)
+      doAssert toInt[int16](g) == none(int16)
+      doAssert toInt[int32](g) == some(i32l + 1)
+      doAssert toInt[int](g) == some(i32l.int + 1)
+      doAssert toInt[int8](h) == none(int8)
+      doAssert toInt[int16](h) == none(int16)
+      doAssert toInt[int32](h) == none(int32)
+      doAssert toInt[int64](h) == some(i32l.int64 - 1)
 
-    let
-      i64h = int64.high
-      i64l = int64.low
-      i = initBigInt(i64h)
-      j = initBigInt(i64h - 1)
-      k = initBigInt(uint64(int64.high) + 1)
-      l = initBigInt(i64l)
-      m = initBigInt(i64l + 1)
-      n = initBigInt("-9223372036854775809") # int64.low - 1
-    doAssert toSignedInt[int8](i) == none(int8)
-    doAssert toSignedInt[int32](i) == none(int32)
-    doAssert toSignedInt[int64](i) == some(i64h)
-    doAssert toSignedInt[int8](j) == none(int8)
-    doAssert toSignedInt[int32](j) == none(int32)
-    doAssert toSignedInt[int64](j) == some(i64h - 1)
-    doAssert toSignedInt[int8](k) == none(int8)
-    doAssert toSignedInt[int32](k) == none(int32)
-    doAssert toSignedInt[int64](k) == none(int64)
-    doAssert toSignedInt[int8](l) == none(int8)
-    doAssert toSignedInt[int32](l) == none(int32)
-    doAssert toSignedInt[int64](l) == some(i64l)
-    doAssert toSignedInt[int8](m) == none(int8)
-    doAssert toSignedInt[int32](m) == none(int32)
-    doAssert toSignedInt[int64](m) == some(i64l + 1)
-    doAssert toSignedInt[int8](n) == none(int8)
-    doAssert toSignedInt[int32](n) == none(int32)
-    doAssert toSignedInt[int64](n) == none(int64)
+    block: # uint32
+      let
+        u32h = uint32.high
+        a = initBigInt(u32h)
+        b = initBigInt(u32h - 1)
+        c = initBigInt(uint64(u32h) + 1)
+      doAssert toInt[uint8](a) == none(uint8)
+      doAssert toInt[uint16](a) == none(uint16)
+      doAssert toInt[uint32](a) == some(u32h)
+      doAssert toInt[uint](a) == some(u32h.uint)
+      doAssert toInt[uint8](b) == none(uint8)
+      doAssert toInt[uint16](b) == none(uint16)
+      doAssert toInt[uint32](b) == some(u32h - 1)
+      doAssert toInt[uint](b) == some(u32h.uint - 1)
+      doAssert toInt[uint8](c) == none(uint8)
+      doAssert toInt[uint16](c) == none(uint16)
+      doAssert toInt[uint32](c) == none(uint32)
+      doAssert toInt[uint64](c) == some(u32h.uint64 + 1)
+
+    block: # int64
+      let
+        i64h = int64.high
+        i64l = int64.low
+        i = initBigInt(i64h)
+        j = initBigInt(i64h - 1)
+        k = initBigInt(uint64(int64.high) + 1)
+        l = initBigInt(i64l)
+        m = initBigInt(i64l + 1)
+        n = initBigInt(int64.low) - one
+      doAssert toInt[int8](i) == none(int8)
+      doAssert toInt[int16](i) == none(int16)
+      doAssert toInt[int32](i) == none(int32)
+      doAssert toInt[int64](i) == some(i64h)
+      doAssert toInt[int8](j) == none(int8)
+      doAssert toInt[int16](j) == none(int16)
+      doAssert toInt[int32](j) == none(int32)
+      doAssert toInt[int64](j) == some(i64h - 1)
+      doAssert toInt[int8](k) == none(int8)
+      doAssert toInt[int16](k) == none(int16)
+      doAssert toInt[int32](k) == none(int32)
+      doAssert toInt[int64](k) == none(int64)
+      doAssert toInt[int8](l) == none(int8)
+      doAssert toInt[int16](l) == none(int16)
+      doAssert toInt[int32](l) == none(int32)
+      doAssert toInt[int64](l) == some(i64l)
+      doAssert toInt[int8](m) == none(int8)
+      doAssert toInt[int16](m) == none(int16)
+      doAssert toInt[int32](m) == none(int32)
+      doAssert toInt[int64](m) == some(i64l + 1)
+      doAssert toInt[int8](n) == none(int8)
+      doAssert toInt[int16](n) == none(int16)
+      doAssert toInt[int32](n) == none(int32)
+      doAssert toInt[int64](n) == none(int64)
+
+    block: # uint64
+      let
+        u64h = uint64.high
+        a = initBigInt(u64h)
+        b = initBigInt(u64h - 1)
+        c = initBigInt(uint64.high) + one
+      doAssert toInt[uint8](a) == none(uint8)
+      doAssert toInt[uint16](a) == none(uint16)
+      doAssert toInt[uint32](a) == none(uint32)
+      doAssert toInt[uint64](a) == some(u64h)
+      doAssert toInt[uint8](b) == none(uint8)
+      doAssert toInt[uint16](b) == none(uint16)
+      doAssert toInt[uint32](b) == none(uint32)
+      doAssert toInt[uint64](b) == some(u64h - 1)
+      doAssert toInt[uint8](c) == none(uint8)
+      doAssert toInt[uint16](c) == none(uint16)
+      doAssert toInt[uint32](c) == none(uint32)
+      doAssert toInt[uint64](c) == none(uint64)
 
   block: # pred/succ
     let a = initBigInt(7)

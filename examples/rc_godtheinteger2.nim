@@ -1,4 +1,4 @@
-# Solution for http://rosettacode.org/wiki/9_billion_names_of_God_the_integer#Python
+# Solution for https://rosettacode.org/wiki/9_billion_names_of_God_the_integer#Python
 import bigints
 
 var p = @[1.initBigInt]
