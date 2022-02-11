@@ -419,14 +419,16 @@ func unsignedMultiplication(a: var BigInt, b, c: BigInt) {.inline.} =
   normalize(a)
 
 func scalarMultiplication(a: var BigInt, b: BigInt, c: uint32) {.inline.} =
-  # always called with bl >= cl
+  if c == 0:
+    return zero
   let
     bl = b.limbs.len
   a.limbs.setLen(bl + 1)
   var tmp = 0'u64
+  let c = uint64(c)
 
   for i in 0 ..< bl:
-    tmp += uint64(b.limbs[i]) * uint64(c)
+    tmp += uint64(b.limbs[i]) * c
     a.limbs[i] = uint32(tmp and uint32.high)
     tmp = tmp shr 32
 
