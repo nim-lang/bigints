@@ -957,12 +957,12 @@ func initBigInt*(str: string, base: range[2..36] = 10): BigInt =
   case str[0]
   of '-':
     if str.len == 1:
-      raise newException(ValueError, "Empty input")
+      raise newException(ValueError, "Invalid input: " & str)
     first = 1
     neg = true
   of '+':
     if str.len == 1:
-      raise newException(ValueError, "Empty input")
+      raise newException(ValueError, "Invalid input: " & str)
     first = 1
   of '_':
     raise newException(ValueError, "A number can not begin with _")
@@ -973,8 +973,10 @@ func initBigInt*(str: string, base: range[2..36] = 10): BigInt =
   of 'A'..'Z':
     discard
   else:
-    raise newException(ValueError, "The digit has not been recognized: " & str[0])
-  
+    raise newException(ValueError, "Unrecognized digit: " & str[0])
+  if str[^1] == '_':
+    raise newException(ValueError, "A number can not end with _")
+
   if base in powers:
     # base is a power of two, so each digit corresponds to a block of bits
     let bits = countTrailingZeroBits(base) # bits per digit
