@@ -64,7 +64,7 @@ func initBigInt*(val: BigInt): BigInt =
 const
   zero = initBigInt(0)
   one = initBigInt(1)
-  karatsubaTreshold = 10
+  karatsubaThreshold = 10
 
 func isZero(a: BigInt): bool {.inline.} =
   for i in countdown(a.limbs.high, 0):
