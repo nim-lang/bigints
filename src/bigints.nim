@@ -961,6 +961,16 @@ func parseDigit(c: char, base: uint32): uint32 {.inline.} =
   if result >= base:
     raise newException(ValueError, "Invalid input: " & c)
 
+func filterUnderscores(str: var string) =
+  var k = 0 # the amount of underscores
+  for i in 0 .. str.high:
+    let c = str[i]
+    if c == '_':
+      inc k
+    elif k > 0:
+      str[i - k] = c
+  str.setLen(str.len - k)
+
 func initBigInt*(str: string, base: range[2..36] = 10): BigInt =
   ## Create a `BigInt` from a string. For invalid inputs, a `ValueError` exception is raised.
   runnableExamples:
@@ -988,16 +998,10 @@ func initBigInt*(str: string, base: range[2..36] = 10): BigInt =
     if str.len == 1:
       raise newException(ValueError, "Invalid input: " & str)
     first = 1
-  of '_':
-    raise newException(ValueError, "A number can not begin with _")
-  of '0'..'9':
-    discard
-  of 'a'..'z':
-    discard
-  of 'A'..'Z':
-    discard
   else:
-    raise newException(ValueError, "Unrecognized digit: " & str[0])
+    discard
+  if str[first] == '_':
+    raise newException(ValueError, "A number can not begin with _")
   if str[^1] == '_':
     raise newException(ValueError, "A number can not end with _")
 
@@ -1020,6 +1024,8 @@ func initBigInt*(str: string, base: range[2..36] = 10): BigInt =
       result.limbs.add(acc)
     result.normalize()
   else:
+    var str = str
+    filterUnderscores(str)
     let d = initBigInt(base ^ size)
     for i in countup(first, str.high, size):
       var num = 0'u32 # the accumulator in this block

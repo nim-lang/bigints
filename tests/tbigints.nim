@@ -59,7 +59,6 @@ proc main() =
       let c2 = "+123_456_789".initBigInt
       doAssert $c2 == "123456789"
       let d2 = "+123_456_789_012_345_678".initBigInt
-      echo "+123_456_789_012_345_678: ", d2
       doAssert $d2 == "123456789012345678"
 
       # Trailing underscores and - sign
