@@ -961,7 +961,7 @@ func parseDigit(c: char, base: uint32): uint32 {.inline.} =
   if result >= base:
     raise newException(ValueError, "Invalid input: " & c)
 
-func filterUnderscores(str: var string) =
+func filterUnderscores(str: var string) {.inline.} =
   var k = 0 # the amount of underscores
   for i in 0 .. str.high:
     let c = str[i]
