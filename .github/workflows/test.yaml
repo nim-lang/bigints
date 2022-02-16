@@ -1,15 +1,15 @@
 name: test
 
 on:
-  push:
-  pull_request:
+  - push
+  - pull_request
 
 jobs:
   before:
     runs-on: ubuntu-latest
     if: "! contains(github.event.head_commit.message, '[skip ci]')"
     steps:
-      - run: echo "not contains '[skip ci]'"
+      - run: echo "commit message doesn't contain '[skip ci]'"
 
   test:
     runs-on: ubuntu-latest
@@ -17,8 +17,7 @@ jobs:
       matrix:
         nim-version:
           - '1.4.8'
-          - '1.6.0'
-          - 'stable'
+          - '1.6.4'
           - 'devel'
     needs: before
     steps:
@@ -28,3 +27,4 @@ jobs:
           nim-version: ${{ matrix.nim-version }}
       - run: nimble install -y
       - run: nimble test
+      - run: nimble checkExamples
