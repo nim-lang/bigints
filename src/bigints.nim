@@ -1031,7 +1031,7 @@ func initBigInt*(str: string, base: range[2..36] = 10): BigInt =
       var num = 0'u32 # the accumulator in this block
       if i + size <= str.len:
         # iterator over a block of length `size`, so we can use `d`
-        for j in countup(i, min(i + size - 1, str.high)):
+        for j in countup(i, i + size - 1):
           if str[j] != '_':
             let digit = parseDigit(str[j], base)
             num = (num * base) + digit
