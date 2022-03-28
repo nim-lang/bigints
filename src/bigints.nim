@@ -961,6 +961,16 @@ func parseDigit(c: char, base: uint32): uint32 {.inline.} =
   if result >= base:
     raise newException(ValueError, "Invalid input: " & c)
 
+func filterUnderscores(str: var string) {.inline.} =
+  var k = 0 # the amount of underscores
+  for i in 0 .. str.high:
+    let c = str[i]
+    if c == '_':
+      inc k
+    elif k > 0:
+      str[i - k] = c
+  str.setLen(str.len - k)
+
 func initBigInt*(str: string, base: range[2..36] = 10): BigInt =
   ## Create a `BigInt` from a string. For invalid inputs, a `ValueError` exception is raised.
   runnableExamples:
@@ -978,9 +988,22 @@ func initBigInt*(str: string, base: range[2..36] = 10): BigInt =
   var first = 0
   var neg = false
 
-  if str[0] == '-':
+  case str[0]
+  of '-':
+    if str.len == 1:
+      raise newException(ValueError, "Invalid input: " & str)
     first = 1
     neg = true
+  of '+':
+    if str.len == 1:
+      raise newException(ValueError, "Invalid input: " & str)
+    first = 1
+  else:
+    discard
+  if str[first] == '_':
+    raise newException(ValueError, "A number can not begin with _")
+  if str[^1] == '_':
+    raise newException(ValueError, "A number can not end with _")
 
   if base in powers:
     # base is a power of two, so each digit corresponds to a block of bits
@@ -989,33 +1012,38 @@ func initBigInt*(str: string, base: range[2..36] = 10): BigInt =
       acc = 0'u32
       accBits = 0 # the number of bits needed for acc
     for i in countdown(str.high, first):
-      let digit = parseDigit(str[i], base)
-      acc = acc or (digit shl accBits)
-      accBits += bits
-      if accBits >= 32:
-        result.limbs.add(acc)
-        accBits -= 32
-        acc = digit shr (bits - accBits)
+      if str[i] != '_':
+        let digit = parseDigit(str[i], base)
+        acc = acc or (digit shl accBits)
+        accBits += bits
+        if accBits >= 32:
+          result.limbs.add(acc)
+          accBits -= 32
+          acc = digit shr (bits - accBits)
     if acc > 0:
       result.limbs.add(acc)
     result.normalize()
   else:
+    var str = str
+    filterUnderscores(str)
     let d = initBigInt(base ^ size)
     for i in countup(first, str.high, size):
       var num = 0'u32 # the accumulator in this block
       if i + size <= str.len:
         # iterator over a block of length `size`, so we can use `d`
-        for j in countup(i, min(i + size - 1, str.high)):
-          let digit = parseDigit(str[j], base)
-          num = (num * base) + digit
+        for j in countup(i, i + size - 1):
+          if str[j] != '_':
+            let digit = parseDigit(str[j], base)
+            num = (num * base) + digit
         unsignedAdditionInt(result, result * d, num)
       else:
         # iterator over a block smaller than `size`, so we have to compute `mul`
         var mul = 1'u32 # the multiplication factor for num
         for j in countup(i, min(i + size - 1, str.high)):
-          let digit = parseDigit(str[j], base)
-          num = (num * base) + digit
-          mul *= base
+          if str[j] != '_':
+            let digit = parseDigit(str[j], base)
+            num = (num * base) + digit
+            mul *= base
         unsignedAdditionInt(result, result * initBigInt(mul), num)
 
   result.isNegative = neg

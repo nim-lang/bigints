@@ -31,6 +31,56 @@ proc main() =
     let h = 1234567.initBigInt
     let i = h.initBigInt
     doAssert $h == $i
+  
+    block:
+      # + sign
+      let plus = "+1234567".initBigInt
+      doAssert $plus == "1234567"
+
+      # Trailing underscores
+      # after 1 digit
+      let a = "1_234_567".initBigInt
+      doAssert $a == "1234567"
+      # after 2 digits
+      let b = "12_345_678".initBigInt
+      doAssert $b == "12345678"
+      # after 3 digits
+      let c = "123_456_789".initBigInt
+      doAssert $c == "123456789"
+
+      # Trailing underscores and + sign
+      # after 1 digit
+      let a2 = "+1_234_567".initBigInt
+      doAssert $a2 == "1234567"
+      # after 2 digits
+      let b2 = "+12_345_678".initBigInt
+      doAssert $b2 == "12345678"
+      # after 3 digits
+      let c2 = "+123_456_789".initBigInt
+      doAssert $c2 == "123456789"
+      let d2 = "+123_456_789_012_345_678".initBigInt
+      doAssert $d2 == "123456789012345678"
+
+      # Trailing underscores and - sign
+      let a3 = "-1_234_567".initBigInt
+      doAssert $a3 == "-1234567"
+      # after 2 digits
+      let b3 = "-12_345_678".initBigInt
+      doAssert $b3 == "-12345678"
+      # after 3 digits
+      let c3 = "-123_456_789".initBigInt
+      doAssert $c3 == "-123456789"
+      let d3 = "-123_456_789_012_345_678".initBigInt
+      doAssert $d3 == "-123456789012345678"
+
+    block:
+      # Wrong formatting of numbers should raise a ValueError
+      doAssertRaises(ValueError): discard "+".initBigInt
+      doAssertRaises(ValueError): discard "-".initBigInt
+      doAssertRaises(ValueError): discard "+@1".initBigInt
+      doAssertRaises(ValueError): discard "+_1".initBigInt
+      doAssertRaises(ValueError): discard "_123_345_678".initBigInt
+      doAssertRaises(ValueError): discard "_12_3_345_678".initBigInt
 
     # test various bit patterns at power-of-two boundaries
     block:
