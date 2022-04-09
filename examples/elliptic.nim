@@ -50,6 +50,9 @@ proc ecMultiply(genPoint: tuple, scalarHex: BigInt): (BigInt, BigInt) =
 
 proc main() =
   let publicKey = ecMultiply(Gpoint, privKey)
+  let officialKey =
+    if publicKey[1] mod two == one: "03" & publicKey[0].toString(base = 16)
+    else: "02" & publicKey[0].toString(base = 16)
 
   echo &"""
 ******* Public Key Generation *********
@@ -64,8 +67,7 @@ the uncompressed public key (HEX):
 04{publicKey[0].toString(base = 16):0>64}{publicKey[1].toString(base = 16):0>64}
 
 the official Public Key - compressed:
-{(if publicKey[1] mod two == one: "03" & publicKey[0].toString(base = 16)
-  else: "02" & publicKey[0].toString(base = 16)):0>64}
+{officialKey:0>64}
 """
 
 main()
