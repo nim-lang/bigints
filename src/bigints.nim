@@ -4,6 +4,10 @@ import std/[algorithm, bitops, math, options]
 
 type
   BigInt* = object
+    ## An arbitrary precision integer.
+    # Invariants for `a: BigInt`:
+    # * if `a` is non-zero: `a.limbs[a.limbs.high] != 0`
+    # * if `a` is zero: `a.limbs.len <= 1`
     limbs: seq[uint32]
     isNegative: bool
 
@@ -23,6 +27,7 @@ func initBigInt*(vals: sink seq[uint32], isNegative = false): BigInt =
     assert $a == $b
   result.limbs = vals
   result.isNegative = isNegative
+  normalize(result)
 
 func initBigInt*[T: int8|int16|int32](val: T): BigInt =
   if val < 0:
@@ -66,10 +71,7 @@ const
   one = initBigInt(1)
 
 func isZero(a: BigInt): bool {.inline.} =
-  for i in countdown(a.limbs.high, 0):
-    if a.limbs[i] != 0'u32:
-      return false
-  return true
+  a.limbs.len == 0 or (a.limbs.len == 1 and a.limbs[0] == 0)
 
 func abs*(a: BigInt): BigInt =
   # Returns the absolute value of `a`.
@@ -532,6 +534,7 @@ func `and`*(a, b: BigInt): BigInt =
   ## Bitwise `and` for `BigInt`s.
   assert (not a.isNegative) and (not b.isNegative)
   bitwiseAnd(result, a, b)
+  normalize(result)
 
 func bitwiseOr(a: var BigInt, b, c: BigInt) =
   # `b` must be smaller than `c`
@@ -564,6 +567,7 @@ func `xor`*(a, b: BigInt): BigInt =
     bitwiseXor(result, a, b)
   else:
     bitwiseXor(result, b, a)
+  normalize(result)
 
 func reset(a: var BigInt) =
   ## Resets a `BigInt` back to the zero value.
