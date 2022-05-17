@@ -1145,7 +1145,7 @@ func invmod*(a, modulus: BigInt): BigInt =
   ## Compute the modular inverse of `a` modulo `modulus`.
   ## The return value is always in the range `[1, modulus-1]`
   runnableExamples:
-    invmod(3.initBigInt, 7.initBigInt) = 5.initBigInt
+    assert invmod(3.initBigInt, 7.initBigInt) == 5.initBigInt
 
   # extended Euclidean algorithm
   if modulus.isZero:
