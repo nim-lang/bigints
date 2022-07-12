@@ -1205,9 +1205,9 @@ func getLimbAndBitPosFromBitPos(bit: Natural): tuple[bit, limb: Natural] {.inlin
 func setBit*(a: var BigInt; bit: Natural) =
   ## Mutates `a`, with the bit at position `bit` set to 1.
   runnableExamples:
-    var v = 0b0000_0011'bi
+    var v = 0b0000_0011.initBigInt
     v.setBit(5)
-    doAssert v == 0b0010_0011'bi
+    doAssert v == 0b0010_0011.initBigInt
 
   let (b, l) = getLimbAndBitPosFromBitPos(bit)
 
@@ -1219,9 +1219,9 @@ func setBit*(a: var BigInt; bit: Natural) =
 func clearBit*(a: var BigInt; bit: Natural) =
   ## Mutates `v`, with the bit at position `bit` set to 0.
   runnableExamples:
-     var v = 0b0000_0011'bi
+     var v = 0b0000_0011.initBigInt
      v.clearBit(1)
-     doAssert v == 0b0000_0001'bi
+     doAssert v == 0b0000_0001.initBigInt
 
   let (b, l) = getLimbAndBitPosFromBitPos(bit)
 
@@ -1234,7 +1234,7 @@ func clearBit*(a: var BigInt; bit: Natural) =
 func testBit*(a: BigInt; bit: Natural): bool =
   ## Returns true if the bit in `a` at positions `bit` is set to 1.
   runnableExamples:
-    let v = 0b0000_1111'bi
+    let v = 0b0000_1111.initBigInt
     doAssert v.testBit(0)
     doAssert not v.testBit(7)
 
