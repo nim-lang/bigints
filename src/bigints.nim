@@ -178,6 +178,14 @@ func `==`(a: BigInt, b: int32): bool = cmp(a, b) == 0
 func `<`(a: BigInt, b: int32): bool = cmp(a, b) < 0
 func `<`(a: int32, b: BigInt): bool = cmp(a, b) < 0
 
+func sgn*(a: BigInt): BigInt =
+  # Return the signum of `a`.
+  runnableExamples:
+    assert sgn(42.initBigInt) == 1.initBigInt
+    assert sgn(-12.initBigInt) == -1.initBigInt
+    assert sgn(0.initBigInt) == 0.initBigInt
+  return sgn(cmp(a, 0)).initBigInt
+  
 template addParts(toAdd) =
   tmp += toAdd
   a.limbs[i] = uint32(tmp and uint32.high)
