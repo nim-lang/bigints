@@ -786,6 +786,16 @@ proc main() =
     doAssert pred(a, 3) == initBigInt(4)
     doAssert succ(a, 3) == initBigInt(10)
 
+  block: # to float
+    doAssert toBiggestFloat(initBigInt("0")) == 0.0
+    doAssert toBiggestFloat(initBigInt("1")) == 1.0
+    doAssert toBiggestFloat(initBigInt("-1")) == -1.0
+    doAssert toBiggestFloat(initBigInt(BiggestInt.high)) == BiggestInt.high.toBiggestFloat
+    doAssert toBiggestFloat(initBigInt(BiggestInt.low)) == BiggestInt.low.toBiggestFloat
+    doAssert toBiggestFloat(initBigInt(BiggestInt.high) * initBigInt(4)) == BiggestInt.high.toBiggestFloat * 4.0
+    doAssert toBiggestFloat(initBigInt(BiggestInt.low) * initBigInt(4)) == BiggestInt.low.toBiggestFloat * 4.0
+    doAssert toBiggestFloat(initBigInt("17976931348623157") * initBigInt(10).pow(292)) == 17976931348623157e292
+
 
 static: main()
 main()

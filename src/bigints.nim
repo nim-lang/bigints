@@ -1,6 +1,6 @@
 ## Arbitrary precision integers.
 
-import std/[algorithm, bitops, math, options]
+import std/[algorithm, bitops, fenv, math, options]
 
 type
   BigInt* = object
@@ -1140,6 +1140,11 @@ func fastLog2*(a: BigInt): int =
     return -1
   bitops.fastLog2(a.limbs[^1]) + 32*(a.limbs.high)
 
+func toBiggestFloat*(x: BigInt): BiggestFloat =
+  let l = mantissaDigits(BiggestFloat)+1
+  let shift = max(fastLog2(x) - l, 0)
+  let mantissa = BiggestFloat(toInt[BiggestInt](x shr shift).get())
+  result = mantissa * pow(2.0, BiggestFloat(shift))
 
 func invmod*(a, modulus: BigInt): BigInt =
   ## Compute the modular inverse of `a` modulo `modulus`.
