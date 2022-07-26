@@ -29,7 +29,7 @@ func initBigInt*(vals: sink seq[uint32], isNegative = false): BigInt =
   result.isNegative = isNegative
   normalize(result)
 
-func initBigInt*[T: int8|int16|int32](val: T): BigInt =
+converter initBigInt*[T: int8|int16|int32](val: T): BigInt =
   if val < 0:
     result.limbs = @[(not val).uint32 + 1] # manual 2's complement (to avoid overflow)
     result.isNegative = true
@@ -40,7 +40,7 @@ func initBigInt*[T: int8|int16|int32](val: T): BigInt =
 func initBigInt*[T: uint8|uint16|uint32](val: T): BigInt =
   result.limbs = @[val.uint32]
 
-func initBigInt*(val: int64): BigInt =
+converter initBigInt*(val: int64): BigInt =
   var a = val.uint64
   if val < 0:
     a = not a + 1 # 2's complement
@@ -57,10 +57,10 @@ func initBigInt*(val: uint64): BigInt =
     result.limbs = @[val.uint32]
 
 when sizeof(int) == 4:
-  template initBigInt*(val: int): BigInt = initBigInt(val.int32)
+  converter initBigInt*(val: int): BigInt = initBigInt(val.int32)
   template initBigInt*(val: uint): BigInt = initBigInt(val.uint32)
 else:
-  template initBigInt*(val: int): BigInt = initBigInt(val.int64)
+  converter initBigInt*(val: int): BigInt = initBigInt(val.int64)
   template initBigInt*(val: uint): BigInt = initBigInt(val.uint64)
 
 func initBigInt*(val: BigInt): BigInt =
