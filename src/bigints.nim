@@ -1141,10 +1141,11 @@ func fastLog2*(a: BigInt): int =
   bitops.fastLog2(a.limbs[^1]) + 32*(a.limbs.high)
 
 func toBiggestFloat*(x: BigInt): BiggestFloat =
-  let l = mantissaDigits(BiggestFloat)+1
-  let shift = max(fastLog2(x) - l, 0)
-  let mantissa = BiggestFloat(toInt[BiggestInt](x shr shift).get())
-  result = mantissa * pow(2.0, BiggestFloat(shift))
+  let lolimb = max(x.limbs.low, x.limbs.high - 1 - mantissaDigits(BiggestFloat) div 32)
+  for i in lolimb..x.limbs.high:
+    result += x.limbs[i].int64.toBiggestFloat * pow(2.0, 32.0 * i.float)
+  if x.isNegative:
+    result = -result
 
 func invmod*(a, modulus: BigInt): BigInt =
   ## Compute the modular inverse of `a` modulo `modulus`.
