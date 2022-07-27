@@ -795,6 +795,9 @@ proc main() =
     doAssert toBiggestFloat(initBigInt(BiggestInt.high) * initBigInt(4)) == BiggestInt.high.toBiggestFloat * 4.0
     doAssert toBiggestFloat(initBigInt(BiggestInt.low) * initBigInt(4)) == BiggestInt.low.toBiggestFloat * 4.0
     doAssert toBiggestFloat(initBigInt("17976931348623157") * initBigInt(10).pow(292)) == 17976931348623157e292
+    doAssert toBiggestFloat(initBigInt("-10").pow(400)) == Inf
+    doAssert toBiggestFloat(initBigInt("-10").pow(401)) == -Inf
+
 
 
 static: main()
