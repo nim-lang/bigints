@@ -17,7 +17,7 @@ nimble install https://github.com/nim-lang/bigints
 - addition, negation and subtraction (`+`, `-`, `+=` `-=`)
 - multiplication (`*`, `*=`)
 - bit shifts (`shr`, `shl`)
-- bitwise `and`, `or` and `xor` (limited to non-negative numbers)
+- bitwise `not`, `and`, `or` and `xor`
 - integer division and modulo operation (`div`, `mod`)
 - conversion of `BigInt` from/to strings supporting bases from 2 to 36 (`initBigInt`, `$`)
 - iteration utilities (`inc`, `dec`, `countdown`, `countup`, `..`, `..<`)
@@ -27,8 +27,7 @@ nimble install https://github.com/nim-lang/bigints
 ## Current limitations and possible enhancements
 
 * not expected to work on 32 bit
-* bitwise `not` operation is not implemented
-* arithmetical operations such as addition, multiplication and division are not optimized for performance (e.g. [karatsuba multiplication](https://en.wikipedia.org/wiki/Karatsuba_algorithm) is not implemented)
+* arithmetic operations such as addition, multiplication and division are not optimized for performance (e.g. [Karatsuba multiplication](https://en.wikipedia.org/wiki/Karatsuba_algorithm) is not implemented)
 
 
 
