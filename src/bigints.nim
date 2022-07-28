@@ -540,7 +540,7 @@ func invertIn(a: BigInt): BigInt =
 
 func invertOut(a: var BigInt) =
   inc(a)
-  a.isNegative = false
+  a.isNegative = true
 
 func `not`*(a: BigInt): BigInt =
   ## Bitwise `not` for `BigInt`s.
