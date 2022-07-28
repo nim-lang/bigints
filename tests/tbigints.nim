@@ -31,7 +31,7 @@ proc main() =
     let h = 1234567.initBigInt
     let i = h.initBigInt
     doAssert $h == $i
-  
+
     block:
       # + sign
       let plus = "+1234567".initBigInt
@@ -324,31 +324,125 @@ proc main() =
       e = 1.initBigInt
       f = 0.initBigInt
 
-    doAssert (a and b) == 533.initBigInt
-    doAssert (a and c) == 1040.initBigInt
-    doAssert (b and c) == 18.initBigInt
-    doAssert (a and d) == 0.initBigInt
-    doAssert (b and d) == 0.initBigInt
-    doAssert (a and e) == 1.initBigInt
-    doAssert (d and e) == 0.initBigInt
+    block: # not
+      let testCases = [
+        (a, "-123456789123456789123456790".initBigInt),
+        (b, -568.initBigInt),
+        (c, -1235.initBigInt),
+        (d, "-340282366920938463463374607431768211457".initBigInt),
+        (e, -2.initBigInt),
+        (f, -1.initBigInt),
+      ]
+      for (x, y) in testCases:
+        doAssert (not x) == y
+        doAssert (not y) == x
 
-    doAssert (a or b) == "123456789123456789123456823".initBigInt
-    doAssert (a or c) == "123456789123456789123456983".initBigInt
-    doAssert (b or c) == 1783.initBigInt
-    doAssert (a or d) == "340282366921061920252498064220891668245".initBigInt
-    doAssert (b or d) == "340282366920938463463374607431768212023".initBigInt
-    doAssert (a or e) == a
-    doAssert (d or e) == (d + e)
+    block: # and
+      doAssert (a and b) == 533.initBigInt
+      doAssert (a and c) == 1040.initBigInt
+      doAssert (b and c) == 18.initBigInt
+      doAssert (a and d) == 0.initBigInt
+      doAssert (b and d) == 0.initBigInt
+      doAssert (a and e) == 1.initBigInt
+      doAssert (d and e) == 0.initBigInt
 
-    doAssert (a xor b) == "123456789123456789123456290".initBigInt
-    doAssert (a xor c) == "123456789123456789123455943".initBigInt
-    doAssert (b xor c) == 1765.initBigInt
-    doAssert (a xor d) == "340282366921061920252498064220891668245".initBigInt
-    doAssert (b xor d) == "340282366920938463463374607431768212023".initBigInt
-    doAssert (a xor e) == (a - e)
-    doAssert (d xor e) == (d + e)
-    doAssert (d xor d) == f
-    doAssert (d xor f) == d
+      doAssert (a and (not b)) == "123456789123456789123456256".initBigInt
+      doAssert (a and (not c)) == "123456789123456789123455749".initBigInt
+      doAssert (b and (not c)) == 549.initBigInt
+      doAssert (a and (not d)) == "123456789123456789123456789".initBigInt
+      doAssert (b and (not d)) == 567.initBigInt
+      doAssert (a and (not e)) == "123456789123456789123456788".initBigInt
+      doAssert (d and (not e)) == d
+
+      doAssert ((not a) and b) == 34.initBigInt
+      doAssert ((not a) and c) == 194.initBigInt
+      doAssert ((not b) and c) == 1216.initBigInt
+      doAssert ((not a) and d) == "340282366920938463463374607431768211456".initBigInt
+      doAssert ((not b) and d) == "340282366920938463463374607431768211456".initBigInt
+      doAssert ((not a) and e) == 0.initBigInt
+      doAssert ((not d) and e) == 1.initBigInt
+
+      doAssert ((not a) and (not b)) == "-123456789123456789123456824".initBigInt
+      doAssert ((not a) and (not c)) == "-123456789123456789123456984".initBigInt
+      doAssert ((not b) and (not c)) == -1784.initBigInt
+      doAssert ((not a) and (not d)) == "-340282366921061920252498064220891668246".initBigInt
+      doAssert ((not b) and (not d)) == "-340282366920938463463374607431768212024".initBigInt
+      doAssert ((not a) and (not e)) == "-123456789123456789123456790".initBigInt
+      doAssert ((not d) and (not e)) == "-340282366920938463463374607431768211458".initBigInt
+
+    block: # or
+      doAssert (a or b) == "123456789123456789123456823".initBigInt
+      doAssert (a or c) == "123456789123456789123456983".initBigInt
+      doAssert (b or c) == 1783.initBigInt
+      doAssert (a or d) == "340282366921061920252498064220891668245".initBigInt
+      doAssert (b or d) == "340282366920938463463374607431768212023".initBigInt
+      doAssert (a or e) == a
+      doAssert (d or e) == (d + e)
+
+      doAssert (a or (not b)) == -35.initBigInt
+      doAssert (a or (not c)) == -195.initBigInt
+      doAssert (b or (not c)) == -1217.initBigInt
+      doAssert (a or (not d)) == "-340282366920938463463374607431768211457".initBigInt
+      doAssert (b or (not d)) == "-340282366920938463463374607431768211457".initBigInt
+      doAssert (a or (not e)) == -1.initBigInt
+      doAssert (d or (not e)) == -2.initBigInt
+
+      doAssert ((not a) or b) == "-123456789123456789123456257".initBigInt
+      doAssert ((not a) or c) == "-123456789123456789123455750".initBigInt
+      doAssert ((not b) or c) == -550.initBigInt
+      doAssert ((not a) or d) == "-123456789123456789123456790".initBigInt
+      doAssert ((not b) or d) == -568.initBigInt
+      doAssert ((not a) or e) == "-123456789123456789123456789".initBigInt
+      doAssert ((not d) or e) == "-340282366920938463463374607431768211457".initBigInt
+
+      doAssert ((not a) or (not b)) == -534.initBigInt
+      doAssert ((not a) or (not c)) == -1041.initBigInt
+      doAssert ((not b) or (not c)) == -19.initBigInt
+      doAssert ((not a) or (not d)) == -1.initBigInt
+      doAssert ((not b) or (not d)) == -1.initBigInt
+      doAssert ((not a) or (not e)) == -2.initBigInt
+      doAssert ((not d) or (not e)) == -1.initBigInt
+
+    block: # xor
+      doAssert (a xor b) == "123456789123456789123456290".initBigInt
+      doAssert (a xor c) == "123456789123456789123455943".initBigInt
+      doAssert (b xor c) == 1765.initBigInt
+      doAssert (a xor d) == "340282366921061920252498064220891668245".initBigInt
+      doAssert (b xor d) == "340282366920938463463374607431768212023".initBigInt
+      doAssert (a xor e) == (a - e)
+      doAssert (d xor e) == (d + e)
+      doAssert (d xor d) == f
+      doAssert (d xor f) == d
+
+      doAssert (a xor (not b)) == "-123456789123456789123456291".initBigInt
+      doAssert (a xor (not c)) == "-123456789123456789123455944".initBigInt
+      doAssert (b xor (not c)) == -1766.initBigInt
+      doAssert (a xor (not d)) == "-340282366921061920252498064220891668246".initBigInt
+      doAssert (b xor (not d)) == "-340282366920938463463374607431768212024".initBigInt
+      doAssert (a xor (not e)) == "-123456789123456789123456789".initBigInt
+      doAssert (d xor (not e)) == "-340282366920938463463374607431768211458".initBigInt
+      doAssert (d xor (not d)) == -1.initBigInt
+      doAssert (d xor (not f)) == (not d)
+
+      doAssert ((not a) xor b) == "-123456789123456789123456291".initBigInt
+      doAssert ((not a) xor c) == "-123456789123456789123455944".initBigInt
+      doAssert ((not b) xor c) == -1766.initBigInt
+      doAssert ((not a) xor d) == "-340282366921061920252498064220891668246".initBigInt
+      doAssert ((not b) xor d) == "-340282366920938463463374607431768212024".initBigInt
+      doAssert ((not a) xor e) == "-123456789123456789123456789".initBigInt
+      doAssert ((not d) xor e) == "-340282366920938463463374607431768211458".initBigInt
+      doAssert ((not d) xor d) == -1.initBigInt
+      doAssert ((not d) xor f) == (not d)
+
+      doAssert ((not a) xor (not b)) == "123456789123456789123456290".initBigInt
+      doAssert ((not a) xor (not c)) == "123456789123456789123455943".initBigInt
+      doAssert ((not b) xor (not c)) == 1765.initBigInt
+      doAssert ((not a) xor (not d)) == "340282366921061920252498064220891668245".initBigInt
+      doAssert ((not b) xor (not d)) == "340282366920938463463374607431768212023".initBigInt
+      doAssert ((not a) xor (not e)) == (a - e)
+      doAssert ((not d) xor (not e)) == (d + e)
+      doAssert ((not d) xor (not d)) == f
+      doAssert ((not d) xor (not f)) == d
 
   block: # inc/dec
     var x: BigInt

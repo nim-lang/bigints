@@ -1,4 +1,6 @@
 ## Arbitrary precision integers.
+##
+## The bitwise operations behave as if negative numbers were represented in 2's complement.
 
 import std/[algorithm, bitops, math, options]
 
@@ -10,6 +12,12 @@ type
     # * if `a` is zero: `a.limbs.len <= 1`
     limbs: seq[uint32]
     isNegative: bool
+
+
+# forward declarations
+func succ*(a: BigInt, b: int = 1): BigInt
+func inc*(a: var BigInt, b: int = 1)
+func dec*(a: var BigInt, b: int = 1)
 
 
 func normalize(a: var BigInt) =
@@ -486,9 +494,6 @@ func `shl`*(x: BigInt, y: Natural): BigInt =
   if carry > 0:
     result.limbs.add(uint32(carry shr (32 - b)))
 
-# forward declaration for use in `shr`
-func dec*(a: var BigInt, b: int = 1)
-
 func `shr`*(x: BigInt, y: Natural): BigInt =
   ## Shifts a `BigInt` to the right (arithmetically).
   runnableExamples:
@@ -525,49 +530,150 @@ func `shr`*(x: BigInt, y: Natural): BigInt =
     # normalize
     result.limbs.setLen(result.limbs.high)
 
-func bitwiseAnd(a: var BigInt, b, c: BigInt) =
-  a.limbs.setLen(min(b.limbs.len, c.limbs.len))
-  for i in 0 ..< a.limbs.len:
-    a.limbs[i] = b.limbs[i] and c.limbs[i]
+
+# bitwise operations
+
+func invertIn(a: BigInt): BigInt =
+  result = a
+  result.isNegative = false
+  dec(result)
+
+func invertOut(a: var BigInt) =
+  inc(a)
+  a.isNegative = false
+
+func `not`*(a: BigInt): BigInt =
+  ## Bitwise `not` for `BigInt`s.
+  # 2's complement: -x = not x + 1 <=> not x = -x - 1 = -(x + 1)
+  result = succ(a)
+  negate(result)
 
 func `and`*(a, b: BigInt): BigInt =
   ## Bitwise `and` for `BigInt`s.
-  assert (not a.isNegative) and (not b.isNegative)
-  bitwiseAnd(result, a, b)
+  if a.isNegative and not a.isZero:
+    if b.isNegative and not b.isZero:
+      # - and -
+      let a = invertIn(a)
+      let b = invertIn(b)
+      result.limbs.setLen(max(a.limbs.len, b.limbs.len))
+      let m = min(a.limbs.len, b.limbs.len)
+      for i in 0 ..< m:
+        result.limbs[i] = a.limbs[i] or b.limbs[i]
+      for i in m ..< a.limbs.len:
+        result.limbs[i] = a.limbs[i]
+      for i in m ..< b.limbs.len:
+        result.limbs[i] = b.limbs[i]
+      invertOut(result)
+    else:
+      # - and +
+      let a = invertIn(a)
+      result = b
+      for i in 0 ..< min(a.limbs.len, b.limbs.len):
+        result.limbs[i] = (not a.limbs[i]) and b.limbs[i]
+  else:
+    if b.isNegative and not b.isZero:
+      # + and -
+      let b = invertIn(b)
+      result = a
+      for i in 0 ..< min(a.limbs.len, b.limbs.len):
+        result.limbs[i] = a.limbs[i] and (not b.limbs[i])
+    else:
+      # + and +
+      result.limbs.setLen(min(a.limbs.len, b.limbs.len))
+      for i in 0 ..< result.limbs.len:
+        result.limbs[i] = a.limbs[i] and b.limbs[i]
   normalize(result)
-
-func bitwiseOr(a: var BigInt, b, c: BigInt) =
-  # `b` must be smaller than `c`
-  a.limbs.setLen(c.limbs.len)
-  for i in 0 ..< b.limbs.len:
-    a.limbs[i] = b.limbs[i] or c.limbs[i]
-  for i in b.limbs.len ..< c.limbs.len:
-    a.limbs[i] = c.limbs[i]
 
 func `or`*(a, b: BigInt): BigInt =
   ## Bitwise `or` for `BigInt`s.
-  assert (not a.isNegative) and (not b.isNegative)
-  if a.limbs.len <= b.limbs.len:
-    bitwiseOr(result, a, b)
+  if a.isNegative and not a.isZero:
+    if b.isNegative and not b.isZero:
+      # - or -
+      let a = invertIn(a)
+      let b = invertIn(b)
+      result.limbs.setLen(min(a.limbs.len, b.limbs.len))
+      for i in 0 ..< result.limbs.len:
+        result.limbs[i] = a.limbs[i] and b.limbs[i]
+      invertOut(result)
+    else:
+      # - or +
+      let a = invertIn(a)
+      result = a
+      for i in 0 ..< min(a.limbs.len, b.limbs.len):
+        result.limbs[i] = a.limbs[i] and (not b.limbs[i])
+      invertOut(result)
   else:
-    bitwiseOr(result, b, a)
-
-func bitwiseXor(a: var BigInt, b, c: BigInt) =
-  # `b` must be smaller than `c`
-  a.limbs.setLen(c.limbs.len)
-  for i in 0 ..< b.limbs.len:
-    a.limbs[i] = b.limbs[i] xor c.limbs[i]
-  for i in b.limbs.len ..< c.limbs.len:
-    a.limbs[i] = c.limbs[i]
+    if b.isNegative and not b.isZero:
+      # + or -
+      let b = invertIn(b)
+      result = b
+      for i in 0 ..< min(a.limbs.len, b.limbs.len):
+        result.limbs[i] = (not a.limbs[i]) and b.limbs[i]
+      invertOut(result)
+    else:
+      # + or +
+      result.limbs.setLen(max(a.limbs.len, b.limbs.len))
+      let m = min(a.limbs.len, b.limbs.len)
+      for i in 0 ..< m:
+        result.limbs[i] = a.limbs[i] or b.limbs[i]
+      for i in m ..< a.limbs.len:
+        result.limbs[i] = a.limbs[i]
+      for i in m ..< b.limbs.len:
+        result.limbs[i] = b.limbs[i]
+  normalize(result)
 
 func `xor`*(a, b: BigInt): BigInt =
   ## Bitwise `xor` for `BigInt`s.
-  assert (not a.isNegative) and (not b.isNegative)
-  if a.limbs.len <= b.limbs.len:
-    bitwiseXor(result, a, b)
+  if a.isNegative and not a.isZero:
+    if b.isNegative and not b.isZero:
+      # - xor -
+      let a = invertIn(a)
+      let b = invertIn(b)
+      result.limbs.setLen(max(a.limbs.len, b.limbs.len))
+      let m = min(a.limbs.len, b.limbs.len)
+      for i in 0 ..< m:
+        result.limbs[i] = a.limbs[i] xor b.limbs[i]
+      for i in m ..< a.limbs.len:
+        result.limbs[i] = a.limbs[i]
+      for i in m ..< b.limbs.len:
+        result.limbs[i] = b.limbs[i]
+    else:
+      # - xor +
+      let a = invertIn(a)
+      result.limbs.setLen(max(a.limbs.len, b.limbs.len))
+      let m = min(a.limbs.len, b.limbs.len)
+      for i in 0 ..< m:
+        result.limbs[i] = a.limbs[i] xor b.limbs[i]
+      for i in m ..< a.limbs.len:
+        result.limbs[i] = a.limbs[i]
+      for i in m ..< b.limbs.len:
+        result.limbs[i] = b.limbs[i]
+      invertOut(result)
   else:
-    bitwiseXor(result, b, a)
+    if b.isNegative and not b.isZero:
+      # + xor -
+      let b = invertIn(b)
+      result.limbs.setLen(max(a.limbs.len, b.limbs.len))
+      let m = min(a.limbs.len, b.limbs.len)
+      for i in 0 ..< m:
+        result.limbs[i] = a.limbs[i] xor b.limbs[i]
+      for i in m ..< a.limbs.len:
+        result.limbs[i] = a.limbs[i]
+      for i in m ..< b.limbs.len:
+        result.limbs[i] = b.limbs[i]
+      invertOut(result)
+    else:
+      # + xor +
+      result.limbs.setLen(max(a.limbs.len, b.limbs.len))
+      let m = min(a.limbs.len, b.limbs.len)
+      for i in 0 ..< m:
+        result.limbs[i] = a.limbs[i] xor b.limbs[i]
+      for i in m ..< a.limbs.len:
+        result.limbs[i] = a.limbs[i]
+      for i in m ..< b.limbs.len:
+        result.limbs[i] = b.limbs[i]
   normalize(result)
+
 
 func reset(a: var BigInt) =
   ## Resets a `BigInt` back to the zero value.
