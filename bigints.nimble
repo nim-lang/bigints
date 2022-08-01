@@ -18,6 +18,7 @@ task test, "Test bigints":
       echo "  using " & gc & " GC"
       for file in ["tbigints.nim", "tbugs.nim"]:
         exec "nim r --hints:off --experimental:strictFuncs --backend:" & backend & " --gc:" & gc & " tests/" & file
+      exec "nim doc --hints:off --backend:" & backend & " --gc:" & gc & " src/bigints.nim"
 
 task checkExamples, "Check examples":
   echo "checking examples"
