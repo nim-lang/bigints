@@ -1,5 +1,6 @@
 import bigints
 import std/options
+import random
 
 const
   zero = initBigInt(0)
@@ -786,6 +787,11 @@ proc main() =
     doAssert pred(a, 3) == initBigInt(4)
     doAssert succ(a, 3) == initBigInt(10)
 
+  # block:
+  #   randomize()
+  #   let a: BigInt = initRandomBigInt(33)
+  #   echo a
 
-static: main()
+
+#static: main()
 main()

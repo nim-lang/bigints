@@ -1,6 +1,6 @@
 ## Arbitrary precision integers.
 
-import std/[algorithm, bitops, math, options]
+import std/[algorithm, bitops, math, options, random]
 
 type
   BigInt* = object
@@ -1198,3 +1198,17 @@ func powmod*(base, exponent, modulus: BigInt): BigInt =
         result = (result * basePow) mod modulus
       basePow = (basePow * basePow) mod modulus
       exponent = exponent shr 1
+
+# proc initRandomBigInt*(nbits: Natural): BigInt =
+#   ## Initialize a standalone BigInt
+#   let n_limbs = nbits shr 5
+#   let remainingBits = nbits mod 32
+#   result.limbs.setLen(n_limbs)
+#   let mask: uint32 = 1'u32 shl (remainingBits) - 1
+#   for i in 0 ..< result.limbs.len-1:
+#     result.limbs[i] = rand(uint32)
+#   result.limbs[result.limbs.len-1] = rand(uint32) xor mask
+
+# when isMainModule:
+#   randomize()
+
