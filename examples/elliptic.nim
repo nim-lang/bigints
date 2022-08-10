@@ -35,7 +35,7 @@ proc ecDouble(a: tuple): (BigInt, BigInt) =
   lam = lam mod primeCurve
   result = (x, y)
 
-proc ecMultiply(genPoint: tuple, scalarHex: BigInt): (BigInt, BigInt) =
+proc ecMultiply*(genPoint: tuple, scalarHex: BigInt): (BigInt, BigInt) =
   if scalarHex == zero or scalarHex >= numberPoints:
     raise newException(Exception, "Invalid Scalar/Private Key")
   var
@@ -47,7 +47,7 @@ proc ecMultiply(genPoint: tuple, scalarHex: BigInt): (BigInt, BigInt) =
       q = ecAdd(q, genPoint)
   result = q
 
-proc main() =
+when isMainModule:
   let publicKey = ecMultiply(Gpoint, privKey)
 
   echo ""
@@ -65,5 +65,3 @@ proc main() =
   echo "the official Public Key - compressed:"
   echo if publicKey[1] mod two == one: "03" & publicKey[0].toString(base = 16).align(64, '0')
        else: "02" & publicKey[0].toString(base = 16).align(64, '0')
-
-main()
