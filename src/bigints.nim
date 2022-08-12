@@ -66,6 +66,50 @@ else:
 func initBigInt*(val: BigInt): BigInt =
   result = val
 
+type
+  SizeDescriptor* = enum
+    Limbs, Bits
+
+proc initRandomBigInt*(number: Natural, unit: SizeDescriptor = Limbs): BigInt =
+  ## Initializes a standalone BigInt whose value is chosen randomly with exactly
+  ## `number` bits or limbs, depending on the value of `unit`. By default, the 
+  ## BigInt is chosen with `number` limbs chosen randomly.
+  if unit == Limbs:
+    if number == 0:
+      raise newException(ValueError, "A Bigint must have at least one limb !")
+    result.limbs.setLen(number)
+    for i in 0 ..< result.limbs.len-1:
+      result.limbs[i] = rand(uint32)
+    var word = rand(uint32)
+    # Bigint's last limb can be zero, iff there is only one limb
+    # We can't normalize instead, since we need no less than number limbs
+    if number != 1:
+      while word == 0: # Very low probability
+        word = rand(uint32)
+    result.limbs[result.limbs.len-1] = word
+
+  else: # unit == Bits
+    if number == 0:
+      return initBigInt(0)
+    let
+      remainder = number mod 32
+      n_limbs = (if remainder == 0: number shr 5 else: number shr 5 + 1)
+      remainingBits  = (if remainder == 0: 32 else: remainder)
+    result.limbs.setLen(n_limbs)
+    # mask ensures only remainingBits bits can be set to 1
+    # Ensures the first bit is set to 1
+    var
+      mask: uint32 = 0xFFFF_FFFF'u32
+      mask2: uint32 = 0x8000_0000'u32
+    if remainingBits != 32:
+      mask = 1'u32 shl remainingBits - 1
+      mask2 = 1'u32 shl (remainingBits-1)
+    for i in 0 ..< result.limbs.len-1:
+      result.limbs[i] = rand(uint32)
+    let word = rand(uint32)
+    result.limbs[result.limbs.len-1] = word and mask or mask2
+
+
 const
   zero = initBigInt(0)
   one = initBigInt(1)
@@ -1198,17 +1242,4 @@ func powmod*(base, exponent, modulus: BigInt): BigInt =
         result = (result * basePow) mod modulus
       basePow = (basePow * basePow) mod modulus
       exponent = exponent shr 1
-
-# proc initRandomBigInt*(nbits: Natural): BigInt =
-#   ## Initialize a standalone BigInt
-#   let n_limbs = nbits shr 5
-#   let remainingBits = nbits mod 32
-#   result.limbs.setLen(n_limbs)
-#   let mask: uint32 = 1'u32 shl (remainingBits) - 1
-#   for i in 0 ..< result.limbs.len-1:
-#     result.limbs[i] = rand(uint32)
-#   result.limbs[result.limbs.len-1] = rand(uint32) xor mask
-
-# when isMainModule:
-#   randomize()
 
