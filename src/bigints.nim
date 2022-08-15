@@ -107,7 +107,7 @@ proc initRandomBigInt*(number: Natural, unit: SizeDescriptor = Limbs): BigInt =
     for i in 0 ..< result.limbs.high:
       result.limbs[i] = rand(uint32)
     let word = rand(uint32)
-    result.limbs[result.limbs.len-1] = word and mask or mask2
+    result.limbs[result.limbs.high] = word and mask or mask2
 
 
 const
