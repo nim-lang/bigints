@@ -12,10 +12,9 @@ const
   memSizeUnit = Mio # Unit in which memSize is expressed
 
 proc computeLimit(memSize: Natural, memSizeUnit: MemSizeUnit): Natural =
-  var factor = 1
+  result = memSize
   for _ in 1..ord(memSizeUnit):
-    factor *= 1024
-  result = memSize * factor
+    result *= 1024
 
 const
   memLimit = computeLimit(memSize, memSizeUnit) # Number of octets
