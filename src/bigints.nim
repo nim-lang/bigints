@@ -67,14 +67,15 @@ func initBigInt*(val: BigInt): BigInt =
   result = val
 
 type
-  SizeDescriptor* = enum
+  RandomMode* = enum
     Limbs, Bits
 
-proc initRandomBigInt*(number: Natural, unit: SizeDescriptor = Limbs): BigInt =
+proc initRandomBigInt*(number: Natural, mode: RandomMode = Limbs): BigInt =
   ## Initializes a `BigInt` whose value is chosen randomly with exactly
   ## `number` bits or limbs, depending on the value of `unit`. By default, the 
   ## `BigInt` is chosen with `number` limbs chosen randomly.
-  if unit == Limbs:
+  case mode
+  of Limbs:
     if number == 0:
       raise newException(ValueError, "A Bigint must have at least one limb !")
     result.limbs.setLen(number)
@@ -88,7 +89,7 @@ proc initRandomBigInt*(number: Natural, unit: SizeDescriptor = Limbs): BigInt =
         word = rand(uint32)
     result.limbs[result.limbs.len-1] = word
 
-  else: # unit == Bits
+  of Bits: # unit == Bits
     if number == 0:
       return initBigInt(0)
     let
@@ -97,7 +98,7 @@ proc initRandomBigInt*(number: Natural, unit: SizeDescriptor = Limbs): BigInt =
       remainingBits  = (if remainder == 0: 32 else: remainder)
     result.limbs.setLen(n_limbs)
     # mask ensures only remainingBits bits can be set to 1
-    # Ensures the first bit is set to 1
+    # mask2 ensures the first bit is set to 1
     var
       mask: uint32 = 0xFFFF_FFFF'u32
       mask2: uint32 = 0x8000_0000'u32
