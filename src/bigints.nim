@@ -104,7 +104,7 @@ proc initRandomBigInt*(number: Natural, unit: SizeDescriptor = Limbs): BigInt =
     if remainingBits != 32:
       mask = 1'u32 shl remainingBits - 1
       mask2 = 1'u32 shl (remainingBits-1)
-    for i in 0 ..< result.limbs.len-1:
+    for i in 0 ..< result.limbs.high:
       result.limbs[i] = rand(uint32)
     let word = rand(uint32)
     result.limbs[result.limbs.len-1] = word and mask or mask2
