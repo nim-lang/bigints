@@ -17,7 +17,7 @@ proc computeLimit(memSize: Natural, memSizeUnit: MemSizeUnit): Natural =
     result *= 1024
 
 const
-  memLimit = computeLimit(memSize, memSizeUnit) # Number of octets
+  memLimit = computeLimit(memSize, memSizeUnit) # Number of bytes
   maxLimbs = memLimit div 8
   maxBits = 4*memLimit
 
