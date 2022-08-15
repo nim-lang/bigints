@@ -71,9 +71,9 @@ type
     Limbs, Bits
 
 proc initRandomBigInt*(number: Natural, unit: SizeDescriptor = Limbs): BigInt =
-  ## Initializes a standalone BigInt whose value is chosen randomly with exactly
+  ## Initializes a `BigInt` whose value is chosen randomly with exactly
   ## `number` bits or limbs, depending on the value of `unit`. By default, the 
-  ## BigInt is chosen with `number` limbs chosen randomly.
+  ## `BigInt` is chosen with `number` limbs chosen randomly.
   if unit == Limbs:
     if number == 0:
       raise newException(ValueError, "A Bigint must have at least one limb !")
