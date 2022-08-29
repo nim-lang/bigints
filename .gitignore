@@ -5,3 +5,4 @@ nimcache/
 *.swp
 *.exe
 testresults/
+htmldocs/
