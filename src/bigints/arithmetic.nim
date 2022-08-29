@@ -1,4 +1,6 @@
 # (modular) arithmetic functions
+include stringConversion
+
 func gcd*(a, b: BigInt): BigInt =
   ## Returns the greatest common divisor (GCD) of `a` and `b`.
   runnableExamples:

@@ -1,4 +1,7 @@
 # BigInt to string and string to BigInt functions
+import std/[options, math, algorithm]
+include increments
+
 func toInt*[T: SomeInteger](x: BigInt): Option[T] =
   ## Converts a `BigInt` number to an integer, if possible.
   ## If the `BigInt` doesn't fit in a `T`, returns `none(T)`;

@@ -1,4 +1,6 @@
 # absolute value and comparison operators <, >, ...
+include initBigInt
+
 func abs*(a: BigInt): BigInt =
   # Returns the absolute value of `a`.
   runnableExamples:

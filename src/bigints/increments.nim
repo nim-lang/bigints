@@ -1,4 +1,6 @@
 # inc, dec, succ, pred, `..`, `..<`, countup, and countdown
+include division
+
 func inc*(a: var BigInt, b: int = 1) =
   ## Increase the value of a `BigInt` by the specified amount (default: 1).
   runnableExamples:

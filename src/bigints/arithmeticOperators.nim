@@ -1,4 +1,6 @@
 # addition, subtraction and multiplication
+include comparisonOperators
+
 template addParts(toAdd) =
   tmp += toAdd
   a.limbs[i] = uint32(tmp and uint32.high)

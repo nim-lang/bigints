@@ -1,4 +1,6 @@
 # shl, shr, and bitwise logical operators: and, or, not
+include arithmeticOperators
+
 func `shl`*(x: BigInt, y: Natural): BigInt =
   ## Shifts a `BigInt` to the left.
   runnableExamples:

@@ -1,4 +1,6 @@
 # Functions to compute the quotient and the remainder
+include shiftingOperators
+
 func unsignedDivRem(q: var BigInt, r: var uint32, n: BigInt, d: uint32) =
   q.limbs.setLen(n.limbs.len)
   r = 0
