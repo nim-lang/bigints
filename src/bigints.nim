@@ -66,6 +66,7 @@ else:
 func initBigInt*(val: BigInt): BigInt =
   result = val
 
+
 const
   zero = initBigInt(0)
   one = initBigInt(1)
@@ -1198,3 +1199,4 @@ func powmod*(base, exponent, modulus: BigInt): BigInt =
         result = (result * basePow) mod modulus
       basePow = (basePow * basePow) mod modulus
       exponent = exponent shr 1
+
