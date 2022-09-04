@@ -1,6 +1,6 @@
 ## Arbitrary precision integers.
 
-import std/[algorithm, bitops, math, options, random]
+import std/[algorithm, bitops, math, options]
 
 type
   BigInt* = object

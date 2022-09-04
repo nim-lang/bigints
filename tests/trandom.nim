@@ -1,5 +1,6 @@
 import bigints
-import random
+import ../src/bigints/utilities
+import std/random
 
 type
   MemSizeUnit = enum
