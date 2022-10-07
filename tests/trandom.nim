@@ -3,9 +3,9 @@ import bigints/random
 import std/options
 
 block: # check uniformity
-  let lo = pow(10'bi, 90)
-  let hi = pow(10'bi, 100)
-  var total = 0'bi
+  let lo = pow(10.initBigInt, 90)
+  let hi = pow(10.initBigInt, 100)
+  var total = 0.initBigInt
   let trials = 1000
   let nbuckets = 33
   var buckets = newSeq[int](nbuckets)
