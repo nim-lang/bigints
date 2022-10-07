@@ -3,7 +3,8 @@ import std/sequtils
 import std/options
 import std/random
 
-proc rand*(r: var Rand, x: Slice[BigInt]): BigInt =
+func rand*(r: var Rand, x: Slice[BigInt]): BigInt =
+  ## Return a random `BigInt`, within the given range, using the given state.
   assert(x.a <= x.b, "invalid range")
   let
     spread = x.b - x.a
@@ -14,7 +15,7 @@ proc rand*(r: var Rand, x: Slice[BigInt]): BigInt =
     # highest possible value of the top two limbs.
     hi64Max = (spread shr (nFullLimbs*32)).toInt[:uint64].get()
   while true:
-    # these limbs can be generated completely randomly
+    # these limbs can be generated completely arbitrarily
     var limbs = newSeqWith(nFullLimbs, r.rand(uint32.low..uint32.high))
     # generate the top two limbs more carefully. This all but guarantees
     # that the entire number is in the correct range
@@ -26,9 +27,12 @@ proc rand*(r: var Rand, x: Slice[BigInt]): BigInt =
       break
   result += x.a
 
-proc rand*(r: var Rand, max: BigInt): BigInt =
+func rand*(r: var Rand, max: BigInt): BigInt =
+  ## Return a random non-negative `BigInt`, up to `max`, using the given state.
   rand(r, 0'bi..max)
 
 proc rand*(x: Slice[BigInt]): BigInt = rand(randState(), x)
-proc rand*(max: BigInt): BigInt = rand(randState(), max)
+  ## Return a random `BigInt`, within the given range.
 
+proc rand*(max: BigInt): BigInt = rand(randState(), max)
+  ## Return a random `BigInt`, up to `max`.
