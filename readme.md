@@ -1,6 +1,6 @@
 # Pure BigInts for Nim
 
-![test](https://github.com/def-/nim-bigints/workflows/test/badge.svg)
+[![test](https://github.com/nim-lang/bigints/actions/workflows/test.yaml/badge.svg)](https://github.com/nim-lang/bigints/actions/workflows/test.yaml)
 
 This library provides a pure implementation for arbitrary precision integers in [Nim](https://nim-lang.org/).
 
