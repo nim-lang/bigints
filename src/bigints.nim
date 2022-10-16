@@ -11,7 +11,6 @@ type
     limbs: seq[uint32]
     isNegative: bool
 
-
 func normalize(a: var BigInt) =
   for i in countdown(a.limbs.high, 0):
     if a.limbs[i] > 0'u32:
@@ -69,6 +68,7 @@ func initBigInt*(val: BigInt): BigInt =
 const
   zero = initBigInt(0)
   one = initBigInt(1)
+  karatsubaThreshold = 2
 
 func isZero(a: BigInt): bool {.inline.} =
   a.limbs.len == 0 or (a.limbs.len == 1 and a.limbs[0] == 0)
@@ -390,7 +390,6 @@ template `-=`*(a: var BigInt, b: BigInt) =
     assert a == 3.initBigInt
   a = a - b
 
-
 func unsignedMultiplication(a: var BigInt, b, c: BigInt) {.inline.} =
   # always called with bl >= cl
   let
@@ -420,6 +419,30 @@ func unsignedMultiplication(a: var BigInt, b, c: BigInt) {.inline.} =
       inc pos
   normalize(a)
 
+func scalarMultiplication(a: var BigInt, b: BigInt, c: uint32) {.inline.} =
+  # always called with bl >= cl
+  if c == 0:
+    a = zero
+    return
+  let
+    bl = b.limbs.len
+  a.limbs.setLen(bl + 1)
+  var tmp = 0'u64
+  let c = uint64(c)
+
+  for i in 0 ..< bl:
+    tmp += uint64(b.limbs[i]) * c
+    a.limbs[i] = uint32(tmp and uint32.high)
+    tmp = tmp shr 32
+
+  a.limbs[bl] = uint32(tmp)
+  normalize(a)
+
+# forward declaration for use in `multiplication`
+func karatsubaMultiplication*(a: var BigInt, b, c: BigInt)
+func `shl`*(x: BigInt, y: Natural): BigInt
+func `shr`*(x: BigInt, y: Natural): BigInt
+
 func multiplication(a: var BigInt, b, c: BigInt) =
   # a = b * c
   if b.isZero or c.isZero:
@@ -430,9 +453,71 @@ func multiplication(a: var BigInt, b, c: BigInt) =
     cl = c.limbs.len
 
   if cl > bl:
+    # if bl >= karatsubaThreshold:
+    #   karatsubaMultiplication(a, c, b)
+    # else:
     unsignedMultiplication(a, c, b)
   else:
+    # if cl >= karatsubaThreshold:
+    #   karatsubaMultiplication(a, b, c)
+    # else:
     unsignedMultiplication(a, b, c)
+  a.isNegative = b.isNegative xor c.isNegative
+
+func karatsubaMultiplication*(a: var BigInt, b, c: BigInt) =
+  if b.isZero or c.isZero:
+    a = zero
+    return
+  a.isNegative = b.isNegative xor c.isNegative
+  let
+    bl = b.limbs.len
+    cl = c.limbs.len
+    n = max(bl, cl)
+    k = n shr 1
+  if bl == 1:
+    # base case : multiply the only limb with each limb of second term
+    scalarMultiplication(a, c, b.limbs[0])
+    a.isNegative = b.isNegative xor c.isNegative
+    return 
+  if cl == 1:
+    scalarMultiplication(a, b, c.limbs[0])
+    a.isNegative = b.isNegative xor c.isNegative
+    return
+  if bl < karatsubaThreshold:
+    if cl <= bl:
+      unsignedMultiplication(a, b, c)
+    else:
+      unsignedMultiplication(a, c, b)
+    a.isNegative = b.isNegative xor c.isNegative
+    return
+  if cl < karatsubaThreshold:
+    if bl <= cl:
+      unsignedMultiplication(a, c, b)
+    else:
+      unsignedMultiplication(a, b, c)
+    a.isNegative = b.isNegative xor c.isNegative
+    return
+  var
+    low_b, high_b, low_c, high_c: BigInt
+  # Decompose `b` and `c` in two parts of (almost) equal length
+  low_b.limbs = b.limbs[0 .. k-1]
+  high_b.limbs = b.limbs[k .. ^1]
+  low_c.limbs = c.limbs[0 .. k-1]
+  high_c.limbs = c.limbs[k .. ^1]
+  
+  # subtractive version of Karatsuba's algorithm to limit carry handling
+  var lowProduct, highProduct, add3, add4, add5, middleTerm: BigInt = zero
+
+  multiplication(lowProduct, low_b, low_c)
+  multiplication(highProduct, high_b, high_c)
+
+  add3 = low_b - high_b
+  add4 = high_c - low_c
+
+  multiplication(add5, add4, add3)
+
+  middleTerm = lowProduct + highProduct + add5
+  a = lowProduct + middleTerm shl (32*k) + highProduct shl (64*k)
   a.isNegative = b.isNegative xor c.isNegative
 
 func `*`*(a, b: BigInt): BigInt =
@@ -1124,7 +1209,6 @@ iterator `..<`*(a, b: BigInt): BigInt =
     yield res
     inc res
 
-
 func modulo(a, modulus: BigInt): BigInt =
   ## Like `mod`, but the result is always in the range `[0, modulus-1]`.
   ## `modulus` should be greater than zero.
@@ -1139,7 +1223,6 @@ func fastLog2*(a: BigInt): int =
   if a.isZero:
     return -1
   bitops.fastLog2(a.limbs[^1]) + 32*(a.limbs.high)
-
 
 func invmod*(a, modulus: BigInt): BigInt =
   ## Compute the modular inverse of `a` modulo `modulus`.
@@ -1198,3 +1281,106 @@ func powmod*(base, exponent, modulus: BigInt): BigInt =
         result = (result * basePow) mod modulus
       basePow = (basePow * basePow) mod modulus
       exponent = exponent shr 1
+
+when isMainModule:
+  var a, b, c: BigInt
+  let
+    two = 2.initBigInt
+    three = 3.initBigInt
+    four = 4.initBigInt
+
+  a.limbs = @[1'u32, 2'u32]
+  b.limbs = @[3'u32, 4'u32]
+  echo a.limbs
+  echo b.limbs
+  echo "factors: ", a, " ", b
+  karatsubaMultiplication(c, a, b)
+  echo "product Karatsuba: ", c
+  echo "correct product:   ", a * b
+
+  a.limbs = @[1'u32, 0'u32]
+  b.limbs = @[0'u32, 4'u32]
+  echo a.limbs
+  echo b.limbs
+  echo "factors: ", a, " ", b
+  karatsubaMultiplication(c, a, b)
+  echo "product Karatsuba: ", c
+  echo "correct product:   ", a * b
+
+  a.limbs = @[2'u32, 1'u32]
+  b.limbs = @[3'u32, 4'u32]
+  echo a.limbs
+  echo b.limbs
+  echo "factors: ", a, " ", b
+  karatsubaMultiplication(c, a, b)
+  echo "product Karatsuba: ", c
+  echo "correct product:   ", a * b
+
+  a.limbs = @[2'u32, 1'u32]
+  b.limbs = @[4'u32, 3'u32]
+  echo a.limbs
+  echo b.limbs
+  echo "factors: ", a, " ", b
+  karatsubaMultiplication(c, a, b)
+  echo "product Karatsuba: ", c
+  echo "correct product:   ", a * b
+
+  a.limbs = @[1'u32, 2'u32]
+  b.limbs = @[3'u32, 4'u32]
+  echo a.limbs
+  echo b.limbs
+  echo "factors: ", a, " ", b
+  karatsubaMultiplication(c, a, b)
+  echo "product Karatsuba: ", c
+  echo "correct product:   ", a * b
+
+  a = two shl 32 - one
+  b = four shl 32 - three
+  echo a.limbs
+  echo b.limbs
+  echo "factors: ", a, " ", b
+  karatsubaMultiplication(c, a, b)
+  echo "product Karatsuba: ", c
+  echo "correct product:   ", a * b
+
+  a = -(two shl 32 + one)
+  b = four shl 32 - three
+  echo a.limbs
+  echo b.limbs
+  echo "factors: ", a, " ", b
+  karatsubaMultiplication(c, a, b)
+  echo "product Karatsuba: ", c
+  echo "correct product:   ", a * b
+
+  a.limbs = @[1'u32, 2'u32, 3'u32]
+  b.limbs = @[4'u32, 5'u32, 6'u32]
+  a.isNegative = false
+  b.isNegative = false
+  echo a.limbs
+  echo b.limbs
+  echo "factors: ", a, " ", b
+  karatsubaMultiplication(c, a, b)
+  echo "product Karatsuba: ", c
+  echo "correct product:   ", a * b
+
+  a.limbs = @[1'u32, 2'u32, 3'u32, 4'u32, 5'u32]
+  b.limbs = @[4'u32, 5'u32, 6'u32, 7'u32, 8'u32]
+  a.isNegative = false
+  b.isNegative = false
+  echo a.limbs
+  echo b.limbs
+  echo "factors: ", a, " ", b
+  karatsubaMultiplication(c, a, b)
+  echo "product Karatsuba: ", c
+  echo "correct product:   ", a * b
+
+  a.limbs = @[1'u32, 2'u32, 3'u32, 4'u32, 5'u32, 6'u32, 7'u32, 8'u32, 9'u32, 10'u32]
+  b.limbs = @[10'u32, 9'u32, 8'u32, 7'u32, 6'u32, 5'u32, 4'u32, 3'u32, 2'u32, 1'u32]
+  a.isNegative = false
+  b.isNegative = false
+  echo a.limbs
+  echo b.limbs
+  echo "factors: ", a, " ", b
+  karatsubaMultiplication(c, a, b)
+  echo "product Karatsuba: ", c
+  echo "correct product:   ", a * b
