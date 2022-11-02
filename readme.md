@@ -17,7 +17,7 @@ nimble install https://github.com/nim-lang/bigints
 - addition, negation and subtraction (`+`, `-`, `+=` `-=`)
 - multiplication (`*`, `*=`)
 - bit shifts (`shr`, `shl`)
-- bitwise `not`, `and`, `or` and `xor`
+- bitwise `not`, `and`, `or` and `xor` (behave as if negative numbers were represented in 2's complement)
 - integer division and modulo operation (`div`, `mod`)
 - conversion of `BigInt` from/to strings supporting bases from 2 to 36 (`initBigInt`, `$`)
 - iteration utilities (`inc`, `dec`, `countdown`, `countup`, `..`, `..<`)

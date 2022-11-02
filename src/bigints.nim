@@ -1304,8 +1304,3 @@ func powmod*(base, exponent, modulus: BigInt): BigInt =
         result = (result * basePow) mod modulus
       basePow = (basePow * basePow) mod modulus
       exponent = exponent shr 1
-
-# example
-let a = -1234.initBigInt
-let b = "-12345678901234567890".initBigInt
-echo (a and b)
