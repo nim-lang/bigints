@@ -989,7 +989,7 @@ func calcSizes(): array[2..36, int] =
 
 const
   digits = "0123456789abcdefghijklmnopqrstuvwxyz"
-  powers = {2, 4, 8, 16, 32}
+  powers = {2'u8, 4, 8, 16, 32}
   sizes = calcSizes() # `sizes[base]` is the maximum number of digits that fully fit in a `uint32`
 
 func toString*(a: BigInt, base: range[2..36] = 10): string =
@@ -1007,7 +1007,7 @@ func toString*(a: BigInt, base: range[2..36] = 10): string =
     return "0"
 
   let size = sizes[base]
-  if base in powers:
+  if base.uint8 in powers:
     let
       bits = countTrailingZeroBits(base) # bits per digit
       mask = (1'u32 shl bits) - 1
@@ -1115,7 +1115,7 @@ func initBigInt*(str: string, base: range[2..36] = 10): BigInt =
   if str[^1] == '_':
     raise newException(ValueError, "A number can not end with _")
 
-  if base in powers:
+  if base.uint8 in powers:
     # base is a power of two, so each digit corresponds to a block of bits
     let bits = countTrailingZeroBits(base) # bits per digit
     var
