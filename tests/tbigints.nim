@@ -102,7 +102,7 @@ proc main() =
   when (NimMajor, NimMinor) >= (1, 5):
     block: # literals
       # workaround
-      include tliterals
+      include ./literals
 
   block: # zero
     # see https://github.com/nim-lang/bigints/issues/26
