@@ -880,6 +880,16 @@ proc main() =
     doAssert pred(a, 3) == initBigInt(4)
     doAssert succ(a, 3) == initBigInt(10)
 
+  when nimvm: discard
+  else:
+    let n = initBigInt("18591708106338011146")
+    block:
+      let buf = n.toBytes(bigEndian)
+      doAssert buf == @[ 0x1'u8, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0xA]
+    block:
+      let buf = n.toBytes(littleEndian)
+      doAssert buf == @[ 0xA'u8, 0x8, 0x7, 0x6, 0x5, 0x4, 0x3, 0x2, 0x1 ]
+
 
 static: main()
 main()

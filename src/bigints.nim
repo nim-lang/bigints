@@ -2,7 +2,7 @@
 ##
 ## The bitwise operations behave as if negative numbers were represented in 2's complement.
 
-import std/[algorithm, bitops, math, options]
+import std/[algorithm, bitops, endians, math, options]
 
 type
   BigInt* = object
@@ -1309,3 +1309,30 @@ func powmod*(base, exponent, modulus: BigInt): BigInt =
         result = (result * basePow) mod modulus
       basePow = (basePow * basePow) mod modulus
       exponent = exponent shr 1
+
+proc toBytes*(a: BigInt; endianness = system.cpuEndian): seq[byte] =
+  ## Convert a `BigInt` to a byte-sequence.
+  ## The byte-sequence is the absolute (positive) value of `a`, it *does not* contain a sign-bit.
+  runnableExamples:
+    let n = initBigInt("18591708106338011146")
+    let buf = n.toBytes(bigEndian)
+    doAssert buf == @[0x1'u8,0x2,0x3,0x4,0x5,0x6,0x7,0x8,0xA]
+  if not a.isZero:
+    result = newSeq[byte](a.limbs.len shl 2)
+    var i: int
+    case endianness
+    of bigEndian:
+      for s in [24, 16, 8, 0]:
+        result[i] = uint8(a.limbs[a.limbs.high] shr s)
+        if result[0] != 0x00: inc(i)
+      for l in countdown(a.limbs.high.pred, a.limbs.low):
+        bigEndian32(addr result[i], unsafeAddr a.limbs[l])
+        inc(i, 4)
+      result.setLen(i)
+    of littleEndian:
+      for l in 0..a.limbs.high:
+        littleEndian32(addr result[i], unsafeAddr a.limbs[l])
+        inc(i, 4)
+      while result[pred i] == 0x00:
+        dec i
+      result.setLen(i)
