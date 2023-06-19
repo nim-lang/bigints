@@ -11,7 +11,7 @@ type
     # * if `a` is non-zero: `a.limbs[a.limbs.high] != 0`
     # * if `a` is zero: `a.limbs.len <= 1`
     limbs: seq[uint32]
-    isNegative: bool
+    isNegative*: bool
 
 
 # forward declarations
@@ -78,7 +78,7 @@ const
   zero = initBigInt(0)
   one = initBigInt(1)
 
-func isZero(a: BigInt): bool {.inline.} =
+func isZero*(a: BigInt): bool {.inline.} =
   a.limbs.len == 0 or (a.limbs.len == 1 and a.limbs[0] == 0)
 
 func abs*(a: BigInt): BigInt =
