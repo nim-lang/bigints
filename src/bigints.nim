@@ -1336,3 +1336,49 @@ proc toBytes*(a: BigInt; endianness = system.cpuEndian): seq[byte] =
       while result[pred i] == 0x00:
         dec i
       result.setLen(i)
+
+proc fromBytes*(result: var BigInt; buf: openarray[uint8]; endianness = system.cpuEndian) =
+  ## Convert a byte-sequence to `BigInt` value.
+  ## The input `buf` is only interpreted as a natural (positive) number.
+  runnableExamples:
+    var n: BigInt
+    n.fromBytes([0x1'u8,0x2,0x3,0x4,0x5,0x6,0x7,0x8,0xA], bigEndian)
+    n = -n
+    doAssert n == initBigInt("-18591708106338011146")
+  result.limbs.setLen((buf.len + 3) shr 2)
+  case endianness
+  of bigEndian:
+    var
+      li = result.limbs.high
+      bi = buf.low
+    block:
+      var
+        limb: uint32
+        j = 4 - (buf.len and 3)
+      while j < 4:
+        limb = (limb shl 8) or buf[bi].uint32
+        inc(bi)
+        inc(j)
+      if bi > 0:
+        result.limbs[li] = limb
+        dec(li)
+    while li >= 0:
+      bigEndian32(addr result.limbs[li], unsafeAddr buf[bi])
+      inc(bi, 4)
+      dec(li)
+  of littleEndian:
+    var
+      li = result.limbs.low
+      bi = buf.low
+    while (bi + 4) < buf.len:
+      littleEndian32(addr result.limbs[li], unsafeAddr buf[bi])
+      inc(bi, 4)
+      inc(li)
+    if bi < buf.len:
+      var
+        limb: uint32
+        ji = buf.high
+      while ji >= bi:
+        limb = (limb shl 8) or buf[ji]
+        dec(ji)
+      result.limbs[li] = limb
