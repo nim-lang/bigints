@@ -27,9 +27,7 @@ func pollardRho(
     divisor = gcd(turtle - hare, n)
 
   if divisor != n:
-    some(divisor)
-  else:
-    none(BigInt)
+    return some(divisor)
 
 
 func somePolynomial(x: BigInt): BigInt =
