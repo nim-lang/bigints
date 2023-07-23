@@ -33,4 +33,4 @@ nimble install https://github.com/nim-lang/bigints
 
 ## Documentation
 
-The documentation is available at: https://nimdocs.com/nim-lang/bigints/bigints.html
+The documentation is available at https://nim-lang.github.io/bigints.
