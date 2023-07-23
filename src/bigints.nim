@@ -9,7 +9,7 @@ type
     ## An arbitrary precision integer.
     # Invariants for `a: BigInt`:
     # * if `a` is non-zero: `a.limbs[a.limbs.high] != 0`
-    # * if `a` is zero: `a.limbs.len <= 1`
+    # * if `a` is zero: `a.limbs == @[]`
     limbs: seq[uint32]
     isNegative: bool
 
@@ -21,11 +21,13 @@ func dec*(a: var BigInt, b: int = 1)
 
 
 func normalize(a: var BigInt) =
+  ## Normalize a `BigInt`, so that all invariants are fulfilled.
   for i in countdown(a.limbs.high, 0):
     if a.limbs[i] > 0'u32:
-      a.limbs.setLen(i+1)
+      a.limbs.setLen(i + 1)
       return
-  a.limbs.setLen(1)
+  # a is zero
+  a.limbs = @[]
 
 func initBigInt*(vals: sink seq[uint32], isNegative = false): BigInt =
   ## Initializes a `BigInt` from a sequence of `uint32` values.
@@ -38,7 +40,10 @@ func initBigInt*(vals: sink seq[uint32], isNegative = false): BigInt =
   normalize(result)
 
 func initBigInt*[T: int8|int16|int32](val: T): BigInt =
-  if val < 0:
+  if val == 0:
+    result.limbs = @[]
+    result.isNegative = false
+  elif val < 0:
     result.limbs = @[(not val).uint32 + 1] # manual 2's complement (to avoid overflow)
     result.isNegative = true
   else:
@@ -46,10 +51,15 @@ func initBigInt*[T: int8|int16|int32](val: T): BigInt =
     result.isNegative = false
 
 func initBigInt*[T: uint8|uint16|uint32](val: T): BigInt =
-  result.limbs = @[val.uint32]
+  if val == 0:
+    result.limbs = @[]
+  else:
+    result.limbs = @[val.uint32]
 
 func initBigInt*(val: int64): BigInt =
   var a = val.uint64
+  if val == 0:
+    return
   if val < 0:
     a = not a + 1 # 2's complement
     result.isNegative = true
@@ -79,7 +89,7 @@ const
   one = initBigInt(1)
 
 func isZero(a: BigInt): bool {.inline.} =
-  a.limbs.len == 0 or (a.limbs.len == 1 and a.limbs[0] == 0)
+  a.limbs.len == 0
 
 func abs*(a: BigInt): BigInt =
   # Returns the absolute value of `a`.
@@ -479,6 +489,9 @@ func `shl`*(x: BigInt, y: Natural): BigInt =
     assert a shl 1 == 48.initBigInt
     assert a shl 2 == 96.initBigInt
 
+  if x.isZero:
+    return x
+
   var carry = 0'u64
   let a = y div 32
   let b = uint32(y mod 32)
@@ -505,6 +518,8 @@ func `shr`*(x: BigInt, y: Natural): BigInt =
   let a = y div 32
   let b = uint32(y mod 32)
   let mask = (1'u32 shl b) - 1
+  if a >= x.limbs.len:
+    return zero
   result.limbs.setLen(x.limbs.len - a)
   result.isNegative = x.isNegative
 
@@ -677,8 +692,7 @@ func `xor`*(a, b: BigInt): BigInt =
 
 func reset(a: var BigInt) =
   ## Resets a `BigInt` back to the zero value.
-  a.limbs.setLen(1)
-  a.limbs[0] = 0
+  a.limbs = @[]
   a.isNegative = false
 
 func unsignedDivRem(q: var BigInt, r: var uint32, n: BigInt, d: uint32) =
