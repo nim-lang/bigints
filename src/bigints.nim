@@ -479,6 +479,9 @@ func `shl`*(x: BigInt, y: Natural): BigInt =
     assert a shl 1 == 48.initBigInt
     assert a shl 2 == 96.initBigInt
 
+  if x.isZero:
+    return x
+
   var carry = 0'u64
   let a = y div 32
   let b = uint32(y mod 32)
@@ -505,6 +508,8 @@ func `shr`*(x: BigInt, y: Natural): BigInt =
   let a = y div 32
   let b = uint32(y mod 32)
   let mask = (1'u32 shl b) - 1
+  if a >= x.limbs.len:
+    return zero
   result.limbs.setLen(x.limbs.len - a)
   result.isNegative = x.isNegative
 
