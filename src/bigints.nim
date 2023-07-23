@@ -1244,7 +1244,7 @@ func fastLog2*(a: BigInt): int =
   ## If `a` is zero, returns -1.
   if a.isZero:
     return -1
-  bitops.fastLog2(a.limbs[^1]) + 32*(a.limbs.high)
+  bitops.fastLog2(a.limbs[^1]) + 32 * (a.limbs.high)
 
 
 func invmod*(a, modulus: BigInt): BigInt =
@@ -1284,6 +1284,7 @@ func powmod*(base, exponent, modulus: BigInt): BigInt =
   ## The return value is always in the range `[0, modulus-1]`.
   runnableExamples:
     assert powmod(2.initBigInt, 3.initBigInt, 7.initBigInt) == 1.initBigInt
+
   if modulus.isZero:
     raise newException(DivByZeroDefect, "modulus must be nonzero")
   elif modulus.isNegative:
@@ -1291,16 +1292,13 @@ func powmod*(base, exponent, modulus: BigInt): BigInt =
   elif modulus == 1:
     return zero
   else:
-    var
-      base = base
-      exponent = exponent
-    if exponent < 0:
-      base = invmod(base, modulus)
-      exponent = -exponent
-    var basePow = base.modulo(modulus)
+    var basePow =
+      if exponent < 0:
+        invmod(base, modulus)
+      else:
+        base.modulo(modulus)
     result = one
-    while not exponent.isZero:
-      if (exponent.limbs[0] and 1) != 0:
+    for i in 0..fastLog2(exponent):
+      if (exponent.limbs[i div 32] and (1'u32 shl (i mod 32))) != 0:
         result = (result * basePow) mod modulus
       basePow = (basePow * basePow) mod modulus
-      exponent = exponent shr 1
