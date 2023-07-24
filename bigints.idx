@@ -1,47 +1,51 @@
-BigInt	bigints.html#BigInt	bigints: BigInt	
-initBigInt	bigints.html#initBigInt,sinkseq[uint32]	bigints: initBigInt(vals: sink seq[uint32]; isNegative = false): BigInt	
-initBigInt	bigints.html#initBigInt,T	bigints: initBigInt[T: int8 | int16 | int32](val: T): BigInt	
-initBigInt	bigints.html#initBigInt,T_2	bigints: initBigInt[T: uint8 | uint16 | uint32](val: T): BigInt	
-initBigInt	bigints.html#initBigInt,int64	bigints: initBigInt(val: int64): BigInt	
-initBigInt	bigints.html#initBigInt,uint64	bigints: initBigInt(val: uint64): BigInt	
-initBigInt	bigints.html#initBigInt.t,int	bigints: initBigInt(val: int): BigInt	
-initBigInt	bigints.html#initBigInt.t,uint	bigints: initBigInt(val: uint): BigInt	
-initBigInt	bigints.html#initBigInt,BigInt	bigints: initBigInt(val: BigInt): BigInt	
-abs	bigints.html#abs,BigInt	bigints: abs(a: BigInt): BigInt	
-`==`	bigints.html#==,BigInt,BigInt	bigints: `==`(a, b: BigInt): bool	
-`&lt;`	bigints.html#<,BigInt,BigInt	bigints: `&lt;`(a, b: BigInt): bool	
-`&lt;=`	bigints.html#<=,BigInt,BigInt	bigints: `&lt;=`(a, b: BigInt): bool	
-`-`	bigints.html#-,BigInt	bigints: `-`(a: BigInt): BigInt	
-`+`	bigints.html#+,BigInt,BigInt	bigints: `+`(a, b: BigInt): BigInt	
-`+=`	bigints.html#+=.t,BigInt,BigInt	bigints: `+=`(a: var BigInt; b: BigInt)	
-`-`	bigints.html#-,BigInt,BigInt	bigints: `-`(a, b: BigInt): BigInt	
-`-=`	bigints.html#-=.t,BigInt,BigInt	bigints: `-=`(a: var BigInt; b: BigInt)	
-`*`	bigints.html#*,BigInt,BigInt	bigints: `*`(a, b: BigInt): BigInt	
-`*=`	bigints.html#*=.t,BigInt,BigInt	bigints: `*=`(a: var BigInt; b: BigInt)	
-pow	bigints.html#pow,BigInt,Natural	bigints: pow(x: BigInt; y: Natural): BigInt	
-`shl`	bigints.html#shl,BigInt,Natural	bigints: `shl`(x: BigInt; y: Natural): BigInt	
-`shr`	bigints.html#shr,BigInt,Natural	bigints: `shr`(x: BigInt; y: Natural): BigInt	
-`not`	bigints.html#not,BigInt	bigints: `not`(a: BigInt): BigInt	
-`and`	bigints.html#and,BigInt,BigInt	bigints: `and`(a, b: BigInt): BigInt	
-`or`	bigints.html#or,BigInt,BigInt	bigints: `or`(a, b: BigInt): BigInt	
-`xor`	bigints.html#xor,BigInt,BigInt	bigints: `xor`(a, b: BigInt): BigInt	
-`div`	bigints.html#div,BigInt,BigInt	bigints: `div`(a, b: BigInt): BigInt	
-`mod`	bigints.html#mod,BigInt,BigInt	bigints: `mod`(a, b: BigInt): BigInt	
-divmod	bigints.html#divmod,BigInt,BigInt	bigints: divmod(a, b: BigInt): tuple[q, r: BigInt]	
-gcd	bigints.html#gcd,BigInt,BigInt	bigints: gcd(a, b: BigInt): BigInt	
-toInt	bigints.html#toInt,BigInt	bigints: toInt[T: SomeInteger](x: BigInt): Option[T]	
-toString	bigints.html#toString,BigInt,range[]	bigints: toString(a: BigInt; base: range[2 .. 36] = 10): string	
-`$`	bigints.html#$,BigInt	bigints: `$`(a: BigInt): string	
-initBigInt	bigints.html#initBigInt,string,range[]	bigints: initBigInt(str: string; base: range[2 .. 36] = 10): BigInt	
-`'bi`	bigints.html#'bi,string	bigints: `&apos;bi`(s: string): BigInt	
-inc	bigints.html#inc,BigInt,int	bigints: inc(a: var BigInt; b: int = 1)	
-dec	bigints.html#dec,BigInt,int	bigints: dec(a: var BigInt; b: int = 1)	
-succ	bigints.html#succ,BigInt,int	bigints: succ(a: BigInt; b: int = 1): BigInt	
-pred	bigints.html#pred,BigInt,int	bigints: pred(a: BigInt; b: int = 1): BigInt	
-countup	bigints.html#countup.i,BigInt,BigInt,int32	bigints: countup(a, b: BigInt; step: int32 = 1): BigInt	
-countdown	bigints.html#countdown.i,BigInt,BigInt,int32	bigints: countdown(a, b: BigInt; step: int32 = 1): BigInt	
-`..`	bigints.html#...i,BigInt,BigInt	bigints: `..`(a, b: BigInt): BigInt	
-`..&lt;`	bigints.html#..<.i,BigInt,BigInt	bigints: `..&lt;`(a, b: BigInt): BigInt	
-fastLog2	bigints.html#fastLog2,BigInt	bigints: fastLog2(a: BigInt): int	
-invmod	bigints.html#invmod,BigInt,BigInt	bigints: invmod(a, modulus: BigInt): BigInt	
-powmod	bigints.html#powmod,BigInt,BigInt,BigInt	bigints: powmod(base, exponent, modulus: BigInt): BigInt	
+nimTitle	bigints	bigints.html	module src/bigints		0
+nim	BigInt	bigints.html#BigInt	object BigInt		8
+nim	succ	bigints.html#succ,BigInt,int	proc succ(a: BigInt; b: int = 1): BigInt		18
+nim	inc	bigints.html#inc,BigInt,int	proc inc(a: var BigInt; b: int = 1)		19
+nim	dec	bigints.html#dec,BigInt,int	proc dec(a: var BigInt; b: int = 1)		20
+nim	initBigInt	bigints.html#initBigInt,sinkseq[uint32]	proc initBigInt(vals: sink seq[uint32]; isNegative = false): BigInt		30
+nim	initBigInt	bigints.html#initBigInt,T	proc initBigInt[T: int8 | int16 | int32](val: T): BigInt		40
+nim	initBigInt	bigints.html#initBigInt,T_2	proc initBigInt[T: uint8 | uint16 | uint32](val: T): BigInt		48
+nim	initBigInt	bigints.html#initBigInt,int64	proc initBigInt(val: int64): BigInt		51
+nim	initBigInt	bigints.html#initBigInt,uint64	proc initBigInt(val: uint64): BigInt		61
+nim	initBigInt	bigints.html#initBigInt.t,int	template initBigInt(val: int): BigInt		71
+nim	initBigInt	bigints.html#initBigInt.t,uint	template initBigInt(val: uint): BigInt		72
+nim	initBigInt	bigints.html#initBigInt,BigInt	proc initBigInt(val: BigInt): BigInt		74
+nim	abs	bigints.html#abs,BigInt	proc abs(a: BigInt): BigInt		84
+nim	`==`	bigints.html#==,BigInt,BigInt	proc `==`(a, b: BigInt): bool		154
+nim	`<`	bigints.html#<,BigInt,BigInt	proc `<`(a, b: BigInt): bool		165
+nim	`<=`	bigints.html#<=,BigInt,BigInt	proc `<=`(a, b: BigInt): bool		175
+nim	`-`	bigints.html#-,BigInt	proc `-`(a: BigInt): BigInt		228
+nim	`+`	bigints.html#+,BigInt,BigInt	proc `+`(a, b: BigInt): BigInt		335
+nim	`+=`	bigints.html#+=.t,BigInt,BigInt	template `+=`(a: var BigInt; b: BigInt)		346
+nim	`-`	bigints.html#-,BigInt,BigInt	proc `-`(a, b: BigInt): BigInt		383
+nim	`-=`	bigints.html#-=.t,BigInt,BigInt	template `-=`(a: var BigInt; b: BigInt)		394
+nim	`*`	bigints.html#*,BigInt,BigInt	proc `*`(a, b: BigInt): BigInt		446
+nim	`*=`	bigints.html#*=.t,BigInt,BigInt	template `*=`(a: var BigInt; b: BigInt)		455
+nim	pow	bigints.html#pow,BigInt,Natural	proc pow(x: BigInt; y: Natural): BigInt		462
+nim	`shl`	bigints.html#shl,BigInt,Natural	proc `shl`(x: BigInt; y: Natural): BigInt		475
+nim	`shr`	bigints.html#shr,BigInt,Natural	proc `shr`(x: BigInt; y: Natural): BigInt		497
+nim	`not`	bigints.html#not,BigInt	proc `not`(a: BigInt): BigInt		545
+nim	`and`	bigints.html#and,BigInt,BigInt	proc `and`(a, b: BigInt): BigInt		551
+nim	`or`	bigints.html#or,BigInt,BigInt	proc `or`(a, b: BigInt): BigInt		587
+nim	`xor`	bigints.html#xor,BigInt,BigInt	proc `xor`(a, b: BigInt): BigInt		625
+nim	`div`	bigints.html#div,BigInt,BigInt	proc `div`(a, b: BigInt): BigInt		829
+nim	`mod`	bigints.html#mod,BigInt,BigInt	proc `mod`(a, b: BigInt): BigInt		845
+nim	divmod	bigints.html#divmod,BigInt,BigInt	proc divmod(a, b: BigInt): tuple[q, r: BigInt]		861
+nim	gcd	bigints.html#gcd,BigInt,BigInt	proc gcd(a, b: BigInt): BigInt		881
+nim	toInt	bigints.html#toInt,BigInt	proc toInt[T: SomeInteger](x: BigInt): Option[T]		910
+nim	toString	bigints.html#toString,BigInt,range[]	proc toString(a: BigInt; base: range[2 .. 36] = 10): string		995
+nim	`$`	bigints.html#$,BigInt	proc `$`(a: BigInt): string		1060
+nim	initBigInt	bigints.html#initBigInt,string,range[]	proc initBigInt(str: string; base: range[2 .. 36] = 10): BigInt		1084
+nim	`'bi`	bigints.html#'bi,string	proc `'bi`(s: string): BigInt		4
+nim	pred	bigints.html#pred,BigInt,int	proc pred(a: BigInt; b: int = 1): BigInt		1199
+nim	countup	bigints.html#countup.i,BigInt,BigInt,int32	iterator countup(a, b: BigInt; step: int32 = 1): BigInt		1205
+nim	countdown	bigints.html#countdown.i,BigInt,BigInt,int32	iterator countdown(a, b: BigInt; step: int32 = 1): BigInt		1212
+nim	`..`	bigints.html#...i,BigInt,BigInt	iterator `..`(a, b: BigInt): BigInt		1219
+nim	`..<`	bigints.html#..<.i,BigInt,BigInt	iterator `..<`(a, b: BigInt): BigInt		1226
+nim	fastLog2	bigints.html#fastLog2,BigInt	proc fastLog2(a: BigInt): int		1241
+nim	invmod	bigints.html#invmod,BigInt,BigInt	proc invmod(a, modulus: BigInt): BigInt		1250
+nim	powmod	bigints.html#powmod,BigInt,BigInt,BigInt	proc powmod(base, exponent, modulus: BigInt): BigInt		1282
+nimgrp	-	bigints.html#--procs-all	proc		228
+nimgrp	initbigint	bigints.html#initBigInt-procs-all	proc		30
+nimgrp	initbigint	bigints.html#initBigInt-templates-all	template		71
