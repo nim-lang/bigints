@@ -506,10 +506,10 @@ func `shr`*(x: BigInt, y: Natural): BigInt =
 
   var carry = 0'u64
   let a = y div 32
-  let b = uint32(y mod 32)
-  let mask = (1'u32 shl b) - 1
   if a >= x.limbs.len:
     return zero
+  let b = uint32(y mod 32)
+  let mask = (1'u32 shl b) - 1
   result.limbs.setLen(x.limbs.len - a)
   result.isNegative = x.isNegative
 
