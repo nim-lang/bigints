@@ -24,28 +24,28 @@ nim	`*`	bigints.html#*,BigInt,BigInt	proc `*`(a, b: BigInt): BigInt		446
 nim	`*=`	bigints.html#*=.t,BigInt,BigInt	template `*=`(a: var BigInt; b: BigInt)		455
 nim	pow	bigints.html#pow,BigInt,Natural	proc pow(x: BigInt; y: Natural): BigInt		462
 nim	`shl`	bigints.html#shl,BigInt,Natural	proc `shl`(x: BigInt; y: Natural): BigInt		475
-nim	`shr`	bigints.html#shr,BigInt,Natural	proc `shr`(x: BigInt; y: Natural): BigInt		497
-nim	`not`	bigints.html#not,BigInt	proc `not`(a: BigInt): BigInt		545
-nim	`and`	bigints.html#and,BigInt,BigInt	proc `and`(a, b: BigInt): BigInt		551
-nim	`or`	bigints.html#or,BigInt,BigInt	proc `or`(a, b: BigInt): BigInt		587
-nim	`xor`	bigints.html#xor,BigInt,BigInt	proc `xor`(a, b: BigInt): BigInt		625
-nim	`div`	bigints.html#div,BigInt,BigInt	proc `div`(a, b: BigInt): BigInt		829
-nim	`mod`	bigints.html#mod,BigInt,BigInt	proc `mod`(a, b: BigInt): BigInt		845
-nim	divmod	bigints.html#divmod,BigInt,BigInt	proc divmod(a, b: BigInt): tuple[q, r: BigInt]		861
-nim	gcd	bigints.html#gcd,BigInt,BigInt	proc gcd(a, b: BigInt): BigInt		881
-nim	toInt	bigints.html#toInt,BigInt	proc toInt[T: SomeInteger](x: BigInt): Option[T]		910
-nim	toString	bigints.html#toString,BigInt,range[]	proc toString(a: BigInt; base: range[2 .. 36] = 10): string		995
-nim	`$`	bigints.html#$,BigInt	proc `$`(a: BigInt): string		1060
-nim	initBigInt	bigints.html#initBigInt,string,range[]	proc initBigInt(str: string; base: range[2 .. 36] = 10): BigInt		1084
+nim	`shr`	bigints.html#shr,BigInt,Natural	proc `shr`(x: BigInt; y: Natural): BigInt		500
+nim	`not`	bigints.html#not,BigInt	proc `not`(a: BigInt): BigInt		550
+nim	`and`	bigints.html#and,BigInt,BigInt	proc `and`(a, b: BigInt): BigInt		556
+nim	`or`	bigints.html#or,BigInt,BigInt	proc `or`(a, b: BigInt): BigInt		592
+nim	`xor`	bigints.html#xor,BigInt,BigInt	proc `xor`(a, b: BigInt): BigInt		630
+nim	`div`	bigints.html#div,BigInt,BigInt	proc `div`(a, b: BigInt): BigInt		834
+nim	`mod`	bigints.html#mod,BigInt,BigInt	proc `mod`(a, b: BigInt): BigInt		850
+nim	divmod	bigints.html#divmod,BigInt,BigInt	proc divmod(a, b: BigInt): tuple[q, r: BigInt]		866
+nim	gcd	bigints.html#gcd,BigInt,BigInt	proc gcd(a, b: BigInt): BigInt		886
+nim	toInt	bigints.html#toInt,BigInt	proc toInt[T: SomeInteger](x: BigInt): Option[T]		915
+nim	toString	bigints.html#toString,BigInt,range[]	proc toString(a: BigInt; base: range[2 .. 36] = 10): string		1000
+nim	`$`	bigints.html#$,BigInt	proc `$`(a: BigInt): string		1065
+nim	initBigInt	bigints.html#initBigInt,string,range[]	proc initBigInt(str: string; base: range[2 .. 36] = 10): BigInt		1089
 nim	`'bi`	bigints.html#'bi,string	proc `'bi`(s: string): BigInt		4
-nim	pred	bigints.html#pred,BigInt,int	proc pred(a: BigInt; b: int = 1): BigInt		1199
-nim	countup	bigints.html#countup.i,BigInt,BigInt,int32	iterator countup(a, b: BigInt; step: int32 = 1): BigInt		1205
-nim	countdown	bigints.html#countdown.i,BigInt,BigInt,int32	iterator countdown(a, b: BigInt; step: int32 = 1): BigInt		1212
-nim	`..`	bigints.html#...i,BigInt,BigInt	iterator `..`(a, b: BigInt): BigInt		1219
-nim	`..<`	bigints.html#..<.i,BigInt,BigInt	iterator `..<`(a, b: BigInt): BigInt		1226
-nim	fastLog2	bigints.html#fastLog2,BigInt	proc fastLog2(a: BigInt): int		1241
-nim	invmod	bigints.html#invmod,BigInt,BigInt	proc invmod(a, modulus: BigInt): BigInt		1250
-nim	powmod	bigints.html#powmod,BigInt,BigInt,BigInt	proc powmod(base, exponent, modulus: BigInt): BigInt		1282
+nim	pred	bigints.html#pred,BigInt,int	proc pred(a: BigInt; b: int = 1): BigInt		1204
+nim	countup	bigints.html#countup.i,BigInt,BigInt,int32	iterator countup(a, b: BigInt; step: int32 = 1): BigInt		1210
+nim	countdown	bigints.html#countdown.i,BigInt,BigInt,int32	iterator countdown(a, b: BigInt; step: int32 = 1): BigInt		1217
+nim	`..`	bigints.html#...i,BigInt,BigInt	iterator `..`(a, b: BigInt): BigInt		1224
+nim	`..<`	bigints.html#..<.i,BigInt,BigInt	iterator `..<`(a, b: BigInt): BigInt		1231
+nim	fastLog2	bigints.html#fastLog2,BigInt	proc fastLog2(a: BigInt): int		1246
+nim	invmod	bigints.html#invmod,BigInt,BigInt	proc invmod(a, modulus: BigInt): BigInt		1255
+nim	powmod	bigints.html#powmod,BigInt,BigInt,BigInt	proc powmod(base, exponent, modulus: BigInt): BigInt		1287
 nimgrp	-	bigints.html#--procs-all	proc		228
 nimgrp	initbigint	bigints.html#initBigInt-procs-all	proc		30
 nimgrp	initbigint	bigints.html#initBigInt-templates-all	template		71
