@@ -10,14 +10,14 @@ import std/strformat
 
 func pollardPMinus1(
   n: BigInt,
-  searchLimit: Natural,
+  searchLimit: BigInt,
   powerBase: BigInt = 2.initBigInt): Option[BigInt] =
   ## Performs Pollard's p-1 algorithm to find a non-trivial factor of `n`.
   var
     curPow = powerBase mod n
 
-  for k in 1.Natural .. searchLimit:
-    curPow = (curPow.pow(k)) mod n
+  for k in 1.initBigInt .. searchLimit:
+    curPow = curPow.powmod(k, n)
     let divisor = gcd(curPow-1.initBigInt, n)
     if divisor != 1.initBigInt and divisor != n:
       return some(divisor)
@@ -27,7 +27,7 @@ func pollardPMinus1(
 
 proc main() =
   const someNum = "52541208898777".initBigInt
-  let result = pollardPMinus1(someNum, 1000000.Natural)
+  let result = pollardPMinus1(someNum, "1000000".initBigInt)
   if result.isSome():
     let factor = result.get()
     echo fmt"{factor} is a factor of {someNum}"
