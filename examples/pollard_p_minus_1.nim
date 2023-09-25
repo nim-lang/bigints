@@ -13,8 +13,7 @@ func pollardPMinus1(
   searchLimit: BigInt,
   powerBase: BigInt = 2.initBigInt): Option[BigInt] =
   ## Performs Pollard's p-1 algorithm to find a non-trivial factor of `n`.
-  var
-    curPow = powerBase mod n
+  var curPow = powerBase mod n
 
   for k in 1.initBigInt .. searchLimit:
     curPow = curPow.powmod(k, n)
