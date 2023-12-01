@@ -20,3 +20,12 @@ block: # check uniformity
     doAssert(trials/nbuckets*0.5 < float(x))
     doAssert(float(x) < trials/nbuckets*1.5)
 
+block: # check serialization roundtrip
+  const
+    trials = 1024
+  var a, b: Bigint
+  for x in 0..trials:
+    a = rand(0.initBigInt..pow(2.initBigInt, x))
+    for endian in [bigEndian, littleEndian]:
+      b.fromBytes(a.toBytes(endian), endian)
+      doAssert a == b

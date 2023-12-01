@@ -102,7 +102,7 @@ proc main() =
   when (NimMajor, NimMinor) >= (1, 5):
     block: # literals
       # workaround
-      include tliterals
+      include ./literals
 
   block: # zero
     # see https://github.com/nim-lang/bigints/issues/26
@@ -879,6 +879,22 @@ proc main() =
     doAssert succ(a) == initBigInt(8)
     doAssert pred(a, 3) == initBigInt(4)
     doAssert succ(a, 3) == initBigInt(10)
+
+  when nimvm: discard
+  else:
+    let n = initBigInt("18591708106338011146")
+    block:
+      let buf = n.toBytes(bigEndian)
+      doAssert buf == @[ 0x1'u8, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0xA]
+      var res: Bigint
+      res.fromBytes(buf, bigEndian)
+      doAssert res == n
+    block:
+      let buf = n.toBytes(littleEndian)
+      doAssert buf == @[ 0xA'u8, 0x8, 0x7, 0x6, 0x5, 0x4, 0x3, 0x2, 0x1 ]
+      var res: Bigint
+      res.fromBytes(buf, littleEndian)
+      doAssert res == n
 
 
 static: main()
