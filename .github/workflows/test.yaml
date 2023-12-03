@@ -14,19 +14,48 @@ jobs:
       - run: echo "commit message doesn't contain '[skip ci]'"
 
   test:
+    needs: before
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         nim-version:
           - '1.4.8'
-          - '1.6.12'
+          - '1.6.16'
+          - '2.0.0'
           - 'devel'
-    needs: before
     steps:
       - uses: actions/checkout@v4
       - uses: jiro4989/setup-nim-action@v1
         with:
           nim-version: ${{ matrix.nim-version }}
+      - run: nimble install -y
+      - run: nimble test
+      - run: nimble checkExamples
+
+  i386:
+    needs: before
+    runs-on: ubuntu-latest
+    container:
+      image: i386/ubuntu
+    strategy:
+      fail-fast: false
+      matrix:
+        nim-version:
+          - '1.4.8'
+          - '1.6.16'
+          - '2.0.0'
+    steps:
+      - uses: actions/checkout@v1
+      - name: Setup
+        run: |
+          apt-get update -y
+          apt-get install -y curl gcc g++ git xz-utils
+          git config --global --add safe.directory /__w/bigints/bigints
+      - name: Install Nim
+        run: |
+          curl -sSf https://nim-lang.org/download/nim-${{ matrix.nim-version }}-linux_x32.tar.xz | tar -xJ
+          realpath nim-${{ matrix.nim-version }}/bin >> $GITHUB_PATH
       - run: nimble install -y
       - run: nimble test
       - run: nimble checkExamples
