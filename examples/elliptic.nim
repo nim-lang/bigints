@@ -1,17 +1,18 @@
 # By Cyther606: https://forum.nim-lang.org/t/522
 # Adapted from: https://github.com/wobine/blackboard101/blob/master/EllipticCurvesPart4-PrivateKeyToPublicKey.py
 import bigints
-import std/[math, strutils]
+import std/[math, strformat]
 
 const
   one = 1.initBigInt
   two = 2.initBigInt
+  three = 3.initBigInt
   zero = 0.initBigInt
 
 proc `^`(base: int; exp: int): BigInt = pow(base.initBigInt, exp)
 
 # Specs of the Bitcoin's curve - secp256k1
-let
+const
   primeCurve: BigInt = 2^256 - 2^32 - 2^9 - 2^8 - 2^7 - 2^6 - 2^4 - one
   numberPoints = initBigInt("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141", 16)
   Acurve = zero # with Bcurve = 7, coefficients in the elliptic curve equation y^2 = x^3 + Acurve * x + Bcurve
@@ -29,8 +30,8 @@ proc ecAdd(a: tuple, b: tuple): (BigInt, BigInt) =
 
 proc ecDouble(a: tuple): (BigInt, BigInt) =
   var
-    lam = ((3.initBigInt * a[0] * a[0] + Acurve) * invmod(2.initBigInt * a[1], primeCurve))
-    x = ((lam * lam) - (2.initBigInt * a[0])) mod primeCurve
+    lam = (three * a[0] * a[0] + Acurve) * invmod(two * a[1], primeCurve)
+    x = ((lam * lam) - (two * a[0])) mod primeCurve
     y = (lam * (a[0] - x) - a[1]) mod primeCurve
   lam = lam mod primeCurve
   result = (x, y)
@@ -49,21 +50,24 @@ proc ecMultiply(genPoint: tuple, scalarHex: BigInt): (BigInt, BigInt) =
 
 proc main() =
   let publicKey = ecMultiply(Gpoint, privKey)
+  let officialKey =
+    if publicKey[1] mod two == one: "03" & publicKey[0].toString(base = 16)
+    else: "02" & publicKey[0].toString(base = 16)
 
-  echo ""
-  echo "******* Public Key Generation *********"
-  echo ""
-  echo "the private key: "
-  echo privKey
-  echo ""
-  echo "the uncompressed public key (not address):"
-  echo publicKey
-  echo ""
-  echo "the uncompressed public key (HEX):"
-  echo "04", publicKey[0].toString(base = 16).align(64, '0'), publicKey[1].toString(base = 16).align(64, '0')
-  echo ""
-  echo "the official Public Key - compressed:"
-  echo if publicKey[1] mod two == one: "03" & publicKey[0].toString(base = 16).align(64, '0')
-       else: "02" & publicKey[0].toString(base = 16).align(64, '0')
+  echo &"""
+******* Public Key Generation *********
+
+the private key:
+{privKey}
+
+the uncompressed public key (not address):
+{publicKey}
+
+the uncompressed public key (HEX):
+04{publicKey[0].toString(base = 16):0>64}{publicKey[1].toString(base = 16):0>64}
+
+the official Public Key - compressed:
+{officialKey:0>64}
+"""
 
 main()
