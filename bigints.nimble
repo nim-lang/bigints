@@ -25,3 +25,20 @@ task checkExamples, "Check examples":
   for example in listFiles("examples"):
     if example.endsWith(".nim"):
       exec "nim check --hints:off " & example
+
+task benchAll, "Benchmark Library":
+  for backend in ["c", "cpp"]:
+    echo "Benchmarks with " & backend & " backend"
+    for gc in ["refc", "arc", "orc"]:
+      echo "Benchmark with " & gc & " garbage collector"
+      for benchmark in listFiles("benchmarks"):
+        if benchmark.endsWith(".nim"):
+          echo "Benchmark " & benchmark
+          exec "nim r --hints:off -d:danger --opt:speed -d:lto --backend:" & backend & " --gc:" & gc & " " & benchmark
+
+task benchOrcC, "Benchmark Library with orc garbage collector and C backend":
+  for benchmark in listFiles("benchmarks"):
+    if benchmark.endsWith(".nim"):
+      echo "Benchmark " & benchmark
+      exec "nim r --hints:off -d:danger --opt:speed -d:lto --backend:c --gc:orc " & benchmark
+
