@@ -16,9 +16,10 @@ block: # check uniformity
     total += r
     let iBucket = (r - lo) div ((hi - lo) div initBigInt(nbuckets))
     buckets[iBucket.toInt[:int]().get()] += 1
+  let expected = trials / nbuckets
   for x in buckets:
-    doAssert(trials / nbuckets * 0.5 < float(x))
-    doAssert(float(x) < trials / nbuckets * 1.5)
+    doAssert(expected * 0.5 < float(x))
+    doAssert(float(x) < expected * 1.5)
 
 block: # single element range
   let x = 1234567890.initBigInt
