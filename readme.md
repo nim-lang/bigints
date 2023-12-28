@@ -26,7 +26,6 @@ nimble install https://github.com/nim-lang/bigints
 
 ## Current limitations and possible enhancements
 
-* not expected to work on 32 bit
 * arithmetic operations such as addition, multiplication and division are not optimized for performance (e.g. [Karatsuba multiplication](https://en.wikipedia.org/wiki/Karatsuba_algorithm) is not implemented)
 
 

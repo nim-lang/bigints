@@ -31,7 +31,7 @@ func initBigInt*(vals: sink seq[uint32], isNegative = false): BigInt =
   ## Initializes a `BigInt` from a sequence of `uint32` values.
   runnableExamples:
     let a = @[10'u32, 2'u32].initBigInt
-    let b = 10 + 2 shl 32
+    let b = 10 + 2'u64 shl 32
     assert $a == $b
   result.limbs = vals
   result.isNegative = isNegative
