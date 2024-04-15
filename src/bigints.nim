@@ -37,39 +37,32 @@ func initBigInt*(vals: sink seq[uint32], isNegative = false): BigInt =
   result.isNegative = isNegative
   normalize(result)
 
-func initBigInt*[T: int8|int16|int32](val: T): BigInt =
-  if val < 0:
-    result.limbs = @[(not val).uint32 + 1] # manual 2's complement (to avoid overflow)
-    result.isNegative = true
-  else:
+func initBigInt*[T: SomeInteger](val: T): BigInt =
+  when T is int8 | int16 | int32 or (T is int and sizeof(int) <= 4):
+    if val < 0:
+      result.limbs = @[(not val).uint32 + 1] # manual 2's complement (to avoid overflow)
+      result.isNegative = true
+    else:
+      result.limbs = @[val.uint32]
+      result.isNegative = false
+  elif T is uint8 | uint16 | uint32 or (T is uint and sizeof(int) <= 4):
     result.limbs = @[val.uint32]
-    result.isNegative = false
-
-func initBigInt*[T: uint8|uint16|uint32](val: T): BigInt =
-  result.limbs = @[val.uint32]
-
-func initBigInt*(val: int64): BigInt =
-  var a = val.uint64
-  if val < 0:
-    a = not a + 1 # 2's complement
-    result.isNegative = true
-  if a > uint32.high:
-    result.limbs = @[(a and uint32.high).uint32, (a shr 32).uint32]
+  elif T is int64 | int:
+    var a = val.uint64
+    if val < 0:
+      a = not a + 1 # 2's complement
+      result.isNegative = true
+    if a > uint32.high:
+      result.limbs = @[(a and uint32.high).uint32, (a shr 32).uint32]
+    else:
+      result.limbs = @[a.uint32]
+  elif T is uint64 | uint:
+    if val > uint32.high:
+      result.limbs = @[(val and uint32.high).uint32, (val shr 32).uint32]
+    else:
+      result.limbs = @[val.uint32]
   else:
-    result.limbs = @[a.uint32]
-
-func initBigInt*(val: uint64): BigInt =
-  if val > uint32.high:
-    result.limbs = @[(val and uint32.high).uint32, (val shr 32).uint32]
-  else:
-    result.limbs = @[val.uint32]
-
-when sizeof(int) == 4:
-  template initBigInt*(val: int): BigInt = initBigInt(val.int32)
-  template initBigInt*(val: uint): BigInt = initBigInt(val.uint32)
-else:
-  template initBigInt*(val: int): BigInt = initBigInt(val.int64)
-  template initBigInt*(val: uint): BigInt = initBigInt(val.uint64)
+    {.error: "unsupported integer type".}
 
 func initBigInt*(val: BigInt): BigInt =
   result = val
