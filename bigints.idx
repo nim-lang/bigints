@@ -46,6 +46,6 @@ nim	`..<`	bigints.html#..<.i,BigInt,BigInt	iterator `..<`(a, b: BigInt): BigInt	
 nim	fastLog2	bigints.html#fastLog2,BigInt	proc fastLog2(a: BigInt): int		1246
 nim	invmod	bigints.html#invmod,BigInt,BigInt	proc invmod(a, modulus: BigInt): BigInt		1255
 nim	powmod	bigints.html#powmod,BigInt,BigInt,BigInt	proc powmod(base, exponent, modulus: BigInt): BigInt		1287
-nimgrp	-	bigints.html#--procs-all	proc		228
 nimgrp	initbigint	bigints.html#initBigInt-procs-all	proc		30
+nimgrp	-	bigints.html#--procs-all	proc		228
 nimgrp	initbigint	bigints.html#initBigInt-templates-all	template		71
