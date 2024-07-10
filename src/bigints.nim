@@ -2,7 +2,7 @@
 ##
 ## The bitwise operations behave as if negative numbers were represented in 2's complement.
 
-import std/[algorithm, bitops, math, options]
+import std/[algorithm, bitops, fenv, math, options]
 
 type
   BigInt* = object
@@ -1251,6 +1251,12 @@ func fastLog2*(a: BigInt): int =
     return -1
   bitops.fastLog2(a.limbs[^1]) + 32*(a.limbs.high)
 
+func to*(x: BigInt, T:type SomeFloat): T =
+  let lolimb = max(x.limbs.low, x.limbs.high - 1 - mantissaDigits(T) div 32)
+  for i in lolimb..x.limbs.high:
+    result += T(x.limbs[i].int64) * pow(2.0, 32.0 * T(i))
+  if x.isNegative:
+    result = -result
 
 func invmod*(a, modulus: BigInt): BigInt =
   ## Compute the modular inverse of `a` modulo `modulus`.
