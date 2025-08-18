@@ -880,6 +880,35 @@ proc main() =
     doAssert pred(a, 3) == initBigInt(4)
     doAssert succ(a, 3) == initBigInt(10)
 
+  block: # to float
+    doAssert initBigInt("1").to(float32) is float32
+    doAssert initBigInt("1").to(float64) is float64
+    doAssert initBigInt("1").to(BiggestFloat) is BiggestFloat
+    doAssert initBigInt("1").to(float) is float
+
+    doAssert initBigInt("0").to(BiggestFloat) == 0.0
+    doAssert initBigInt("1").to(BiggestFloat) == 1.0
+    doAssert initBigInt("1").to(float32) == 1.0
+    doAssert initBigInt("1").to(float64) == 1.0
+
+    doAssert initBigInt("-1").to(BiggestFloat) == -1.0
+    doAssert initBigInt(BiggestInt.high).to(BiggestFloat) == BiggestFloat(BiggestInt.high)
+    doAssert initBigInt(BiggestInt.low).to(BiggestFloat) == BiggestFloat(BiggestInt.low)
+    doAssert (initBigInt(BiggestInt.high) * initBigInt(4)).to(BiggestFloat) == BiggestFloat(BiggestInt.high) * 4.0
+    doAssert (initBigInt(BiggestInt.low) * initBigInt(4)).to(BiggestFloat) == BiggestFloat(BiggestInt.low) * 4.0
+    doAssert (initBigInt("17976931348623157") * initBigInt(10).pow(292)).to(BiggestFloat) == 17976931348623157e292
+
+    # limits of exact representability
+    doAssert initBigInt(1 shl 24).to(float32) == float32(1 shl 24)
+    doAssert initBigInt(-1 shl 24).to(float32) == float32(-1 shl 24)
+    doAssert initBigInt(1 shl 53).to(float64) == float64(1 shl 53)
+    doAssert initBigInt(-1 shl 53).to(float64) == float64(-1 shl 53)
+    # out of exact integer representation range
+    doAssert initBigInt(int32.high).to(float32) == float32(int32.high)
+    doAssert initBigInt(int64.high).to(float64) == float64(int64.high)
+    # well out out of finite range
+    doAssert initBigInt("-10").pow(400).to(float64) == Inf
+    doAssert initBigInt("-10").pow(401).to(float64) == -Inf
 
 static: main()
 main()
