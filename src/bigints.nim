@@ -5,12 +5,13 @@
 import std/[algorithm, bitops, math, options]
 
 type
+  Limb = uint32
   BigInt* = object
     ## An arbitrary precision integer.
     # Invariants for `a: BigInt`:
     # * if `a` is non-zero: `a.limbs[a.limbs.high] != 0`
     # * if `a` is zero: `a.limbs.len <= 1`
-    limbs: seq[uint32]
+    limbs: seq[Limb]
     isNegative: bool
 
 
@@ -78,8 +79,11 @@ const
   zero = initBigInt(0)
   one = initBigInt(1)
 
+func isZeroLimbs(limbs: openArray[Limb]): bool {.inline.} =
+  limbs.len == 0 or (limbs.len == 1 and limbs[0] == 0)
+
 func isZero(a: BigInt): bool {.inline.} =
-  a.limbs.len == 0 or (a.limbs.len == 1 and a.limbs[0] == 0)
+  isZeroLimbs(a.limbs)
 
 func abs*(a: BigInt): BigInt =
   # Returns the absolute value of `a`.
@@ -89,22 +93,22 @@ func abs*(a: BigInt): BigInt =
   result = a
   result.isNegative = false
 
-func unsignedCmp(a: BigInt, b: uint32): int64 =
+func unsignedCmp(aLimbs: openArray[Limb], b: uint32): int64 =
   # ignores the sign of `a`
   # `a` and `b` are assumed to not be zero
-  result = int64(a.limbs.len) - 1
+  result = int64(aLimbs.len) - 1
   if result != 0: return
-  result = int64(a.limbs[0]) - int64(b)
+  result = int64(aLimbs[0]) - int64(b)
 
-func unsignedCmp(a: uint32, b: BigInt): int64 = -unsignedCmp(b, a)
+func unsignedCmp(a: uint32, bLimbs: openArray[Limb]): int64 = -unsignedCmp(bLimbs, a)
 
-func unsignedCmp(a, b: BigInt): int64 =
+func unsignedCmp(aLimbs, bLimbs: openArray[Limb]): int64 =
   # ignores the signs of `a` and `b`
   # `a` and `b` are assumed to not be zero
-  result = int64(a.limbs.len) - int64(b.limbs.len)
+  result = int64(aLimbs.len) - int64(bLimbs.len)
   if result != 0: return
-  for i in countdown(a.limbs.high, 0):
-    result = int64(a.limbs[i]) - int64(b.limbs[i])
+  for i in countdown(aLimbs.high, 0):
+    result = int64(aLimbs[i]) - int64(bLimbs[i])
     if result != 0:
       return
 
@@ -124,12 +128,12 @@ func cmp(a, b: BigInt): int64 =
     if b.isZero or not b.isNegative:
       return -1
     else:
-      return unsignedCmp(b, a)
+      return unsignedCmp(b.limbs, a.limbs)
   else: # a > 0
     if b.isZero or b.isNegative:
       return 1
     else:
-      return unsignedCmp(a, b)
+      return unsignedCmp(a.limbs, b.limbs)
 
 func cmp(a: BigInt, b: int32): int64 =
   ## Returns:
@@ -140,14 +144,14 @@ func cmp(a: BigInt, b: int32): int64 =
     return -b.int64
   elif a.isNegative:
     if b < 0:
-      return unsignedCmp((not b).uint32 + 1, a)
+      return unsignedCmp((not b).uint32 + 1, a.limbs)
     else:
       return -1
   else: # a > 0
     if b <= 0:
       return 1
     else:
-      return unsignedCmp(a, b.uint32)
+      return unsignedCmp(a.limbs, b.uint32)
 
 func cmp(a: int32, b: BigInt): int64 = -cmp(b, a)
 
@@ -191,33 +195,33 @@ template addParts(toAdd) =
   a.limbs[i] = uint32(tmp and uint32.high)
   tmp = tmp shr 32
 
-func unsignedAdditionInt(a: var BigInt, b: BigInt, c: uint32) =
-  let bl = b.limbs.len
+func unsignedAdditionInt(a: var BigInt, bLimbs: openArray[Limb], c: uint32) =
+  let bl = bLimbs.len
   a.limbs.setLen(bl)
 
   var tmp: uint64 = uint64(c)
   for i in 0 ..< bl:
-    addParts(uint64(b.limbs[i]))
+    addParts(uint64(bLimbs[i]))
   if tmp > 0'u64:
     a.limbs.add(uint32(tmp))
   a.isNegative = false
 
-func unsignedAddition(a: var BigInt, b, c: BigInt) =
+func unsignedAddition(a: var BigInt, bLimbs, cLimbs: openArray[Limb]) =
   let
-    bl = b.limbs.len
-    cl = c.limbs.len
+    bl = bLimbs.len
+    cl = cLimbs.len
   var m = min(bl, cl)
   a.limbs.setLen(max(bl, cl))
 
   var tmp = 0'u64
   for i in 0 ..< m:
-    addParts(uint64(b.limbs[i]) + uint64(c.limbs[i]))
+    addParts(uint64(bLimbs[i]) + uint64(cLimbs[i]))
   if bl < cl:
     for i in m ..< cl:
-      addParts(uint64(c.limbs[i]))
+      addParts(uint64(cLimbs[i]))
   else:
     for i in m ..< bl:
-      addParts(uint64(b.limbs[i]))
+      addParts(uint64(bLimbs[i]))
   if tmp > 0'u64:
     a.limbs.add(uint32(tmp))
   a.isNegative = false
@@ -236,14 +240,14 @@ func `-`*(a: BigInt): BigInt =
   result = a
   negate(result)
 
-template realUnsignedSubtractionInt(a: var BigInt, b: BigInt, c: uint32) =
+template realUnsignedSubtractionInt(a: var BigInt, bLimbs: openArray[Limb], c: uint32) =
   # b > c
-  let bl = b.limbs.len
+  let bl = bLimbs.len
   a.limbs.setLen(bl)
 
   var tmp = int64(c)
   for i in 0 ..< bl:
-    tmp = int64(uint32.high) + 1 + int64(b.limbs[i]) - tmp
+    tmp = int64(uint32.high) + 1 + int64(bLimbs[i]) - tmp
     a.limbs[i] = uint32(tmp and int64(uint32.high))
     tmp = 1 - (tmp shr 32)
   a.isNegative = false
@@ -251,28 +255,28 @@ template realUnsignedSubtractionInt(a: var BigInt, b: BigInt, c: uint32) =
   normalize(a)
   assert tmp == 0
 
-template realUnsignedSubtraction(a: var BigInt, b, c: BigInt) =
+template realUnsignedSubtraction(a: var BigInt, bLimbs, cLimbs: openArray[Limb]) =
   # b > c
   let
-    bl = b.limbs.len
-    cl = c.limbs.len
+    bl = bLimbs.len
+    cl = cLimbs.len
   var m = min(bl, cl)
   a.limbs.setLen(max(bl, cl))
 
   var tmp = 0'i64
   for i in 0 ..< m:
-    tmp = int64(uint32.high) + 1 + int64(b.limbs[i]) - int64(c.limbs[i]) - tmp
+    tmp = int64(uint32.high) + 1 + int64(bLimbs[i]) - int64(cLimbs[i]) - tmp
     a.limbs[i] = uint32(tmp and int64(uint32.high))
     tmp = 1 - (tmp shr 32)
   if bl < cl:
     for i in m ..< cl:
-      tmp = int64(uint32.high) + 1 - int64(c.limbs[i]) - tmp
+      tmp = int64(uint32.high) + 1 - int64(cLimbs[i]) - tmp
       a.limbs[i] = uint32(tmp and int64(uint32.high))
       tmp = 1 - (tmp shr 32)
     a.isNegative = true
   else:
     for i in m ..< bl:
-      tmp = int64(uint32.high) + 1 + int64(b.limbs[i]) - tmp
+      tmp = int64(uint32.high) + 1 + int64(bLimbs[i]) - tmp
       a.limbs[i] = uint32(tmp and int64(uint32.high))
       tmp = 1 - (tmp shr 32)
     a.isNegative = false
@@ -280,24 +284,24 @@ template realUnsignedSubtraction(a: var BigInt, b, c: BigInt) =
   normalize(a)
   assert tmp == 0
 
-func unsignedSubtractionInt(a: var BigInt, b: BigInt, c: uint32) =
+func unsignedSubtractionInt(a: var BigInt, bLimbs: openArray[Limb], c: uint32) =
   # `b` is not zero
-  let cmpRes = unsignedCmp(b, c)
+  let cmpRes = unsignedCmp(bLimbs, c)
   if cmpRes > 0:
-    realUnsignedSubtractionInt(a, b, c)
+    realUnsignedSubtractionInt(a, bLimbs, c)
   elif cmpRes < 0:
     # `b` is only a single limb
-    a.limbs = @[c - b.limbs[0]]
+    a.limbs = @[c - bLimbs[0]]
     a.isNegative = true
   else: # b == c
     a = zero
 
-func unsignedSubtraction(a: var BigInt, b, c: BigInt) =
-  let cmpRes = unsignedCmp(b, c)
+func unsignedSubtraction(a: var BigInt, bLimbs, cLimbs: openArray[Limb]) =
+  let cmpRes = unsignedCmp(bLimbs, cLimbs)
   if cmpRes > 0:
-    realUnsignedSubtraction(a, b, c)
+    realUnsignedSubtraction(a, bLimbs, cLimbs)
   elif cmpRes < 0:
-    realUnsignedSubtraction(a, c, b)
+    realUnsignedSubtraction(a, cLimbs, bLimbs)
     a.negate()
   else: # b == c
     a = zero
@@ -308,29 +312,29 @@ func additionInt(a: var BigInt, b: BigInt, c: int32) =
     a = c.initBigInt
   elif b.isNegative:
     if c < 0:
-      unsignedAdditionInt(a, b, (not c).uint32 + 1)
+      unsignedAdditionInt(a, b.limbs, (not c).uint32 + 1)
     else:
-      unsignedSubtractionInt(a, b, c.uint32)
+      unsignedSubtractionInt(a, b.limbs, c.uint32)
     a.negate()
   else:
     if c < 0:
-      unsignedSubtractionInt(a, b, (not c).uint32 + 1)
+      unsignedSubtractionInt(a, b.limbs, (not c).uint32 + 1)
     else:
-      unsignedAdditionInt(a, b, c.uint32)
+      unsignedAdditionInt(a, b.limbs, c.uint32)
 
 func addition(a: var BigInt, b, c: BigInt) =
   # a = b + c
   if b.isNegative:
     if c.isNegative:
-      unsignedAddition(a, b, c)
+      unsignedAddition(a, b.limbs, c.limbs)
       a.isNegative = true
     else:
-      unsignedSubtraction(a, c, b)
+      unsignedSubtraction(a, c.limbs, b.limbs)
   else:
     if c.isNegative:
-      unsignedSubtraction(a, b, c)
+      unsignedSubtraction(a, b.limbs, c.limbs)
     else:
-      unsignedAddition(a, b, c)
+      unsignedAddition(a, b.limbs, c.limbs)
 
 func `+`*(a, b: BigInt): BigInt =
   ## Addition for `BigInt`s.
@@ -356,29 +360,29 @@ func subtractionInt(a: var BigInt, b: BigInt, c: int32) =
     a = -c.initBigInt
   elif b.isNegative:
     if c < 0:
-      unsignedSubtractionInt(a, b, (not c).uint32 + 1)
+      unsignedSubtractionInt(a, b.limbs, (not c).uint32 + 1)
     else:
-      unsignedAdditionInt(a, b, c.uint32)
+      unsignedAdditionInt(a, b.limbs, c.uint32)
     a.negate()
   else:
     if c < 0:
-      unsignedAdditionInt(a, b, (not c).uint32 + 1)
+      unsignedAdditionInt(a, b.limbs, (not c).uint32 + 1)
     else:
-      unsignedSubtractionInt(a, b, c.uint32)
+      unsignedSubtractionInt(a, b.limbs, c.uint32)
 
 func subtraction(a: var BigInt, b, c: BigInt) =
   # a = b - c
   if b.isNegative:
     if c.isNegative:
-      unsignedSubtraction(a, c, b)
+      unsignedSubtraction(a, c.limbs, b.limbs)
     else:
-      unsignedAddition(a, b, c)
+      unsignedAddition(a, b.limbs, c.limbs)
       a.isNegative = true
   else:
     if c.isNegative:
-      unsignedAddition(a, b, c)
+      unsignedAddition(a, b.limbs, c.limbs)
     else:
-      unsignedSubtraction(a, b, c)
+      unsignedSubtraction(a, b.limbs, c.limbs)
 
 func `-`*(a, b: BigInt): BigInt =
   ## Subtraction for `BigInt`s.
@@ -398,17 +402,16 @@ template `-=`*(a: var BigInt, b: BigInt) =
     assert a == 3.initBigInt
   a = a - b
 
-
-func unsignedMultiplication(a: var BigInt, b, c: BigInt) {.inline.} =
+func unsignedLongMultiplication(a: var BigInt, bLimbs, cLimbs: openArray[Limb]) {.inline.} =
   # always called with bl >= cl
   let
-    bl = b.limbs.len
-    cl = c.limbs.len
+    bl = bLimbs.len
+    cl = cLimbs.len
   a.limbs.setLen(bl + cl)
   var tmp = 0'u64
 
   for i in 0 ..< bl:
-    tmp += uint64(b.limbs[i]) * uint64(c.limbs[0])
+    tmp += uint64(bLimbs[i]) * uint64(cLimbs[0])
     a.limbs[i] = uint32(tmp and uint32.high)
     tmp = tmp shr 32
 
@@ -417,7 +420,7 @@ func unsignedMultiplication(a: var BigInt, b, c: BigInt) {.inline.} =
   for j in 1 ..< cl:
     tmp = 0'u64
     for i in 0 ..< bl:
-      tmp += uint64(a.limbs[j + i]) + uint64(b.limbs[i]) * uint64(c.limbs[j])
+      tmp += uint64(a.limbs[j + i]) + uint64(bLimbs[i]) * uint64(cLimbs[j])
       a.limbs[j + i] = uint32(tmp and uint32.high)
       tmp = tmp shr 32
     var pos = j + bl
@@ -428,19 +431,109 @@ func unsignedMultiplication(a: var BigInt, b, c: BigInt) {.inline.} =
       inc pos
   normalize(a)
 
-func multiplication(a: var BigInt, b, c: BigInt) =
-  # a = b * c
-  if b.isZero or c.isZero:
+func unsignedMultiplicationInt(a: var BigInt, bLimbs: openArray[Limb], c: uint32) {.inline.} =
+  if c == 0:
     a = zero
     return
   let
-    bl = b.limbs.len
-    cl = c.limbs.len
+    bl = bLimbs.len
+  a.limbs.setLen(bl + 1)
+  var tmp = 0'u64
+  let c = uint64(c)
+
+  for i in 0 ..< bl:
+    tmp += uint64(bLimbs[i]) * c
+    a.limbs[i] = uint32(tmp and uint32.high)
+    tmp = tmp shr 32
+
+  a.limbs[bl] = uint32(tmp)
+  normalize(a)
+
+const
+  karatsubaThreshold = 80
+
+func unsignedKaratsubaMultiplication(a: var BigInt, bLimbs, cLimbs: openArray[Limb])
+
+func unsignedMultiplication(a: var BigInt, bLimbs, cLimbs: openArray[Limb]) =
+  # a = b * c
+  if bLimbs.isZeroLimbs or cLimbs.isZeroLimbs:
+    a = zero
+    return
+  let
+    bl = bLimbs.len
+    cl = cLimbs.len
 
   if cl > bl:
-    unsignedMultiplication(a, c, b)
+    if bl >= karatsubaThreshold:
+      unsignedKaratsubaMultiplication(a, cLimbs, bLimbs)
+    else:
+      unsignedLongMultiplication(a, cLimbs, bLimbs)
   else:
-    unsignedMultiplication(a, b, c)
+    if cl >= karatsubaThreshold:
+      unsignedKaratsubaMultiplication(a, bLimbs, cLimbs)
+    else:
+      unsignedLongMultiplication(a, bLimbs, cLimbs)
+
+func multiplication(a: var BigInt, b, c: BigInt) =
+  unsignedMultiplication(a, b.limbs, c.limbs)
+  a.isNegative = b.isNegative xor c.isNegative
+
+func `shl`*(x: BigInt, y: Natural): BigInt
+func `shr`*(x: BigInt, y: Natural): BigInt
+
+template toOpenArrayCompat(a: typed, b, c: int): untyped =
+  when (NimMajor, NimMinor, NimPatch) >= (1, 6, 10):
+    a.toOpenArray(b, c)
+  else:
+    when nimvm:
+      a[b .. c]
+    else:
+      a.toOpenArray(b, c)
+
+func unsignedKaratsubaMultiplication(a: var BigInt, bLimbs, cLimbs: openArray[Limb]) =
+  if bLimbs.isZeroLimbs or cLimbs.isZeroLimbs:
+    a = zero
+    return
+  let
+    bl = bLimbs.len
+    cl = cLimbs.len
+    n = min(bl, cl)
+    k = n shr 1
+  if bl == 1:
+    # base case : multiply the only limb with each limb of second term
+    unsignedMultiplicationInt(a, cLimbs, bLimbs[0])
+    return 
+  if cl == 1:
+    unsignedMultiplicationInt(a, bLimbs, cLimbs[0])
+    return
+  if bl < karatsubaThreshold or cl < karatsubaThreshold:
+    if bl >= cl:
+      unsignedLongMultiplication(a, bLimbs, cLimbs)
+    else:
+      unsignedLongMultiplication(a, cLimbs, bLimbs)
+    return
+  # Decompose `b` and `c` in two parts of (almost) equal length
+  template low_b: openArray[Limb] = bLimbs.toOpenArrayCompat(0, k-1)
+  template high_b: openArray[Limb] = bLimbs.toOpenArrayCompat(k, bl-1)
+  template low_c: openArray[Limb] = cLimbs.toOpenArrayCompat(0, k-1)
+  template high_c: openArray[Limb] = cLimbs.toOpenArrayCompat(k, cl-1)
+  
+  # subtractive version of Karatsuba's algorithm to limit carry handling
+  var lowProduct, highProduct, add3, add4, add5, middleTerm: BigInt = zero
+
+  unsignedMultiplication(lowProduct, low_b, low_c)
+  unsignedMultiplication(highProduct, high_b, high_c)
+
+  unsignedSubtraction(add3, low_b, high_b)
+  unsignedSubtraction(add4, high_c, low_c)
+
+  multiplication(add5, add4, add3)
+
+  middleTerm = lowProduct + highProduct + add5
+  a = lowProduct + middleTerm shl (32*k) + highProduct shl (64*k)
+
+func karatsubaMultiplication*(a: var BigInt, b, c: BigInt) =
+  unsignedKaratsubaMultiplication(a, b.limbs, c.limbs)
   a.isNegative = b.isNegative xor c.isNegative
 
 func `*`*(a, b: BigInt): BigInt =
@@ -1150,7 +1243,7 @@ func initBigInt*(str: string, base: range[2..36] = 10): BigInt =
           if str[j] != '_':
             let digit = parseDigit(str[j], base)
             num = (num * base) + digit
-        unsignedAdditionInt(result, result * d, num)
+        unsignedAdditionInt(result, (result * d).limbs, num)
       else:
         # iterator over a block smaller than `size`, so we have to compute `mul`
         var mul = 1'u32 # the multiplication factor for num
@@ -1159,7 +1252,7 @@ func initBigInt*(str: string, base: range[2..36] = 10): BigInt =
             let digit = parseDigit(str[j], base)
             num = (num * base) + digit
             mul *= base
-        unsignedAdditionInt(result, result * initBigInt(mul), num)
+        unsignedAdditionInt(result, (result * initBigInt(mul)).limbs, num)
 
   result.isNegative = neg
 
@@ -1235,7 +1328,6 @@ iterator `..<`*(a, b: BigInt): BigInt =
     yield res
     inc res
 
-
 func modulo(a, modulus: BigInt): BigInt =
   ## Like `mod`, but the result is always in the range `[0, modulus-1]`.
   ## `modulus` should be greater than zero.
@@ -1250,7 +1342,6 @@ func fastLog2*(a: BigInt): int =
   if a.isZero:
     return -1
   bitops.fastLog2(a.limbs[^1]) + 32*(a.limbs.high)
-
 
 func invmod*(a, modulus: BigInt): BigInt =
   ## Compute the modular inverse of `a` modulo `modulus`.
