@@ -1,4 +1,4 @@
-nimTitle	bigints	bigints.html	module src/bigints		0
+nimTitle	bigints	bigints.html	module bigints		0
 nim	BigInt	bigints.html#BigInt	object BigInt		8
 nim	succ	bigints.html#succ,BigInt,int	proc succ(a: BigInt; b: int = 1): BigInt		18
 nim	inc	bigints.html#inc,BigInt,int	proc inc(a: var BigInt; b: int = 1)		19
