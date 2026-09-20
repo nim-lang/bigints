@@ -1309,3 +1309,49 @@ func powmod*(base, exponent, modulus: BigInt): BigInt =
         result = (result * basePow) mod modulus
       basePow = (basePow * basePow) mod modulus
       exponent = exponent shr 1
+
+func getLimbAndBitPosFromBitPos(bit: Natural): tuple[bit, limb: Natural] {.inline.} =
+  (bit: Natural(bit and 31), limb: Natural(bit shr 5))
+
+func setBit*(a: var BigInt; bit: Natural) =
+  ## Mutates `a`, with the bit at position `bit` set to 1.
+  runnableExamples:
+    var v = 0b0000_0011.initBigInt
+    v.setBit(5)
+    doAssert v == 0b0010_0011.initBigInt
+
+  let (b, l) = getLimbAndBitPosFromBitPos(bit)
+
+  if l >= a.limbs.len:
+    a.limbs.setLen(l + 1)
+
+  a.limbs[l] = a.limbs[l] or (1'u32 shl b)
+
+func clearBit*(a: var BigInt; bit: Natural) =
+  ## Mutates `v`, with the bit at position `bit` set to 0.
+  runnableExamples:
+     var v = 0b0000_0011.initBigInt
+     v.clearBit(1)
+     doAssert v == 0b0000_0001.initBigInt
+
+  let (b, l) = getLimbAndBitPosFromBitPos(bit)
+
+  if l >= a.limbs.len:
+    return
+
+  a.limbs[l] = a.limbs[l] and not (1'u32 shl b)
+  normalize(a)
+
+func testBit*(a: BigInt; bit: Natural): bool =
+  ## Returns true if the bit in `a` at positions `bit` is set to 1.
+  runnableExamples:
+    let v = 0b0000_1111.initBigInt
+    doAssert v.testBit(0)
+    doAssert not v.testBit(7)
+
+  let (b, l) = getLimbAndBitPosFromBitPos(bit)
+
+  if l >= a.limbs.len:
+    false
+  else:
+    (a.limbs[l] and (1'u32 shl b)) != 0
