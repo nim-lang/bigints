@@ -87,5 +87,18 @@ proc main() =
   block: # toInt[int64] produces wrong results in certain cases (https://github.com/nim-lang/bigints/issues/99)
     doAssert toInt[int64](-initBigInt(0xFFFFFFFF_00000000'u64)) == none(int64)
 
+  block: # arithmetic `shr` of a negative number shifted past its size gives -1, not 0
+    doAssert ((-1).initBigInt shr 32) == (-1).initBigInt
+    doAssert ((-2).initBigInt shr 33) == (-1).initBigInt
+    doAssert (("-18446744073709551615").initBigInt shr 1000) == (-1).initBigInt
+    doAssert (1.initBigInt shr 32) == 0.initBigInt
+    doAssert ((-1).initBigInt shr 0) == (-1).initBigInt
+
+  block: # division: quotient digit estimate must be clamped when leading limbs are equal
+    let n = "730750818495310275721298203196880063083711561727".initBigInt
+    let d = "39614081247908796766359650303".initBigInt
+    doAssert n div d == "18446744073709551615".initBigInt
+    doAssert n mod d == "696856065384891421382672382".initBigInt
+
 static: main()
 main()

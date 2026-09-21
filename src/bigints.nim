@@ -507,7 +507,8 @@ func `shr`*(x: BigInt, y: Natural): BigInt =
   var carry = 0'u64
   let a = y div 32
   if a >= x.limbs.len:
-    return zero
+    # every limb was shifted out: 0, or -1 for negative x (arithmetic shift)
+    return if x.isNegative: -one else: zero
   let b = uint32(y mod 32)
   let mask = (1'u32 shl b) - 1
   result.limbs.setLen(x.limbs.len - a)
@@ -754,11 +755,16 @@ func unsignedDivRem(q, r: var BigInt, n, d: BigInt) =
       var q1 = vv div wm1
       var r1 = vv mod wm1
 
-      while (wm2 * q1) > ((r1 shl 32) or q.limbs[v+dn-2]):
-        dec q1
-        r1 += wm1
-        if r1 > uint32.high:
-          break
+      if q1 > uint32.high.uint64:
+        # vtop == wm1: clamp qhat to b-1 and recompute rhat (Knuth, step D3)
+        q1 = uint32.high.uint64
+        r1 = vv - q1 * uint64(wm1)
+      if r1 <= uint32.high:
+        while (wm2 * q1) > ((r1 shl 32) or q.limbs[v+dn-2]):
+          dec q1
+          r1 += wm1
+          if r1 > uint32.high:
+            break
 
       assert q1 <= uint32.high
 
