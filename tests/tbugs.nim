@@ -87,5 +87,12 @@ proc main() =
   block: # toInt[int64] produces wrong results in certain cases (https://github.com/nim-lang/bigints/issues/99)
     doAssert toInt[int64](-initBigInt(0xFFFFFFFF_00000000'u64)) == none(int64)
 
+  block: # arithmetic `shr` of a negative number shifted past its size gives -1, not 0
+    doAssert ((-1).initBigInt shr 32) == (-1).initBigInt
+    doAssert ((-2).initBigInt shr 33) == (-1).initBigInt
+    doAssert (("-18446744073709551615").initBigInt shr 1000) == (-1).initBigInt
+    doAssert (1.initBigInt shr 32) == 0.initBigInt
+    doAssert ((-1).initBigInt shr 0) == (-1).initBigInt
+
 static: main()
 main()

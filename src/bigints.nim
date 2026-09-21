@@ -507,7 +507,8 @@ func `shr`*(x: BigInt, y: Natural): BigInt =
   var carry = 0'u64
   let a = y div 32
   if a >= x.limbs.len:
-    return zero
+    # every limb was shifted out: 0, or -1 for negative x (arithmetic shift)
+    return if x.isNegative: -one else: zero
   let b = uint32(y mod 32)
   let mask = (1'u32 shl b) - 1
   result.limbs.setLen(x.limbs.len - a)
