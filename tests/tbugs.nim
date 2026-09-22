@@ -87,5 +87,23 @@ proc main() =
   block: # toInt[int64] produces wrong results in certain cases (https://github.com/nim-lang/bigints/issues/99)
     doAssert toInt[int64](-initBigInt(0xFFFFFFFF_00000000'u64)) == none(int64)
 
+  block: # Division causes assert failure (https://github.com/nim-lang/bigints/issues/123)
+    let
+      a = initBigInt("6277101735386680763835789123314955362437298222279840143829")
+      b = initBigInt("1461501637330902918203684832716283019655932313743")
+    doAssert a div b == initBigInt(4294967295'u32)
+    doAssert a mod b == initBigInt("1461501637330902618310973779051226782019976108644")
+    # top limb of the (normalized) dividend equals the top limb of the divisor
+    let c = initBigInt("340282366920938463463374607431768211455") # 2^128 - 1
+    let d = initBigInt("79228162514264337593543950335")             # 2^96 - 1
+    doAssert c div d == initBigInt(4294967296'u64)
+    doAssert c mod d == initBigInt(4294967295'u32)
+    # minimal case (see https://kolja.rs/algorithm-d/, footnote 16):
+    # top two limbs of dividend and divisor are equal, true digit is 2^32 - 1
+    let e = initBigInt("80000000000000000000000000000000", 16)
+    let f = initBigInt("800000000000000000000001", 16)
+    doAssert e div f == initBigInt(4294967295'u32)
+    doAssert e mod f == initBigInt("39614081257132168792477007873")
+
 static: main()
 main()

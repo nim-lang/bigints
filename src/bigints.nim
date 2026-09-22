@@ -751,14 +751,21 @@ func unsignedDivRem(q, r: var BigInt, n, d: BigInt) =
       let vtop = q.limbs[v + dn]
       assert vtop <= wm1
       let vv = (uint64(vtop) shl 32) or q.limbs[v+dn-1]
-      var q1 = vv div wm1
-      var r1 = vv mod wm1
+      # Knuth, TAOCP vol. 2, Algorithm D, step D3: q̂ = min(vv div wm1, b - 1).
+      # When vtop == wm1, vv div wm1 >= 2^32, and the two-limb correction test
+      # below cannot always bring it back under 2^32 on its own (issue #123).
+      var q1, r1: uint64
+      if vtop == wm1:
+        q1 = uint64(uint32.high)
+        r1 = uint64(q.limbs[v+dn-1]) + uint64(wm1)  # vv - q1 * wm1
+      else:
+        q1 = vv div wm1
+        r1 = vv mod wm1
 
-      while (wm2 * q1) > ((r1 shl 32) or q.limbs[v+dn-2]):
+      while r1 <= uint32.high and
+          (wm2 * q1) > ((r1 shl 32) or q.limbs[v+dn-2]):
         dec q1
         r1 += wm1
-        if r1 > uint32.high:
-          break
 
       assert q1 <= uint32.high
 
